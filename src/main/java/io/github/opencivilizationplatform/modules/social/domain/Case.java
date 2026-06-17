@@ -17,7 +17,8 @@ public class Case {
     private Incident sourceIncident;
 
     @Column(nullable = false)
-    private String status; // OPEN, IN_PROGRESS, REHABILITATION, CLOSED
+    @Enumerated(EnumType.STRING)
+    private CaseStatus status;
 
     @Column(columnDefinition = "TEXT")
     private String resolutionPlan;
@@ -40,8 +41,8 @@ public class Case {
     public void setId(Long id) { this.id = id; }
     public Incident getSourceIncident() { return sourceIncident; }
     public void setSourceIncident(Incident sourceIncident) { this.sourceIncident = sourceIncident; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public CaseStatus getStatus() { return status; }
+    public void setStatus(CaseStatus status) { this.status = status; }
     public String getResolutionPlan() { return resolutionPlan; }
     public void setResolutionPlan(String resolutionPlan) { this.resolutionPlan = resolutionPlan; }
     public String getRehabilitationProgram() { return rehabilitationProgram; }

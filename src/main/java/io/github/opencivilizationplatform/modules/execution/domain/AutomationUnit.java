@@ -15,13 +15,15 @@ public class AutomationUnit {
     private String name;
 
     @Column(nullable = false)
-    private String type; // e.g., CONSTRUCTOR, DRONE, BOT
+    @Enumerated(EnumType.STRING)
+    private AutomationUnitType type;
 
     @Column(nullable = false)
     private String region;
 
     @Column(nullable = false)
-    private String status; // ACTIVE, IDLE, MAINTENANCE, OFFLINE
+    @Enumerated(EnumType.STRING)
+    private AutomationUnitStatus status;
 
     @Column(nullable = false)
     private String currentTask;
@@ -35,12 +37,12 @@ public class AutomationUnit {
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public AutomationUnitType getType() { return type; }
+    public void setType(AutomationUnitType type) { this.type = type; }
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public AutomationUnitStatus getStatus() { return status; }
+    public void setStatus(AutomationUnitStatus status) { this.status = status; }
     public String getCurrentTask() { return currentTask; }
     public void setCurrentTask(String currentTask) { this.currentTask = currentTask; }
     public LocalDateTime getLastPing() { return lastPing; }

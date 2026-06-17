@@ -1,6 +1,7 @@
 package io.github.opencivilizationplatform.modules.execution.api;
 
 import io.github.opencivilizationplatform.modules.execution.domain.AutomationUnit;
+import io.github.opencivilizationplatform.modules.execution.domain.AutomationUnitStatus;
 import io.github.opencivilizationplatform.modules.execution.infrastructure.AutomationUnitRepository;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,7 +23,7 @@ public class AutomationUnitController {
     }
 
     @PostMapping("/{id}/status")
-    public AutomationUnit updateStatus(@PathVariable Long id, @RequestParam String status) {
+    public AutomationUnit updateStatus(@PathVariable Long id, @RequestParam AutomationUnitStatus status) {
         AutomationUnit unit = automationUnitRepository.findById(id).orElseThrow();
         unit.setStatus(status);
         return automationUnitRepository.save(unit);

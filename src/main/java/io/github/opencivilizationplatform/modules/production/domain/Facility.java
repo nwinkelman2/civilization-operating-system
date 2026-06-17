@@ -14,7 +14,8 @@ public class Facility {
     private String name;
 
     @Column(nullable = false)
-    private String type; // e.g., VERTICAL_FARM, HOUSING_3D, RECYCLING_HUB
+    @Enumerated(EnumType.STRING)
+    private FacilityType type;
 
     @Column(nullable = false)
     private String region;
@@ -23,7 +24,8 @@ public class Facility {
     private Double efficiency;
 
     @Column(nullable = false)
-    private String status; // ACTIVE, MAINTENANCE, OFFLINE
+    @Enumerated(EnumType.STRING)
+    private FacilityStatus status;
 
     private String currentOutput;
 
@@ -33,14 +35,14 @@ public class Facility {
     public void setId(Long id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public FacilityType getType() { return type; }
+    public void setType(FacilityType type) { this.type = type; }
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
     public Double getEfficiency() { return efficiency; }
     public void setEfficiency(Double efficiency) { this.efficiency = efficiency; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public FacilityStatus getStatus() { return status; }
+    public void setStatus(FacilityStatus status) { this.status = status; }
     public String getCurrentOutput() { return currentOutput; }
     public void setCurrentOutput(String currentOutput) { this.currentOutput = currentOutput; }
 }

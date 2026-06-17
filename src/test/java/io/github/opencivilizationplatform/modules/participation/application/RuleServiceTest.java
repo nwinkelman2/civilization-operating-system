@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.participation.application;
 
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
+import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
+import io.github.opencivilizationplatform.modules.participation.domain.ValidationStatus;
 import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,25 +43,25 @@ class RuleServiceTest {
     @Test
     void testGetValidatedRules() {
         Rule activeValidated = new Rule();
-        activeValidated.setStatus("ACTIVE");
-        activeValidated.setValidationStatus("SCIENTIFICALLY_VALIDATED");
+        activeValidated.setStatus(RuleStatus.ACTIVE);
+        activeValidated.setValidationStatus(ValidationStatus.SCIENTIFICALLY_VALIDATED);
 
-        Rule inactive = new Rule();
-        inactive.setStatus("INACTIVE");
-        inactive.setValidationStatus("SCIENTIFICALLY_VALIDATED");
+        Rule deprecated = new Rule();
+        deprecated.setStatus(RuleStatus.DEPRECATED);
+        deprecated.setValidationStatus(ValidationStatus.SCIENTIFICALLY_VALIDATED);
 
         Rule unvalidated = new Rule();
-        unvalidated.setStatus("ACTIVE");
-        unvalidated.setValidationStatus("PENDING");
+        unvalidated.setStatus(RuleStatus.ACTIVE);
+        unvalidated.setValidationStatus(ValidationStatus.PENDING);
 
-        List<Rule> allRules = List.of(activeValidated, inactive, unvalidated);
+        List<Rule> allRules = List.of(activeValidated, deprecated, unvalidated);
         when(ruleRepository.findAll()).thenReturn(allRules);
 
         List<Rule> result = ruleService.getValidatedRules();
 
         assertEquals(1, result.size());
-        assertEquals("ACTIVE", result.get(0).getStatus());
-        assertEquals("SCIENTIFICALLY_VALIDATED", result.get(0).getValidationStatus());
+        assertEquals(RuleStatus.ACTIVE, result.get(0).getStatus());
+        assertEquals(ValidationStatus.SCIENTIFICALLY_VALIDATED, result.get(0).getValidationStatus());
     }
 
     @Test

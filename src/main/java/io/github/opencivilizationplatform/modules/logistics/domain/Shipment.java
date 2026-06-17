@@ -27,7 +27,8 @@ public class Shipment {
     private String unit;
 
     @Column(nullable = false)
-    private String status; // PENDING, IN_TRANSIT, DELIVERED
+    @Enumerated(EnumType.STRING)
+    private ShipmentStatus status;
 
     private LocalDateTime eta;
 
@@ -45,8 +46,8 @@ public class Shipment {
     public void setQuantity(Double quantity) { this.quantity = quantity; }
     public String getUnit() { return unit; }
     public void setUnit(String unit) { this.unit = unit; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public ShipmentStatus getStatus() { return status; }
+    public void setStatus(ShipmentStatus status) { this.status = status; }
     public LocalDateTime getEta() { return eta; }
     public void setEta(LocalDateTime eta) { this.eta = eta; }
 }

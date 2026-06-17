@@ -12,7 +12,8 @@ public class Interaction {
     private Long id;
 
     @Column(nullable = false)
-    private String type; // e.g., NEED_REPORT, INNOVATION, COLLABORATION
+    @Enumerated(EnumType.STRING)
+    private InteractionType type;
 
     @Column(nullable = false, length = 2000)
     private String content;
@@ -24,7 +25,8 @@ public class Interaction {
     private String citizenId;
 
     @Column(nullable = false)
-    private String status; // PENDING, VERIFIED, INTEGRATED
+    @Enumerated(EnumType.STRING)
+    private InteractionStatus status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -33,16 +35,16 @@ public class Interaction {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public InteractionType getType() { return type; }
+    public void setType(InteractionType type) { this.type = type; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
     public String getCitizenId() { return citizenId; }
     public void setCitizenId(String citizenId) { this.citizenId = citizenId; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public InteractionStatus getStatus() { return status; }
+    public void setStatus(InteractionStatus status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 

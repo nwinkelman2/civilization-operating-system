@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.participation.application;
 
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
+import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
+import io.github.opencivilizationplatform.modules.participation.domain.ValidationStatus;
 import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +22,7 @@ public class RuleService {
 
     public List<Rule> getValidatedRules() {
         return ruleRepository.findAll().stream()
-                .filter(rule -> "ACTIVE".equals(rule.getStatus()) && "SCIENTIFICALLY_VALIDATED".equals(rule.getValidationStatus()))
+                .filter(rule -> RuleStatus.ACTIVE.equals(rule.getStatus()) && ValidationStatus.SCIENTIFICALLY_VALIDATED.equals(rule.getValidationStatus()))
                 .toList();
     }
 

@@ -1,6 +1,7 @@
 package io.github.opencivilizationplatform.modules.monitoring.application;
 
 import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
+import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetricStatus;
 import io.github.opencivilizationplatform.modules.monitoring.infrastructure.BiosphereMetricRepository;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -24,7 +25,7 @@ public class BiosphereMetricService {
 
     public BiosphereMetric saveMetric(BiosphereMetric metric) {
         BiosphereMetric saved = metricRepository.save(metric);
-        if ("CRITICAL".equals(saved.getStatus())) {
+        if (BiosphereMetricStatus.CRITICAL.equals(saved.getStatus())) {
             eventPublisher.publishEvent(new BiosphereCriticalEvent(this, saved));
         }
         return saved;

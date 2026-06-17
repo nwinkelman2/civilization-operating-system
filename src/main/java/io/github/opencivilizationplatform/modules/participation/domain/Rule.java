@@ -21,10 +21,12 @@ public class Rule {
     private String logicCode;
 
     @Column(nullable = false)
-    private String status; // PROPOSED, ACTIVE, DEPRECATED
+    @Enumerated(EnumType.STRING)
+    private RuleStatus status;
 
     @Column(nullable = false)
-    private String validationStatus; // PENDING, SCIENTIFICALLY_VALIDATED, REJECTED
+    @Enumerated(EnumType.STRING)
+    private ValidationStatus validationStatus;
 
     private String validatedBy;
 
@@ -43,10 +45,10 @@ public class Rule {
     public void setDescription(String description) { this.description = description; }
     public String getLogicCode() { return logicCode; }
     public void setLogicCode(String logicCode) { this.logicCode = logicCode; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-    public String getValidationStatus() { return validationStatus; }
-    public void setValidationStatus(String validationStatus) { this.validationStatus = validationStatus; }
+    public RuleStatus getStatus() { return status; }
+    public void setStatus(RuleStatus status) { this.status = status; }
+    public ValidationStatus getValidationStatus() { return validationStatus; }
+    public void setValidationStatus(ValidationStatus validationStatus) { this.validationStatus = validationStatus; }
     public String getValidatedBy() { return validatedBy; }
     public void setValidatedBy(String validatedBy) { this.validatedBy = validatedBy; }
     public Integer getVotesCount() { return votesCount; }

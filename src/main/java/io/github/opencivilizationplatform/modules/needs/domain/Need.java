@@ -11,7 +11,8 @@ public class Need {
     private Long id;
 
     @Column(nullable = false)
-    private String category; // e.g., NUTRITION, HOUSING, HEALTH, EDUCATION
+    @Enumerated(EnumType.STRING)
+    private NeedCategory category;
 
     @Column(nullable = false)
     private String region;
@@ -29,14 +30,15 @@ public class Need {
     private Integer priority; // 1-5
 
     @Column(nullable = false)
-    private String status; // UNMET, PARTIAL, MET
+    @Enumerated(EnumType.STRING)
+    private NeedStatus status;
 
     public Need() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
+    public NeedCategory getCategory() { return category; }
+    public void setCategory(NeedCategory category) { this.category = category; }
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
     public String getDescription() { return description; }
@@ -47,6 +49,6 @@ public class Need {
     public void setUnit(String unit) { this.unit = unit; }
     public Integer getPriority() { return priority; }
     public void setPriority(Integer priority) { this.priority = priority; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public NeedStatus getStatus() { return status; }
+    public void setStatus(NeedStatus status) { this.status = status; }
 }

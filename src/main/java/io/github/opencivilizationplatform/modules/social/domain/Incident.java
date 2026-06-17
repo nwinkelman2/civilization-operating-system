@@ -13,7 +13,8 @@ public class Incident {
     private Long id;
 
     @Column(nullable = false)
-    private String type; // CONFLICT, BEHAVIORAL_ANOMALY, OTHER
+    @Enumerated(EnumType.STRING)
+    private IncidentType type;
 
     @Column(nullable = false)
     private String location;
@@ -22,10 +23,12 @@ public class Incident {
     private String description;
 
     @Column(nullable = false)
-    private String riskLevel; // LOW, MEDIUM, HIGH, CRITICAL
+    @Enumerated(EnumType.STRING)
+    private RiskLevel riskLevel;
 
     @Column(nullable = false)
-    private String status; // REPORTED, ANALYZING, CASE_OPENED, RESOLVED
+    @Enumerated(EnumType.STRING)
+    private IncidentStatus status;
 
     @ElementCollection
     private List<String> participantIds;
@@ -37,16 +40,16 @@ public class Incident {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public IncidentType getType() { return type; }
+    public void setType(IncidentType type) { this.type = type; }
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public String getRiskLevel() { return riskLevel; }
-    public void setRiskLevel(String riskLevel) { this.riskLevel = riskLevel; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public RiskLevel getRiskLevel() { return riskLevel; }
+    public void setRiskLevel(RiskLevel riskLevel) { this.riskLevel = riskLevel; }
+    public IncidentStatus getStatus() { return status; }
+    public void setStatus(IncidentStatus status) { this.status = status; }
     public List<String> getParticipantIds() { return participantIds; }
     public void setParticipantIds(List<String> participantIds) { this.participantIds = participantIds; }
     public LocalDateTime getReportedAt() { return reportedAt; }

@@ -3,6 +3,7 @@ package io.github.opencivilizationplatform.modules.contribution.application;
 import io.github.opencivilizationplatform.modules.contribution.domain.Citizen;
 import io.github.opencivilizationplatform.modules.contribution.domain.Contribution;
 import io.github.opencivilizationplatform.modules.contribution.domain.Project;
+import io.github.opencivilizationplatform.modules.contribution.domain.ProjectStatus;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ContributionRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ProjectRepository;
@@ -43,8 +44,8 @@ class ContributionServiceTest {
     @Test
     void testGetActiveProjects() {
         Project p = new Project();
-        p.setStatus("ACTIVE");
-        when(projectRepository.findByStatus("ACTIVE")).thenReturn(Arrays.asList(p));
+        p.setStatus(ProjectStatus.ACTIVE);
+        when(projectRepository.findByStatus(ProjectStatus.ACTIVE)).thenReturn(Arrays.asList(p));
         assertEquals(1, contributionService.getActiveProjects().size());
     }
 

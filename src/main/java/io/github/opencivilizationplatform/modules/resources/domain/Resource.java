@@ -12,7 +12,8 @@ public class Resource {
     private Long id;
 
     @Column(nullable = false)
-    private String type; // e.g., MINERAL, ENERGY, FOOD, WATER
+    @Enumerated(EnumType.STRING)
+    private ResourceType type;
 
     @Column(nullable = false, length = 1000)
     private String description;
@@ -33,8 +34,8 @@ public class Resource {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public ResourceType getType() { return type; }
+    public void setType(ResourceType type) { this.type = type; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
     public String getName() { return name; }

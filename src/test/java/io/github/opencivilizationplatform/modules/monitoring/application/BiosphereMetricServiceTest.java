@@ -1,6 +1,7 @@
 package io.github.opencivilizationplatform.modules.monitoring.application;
 
 import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
+import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetricStatus;
 import io.github.opencivilizationplatform.modules.monitoring.infrastructure.BiosphereMetricRepository;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import org.junit.jupiter.api.BeforeEach;
@@ -47,26 +48,26 @@ class BiosphereMetricServiceTest {
     @Test
     void testSaveNormalMetric() {
         BiosphereMetric metric = new BiosphereMetric();
-        metric.setStatus("STABLE");
+        metric.setStatus(BiosphereMetricStatus.NORMAL);
         when(metricRepository.save(any(BiosphereMetric.class))).thenReturn(metric);
 
         BiosphereMetric saved = biosphereMetricService.saveMetric(metric);
 
         assertNotNull(saved);
-        assertEquals("STABLE", saved.getStatus());
+        assertEquals(BiosphereMetricStatus.NORMAL, saved.getStatus());
         verify(eventPublisher, never()).publishEvent(any(BiosphereCriticalEvent.class));
     }
 
     @Test
     void testSaveCriticalMetricPublishesEvent() {
         BiosphereMetric metric = new BiosphereMetric();
-        metric.setStatus("CRITICAL");
+        metric.setStatus(BiosphereMetricStatus.CRITICAL);
         when(metricRepository.save(any(BiosphereMetric.class))).thenReturn(metric);
 
         BiosphereMetric saved = biosphereMetricService.saveMetric(metric);
 
         assertNotNull(saved);
-        assertEquals("CRITICAL", saved.getStatus());
+        assertEquals(BiosphereMetricStatus.CRITICAL, saved.getStatus());
         verify(eventPublisher, times(1)).publishEvent(any(BiosphereCriticalEvent.class));
     }
 }

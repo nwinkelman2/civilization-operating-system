@@ -1,6 +1,7 @@
 package io.github.opencivilizationplatform.modules.participation.api;
 
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
+import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
 import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +32,7 @@ public class RuleController {
     @PostMapping
     public Rule proposeRule(@RequestBody Rule rule) {
         rule.setVotesCount(0);
-        rule.setStatus("PROPOSED");
+        rule.setStatus(RuleStatus.PROPOSED);
         return ruleRepository.save(rule);
     }
 }

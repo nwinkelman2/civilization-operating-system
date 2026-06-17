@@ -19,16 +19,19 @@ public class Project {
     private String description;
 
     @Column(nullable = false)
-    private String category;
+    @Enumerated(EnumType.STRING)
+    private ProjectCategory category;
 
     @Column(nullable = false)
-    private String impactArea;
+    @Enumerated(EnumType.STRING)
+    private ImpactArea impactArea;
 
     @ElementCollection
     private List<String> requiredSkillNames;
 
     @Column(nullable = false)
-    private String status; // PROPOSED, ACTIVE, COMPLETED
+    @Enumerated(EnumType.STRING)
+    private ProjectStatus status;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -41,14 +44,14 @@ public class Project {
     public void setTitle(String title) { this.title = title; }
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
-    public String getCategory() { return category; }
-    public void setCategory(String category) { this.category = category; }
-    public String getImpactArea() { return impactArea; }
-    public void setImpactArea(String impactArea) { this.impactArea = impactArea; }
+    public ProjectCategory getCategory() { return category; }
+    public void setCategory(ProjectCategory category) { this.category = category; }
+    public ImpactArea getImpactArea() { return impactArea; }
+    public void setImpactArea(ImpactArea impactArea) { this.impactArea = impactArea; }
     public List<String> getRequiredSkillNames() { return requiredSkillNames; }
     public void setRequiredSkillNames(List<String> requiredSkillNames) { this.requiredSkillNames = requiredSkillNames; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public ProjectStatus getStatus() { return status; }
+    public void setStatus(ProjectStatus status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 

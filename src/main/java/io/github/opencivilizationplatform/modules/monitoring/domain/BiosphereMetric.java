@@ -27,7 +27,8 @@ public class BiosphereMetric {
     private Double safetyLimit;
 
     @Column(nullable = false)
-    private String status; // NORMAL, WARNING, CRITICAL
+    @Enumerated(EnumType.STRING)
+    private BiosphereMetricStatus status;
 
     @Column(nullable = false)
     private Double drift;
@@ -46,8 +47,8 @@ public class BiosphereMetric {
     public void setUnit(String unit) { this.unit = unit; }
     public Double getSafetyLimit() { return safetyLimit; }
     public void setSafetyLimit(Double safetyLimit) { this.safetyLimit = safetyLimit; }
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public BiosphereMetricStatus getStatus() { return status; }
+    public void setStatus(BiosphereMetricStatus status) { this.status = status; }
     public Double getDrift() { return drift; }
     public void setDrift(Double drift) { this.drift = drift; }
 

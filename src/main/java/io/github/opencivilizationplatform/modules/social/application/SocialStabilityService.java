@@ -3,6 +3,7 @@ package io.github.opencivilizationplatform.modules.social.application;
 import io.github.opencivilizationplatform.modules.social.domain.BehaviorAssessment;
 import io.github.opencivilizationplatform.modules.social.domain.Case;
 import io.github.opencivilizationplatform.modules.social.domain.Incident;
+import io.github.opencivilizationplatform.modules.social.domain.IncidentStatus;
 import io.github.opencivilizationplatform.modules.social.infrastructure.BehaviorAssessmentRepository;
 import io.github.opencivilizationplatform.modules.social.infrastructure.CaseRepository;
 import io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository;
@@ -32,7 +33,7 @@ public class SocialStabilityService {
     }
 
     public Incident reportIncident(Incident incident) {
-        incident.setStatus("REPORTED");
+        incident.setStatus(IncidentStatus.REPORTED);
         return incidentRepository.save(incident);
     }
 

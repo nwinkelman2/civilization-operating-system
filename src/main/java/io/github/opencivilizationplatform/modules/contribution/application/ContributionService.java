@@ -3,6 +3,7 @@ package io.github.opencivilizationplatform.modules.contribution.application;
 import io.github.opencivilizationplatform.modules.contribution.domain.Citizen;
 import io.github.opencivilizationplatform.modules.contribution.domain.Contribution;
 import io.github.opencivilizationplatform.modules.contribution.domain.Project;
+import io.github.opencivilizationplatform.modules.contribution.domain.ProjectStatus;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ContributionRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ProjectRepository;
@@ -32,7 +33,7 @@ public class ContributionService {
     }
 
     public List<Project> getActiveProjects() {
-        return projectRepository.findByStatus("ACTIVE");
+        return projectRepository.findByStatus(ProjectStatus.ACTIVE);
     }
 
     @Transactional
