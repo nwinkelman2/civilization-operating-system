@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/governance")
-@CrossOrigin(origins = "*")
 public class ScientificCommitteeController {
 
     private final ScientificCommitteeRepository committeeRepository;

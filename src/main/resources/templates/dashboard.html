@@ -138,22 +138,30 @@
         </div>
     </section>
 
-    <!-- Telemetry Row (Simulating the bottom half of the image) -->
+    <!-- Telemetry Row -->
     <div class="telemetry-row">
         <section class="card glass-morphism" style="margin-top: 20px; padding: 20px;">
-            <h2 style="font-size: 0.7rem;"><i data-lucide="brain" style="width: 14px; vertical-align: middle;"></i> SIMULATION CORTEX TELEMETRY</h2>
-            <div style="font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--text-secondary);">
+            <h2 style="font-size: 0.7rem;"><i data-lucide="brain" style="width: 14px; vertical-align: middle;"></i> CORTEX TELEMETRY <span class="live-badge" style="font-size: 0.45rem; margin-left: 8px;">LIVE</span></h2>
+            <div id="cortex-telemetry" style="font-family: 'Courier New', monospace; font-size: 0.75rem; color: var(--text-secondary);">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                     <span>ENGINE_STATUS:</span>
-                    <span style="color: var(--green);">SYNCHRONIZED</span>
+                    <span style="color: var(--green);" id="tele-engine" th:text="${simulationStatus.engine}">SYNCHRONIZED</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                    <span>ACTIVE_CONSTITUTIONAL_RULES:</span>
-                    <span style="color: var(--accent-cyan);">8</span>
+                    <span>TICK:</span>
+                    <span style="color: var(--accent-cyan);" id="tele-tick" th:text="${simulationStatus.tick}">0</span>
                 </div>
-                <div>LATEST_AUTONOMOUS_DECISION:</div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>ACTIVE_RULES:</span>
+                    <span style="color: var(--accent-cyan);" id="tele-rules" th:text="${simulationStatus.activeRulesCount}">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                    <span>MONITORED_CATEGORIES:</span>
+                    <span id="tele-categories" th:text="${#lists.size(simulationStatus.monitoredCategories)}">0</span>
+                </div>
+                <div style="margin-top: 8px;">LAST_DECISION:</div>
                 <div style="background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; border-left: 2px solid var(--accent-cyan); margin-top: 5px;">
-                    "Awaiting simulation cycle..."
+                    <span id="tele-decision" th:text="${simulationStatus.lastDecision}">"Awaiting simulation cycle..."</span>
                 </div>
             </div>
         </section>
@@ -173,6 +181,20 @@
         </section>
     </div>
 
+    <script>
+        function pollCortex() {
+            fetch('/api/v1/simulation/status')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('tele-tick').textContent = data.tick;
+                    document.getElementById('tele-rules').textContent = data.activeRulesCount;
+                    document.getElementById('tele-categories').textContent = data.monitoredCategories.length;
+                    document.getElementById('tele-decision').textContent = data.lastDecision;
+                })
+                .catch(() => {});
+        }
+        setInterval(pollCortex, 6000);
+    </script>
     <script th:inline="javascript">
         function runAudit() {
             const btn = document.getElementById('audit-btn');

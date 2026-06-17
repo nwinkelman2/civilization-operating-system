@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/shipments")
-@CrossOrigin(origins = "*")
 public class ShipmentController {
 
     private final ShipmentRepository shipmentRepository;

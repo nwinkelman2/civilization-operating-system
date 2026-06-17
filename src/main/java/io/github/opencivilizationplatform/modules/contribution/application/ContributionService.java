@@ -7,10 +7,12 @@ import io.github.opencivilizationplatform.modules.contribution.infrastructure.Ci
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ContributionRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ProjectRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 @Service
+@Transactional(readOnly = true)
 public class ContributionService {
 
     private final CitizenRepository citizenRepository;
@@ -33,6 +35,7 @@ public class ContributionService {
         return projectRepository.findByStatus("ACTIVE");
     }
 
+    @Transactional
     public Contribution recordContribution(Contribution contribution) {
         Contribution saved = contributionRepository.save(contribution);
         if (contribution.getCitizen() != null) {

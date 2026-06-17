@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/biosphere")
-@CrossOrigin(origins = "*")
 public class BiosphereMetricController {
 
     private final BiosphereMetricRepository metricRepository;

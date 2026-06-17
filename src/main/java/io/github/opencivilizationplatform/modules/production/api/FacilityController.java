@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/facilities")
-@CrossOrigin(origins = "*")
 public class FacilityController {
 
     private final FacilityRepository facilityRepository;

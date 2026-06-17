@@ -1,74 +1,113 @@
 <div th:fragment="content">
-    <header class="page-header">
-        <h1 class="glow-text"><i data-lucide="brain" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 15px;"></i>Simulation Core</h1>
-        <p class="subtitle">Cortex Engine & Automated Execution | Predictive Modeling</p>
+    <header class="page-header" style="margin-bottom: 30px;">
+        <h1 class="glitch-text" data-text="SIMULATION CORE">
+            <span class="glitch-scan">⟐</span> SIMULATION CORE <span class="glitch-scan">⟐</span>
+        </h1>
+        <p class="subtitle">Cortex Engine &bull; Automated Governance &bull; Real-Time Simulation</p>
     </header>
 
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
-        <!-- Logic Core Status -->
-        <section class="card glass-morphism animate" th:if="${status != null}">
-            <h2><i data-lucide="brain" style="width: 18px; vertical-align: middle;"></i> Cortex Status</h2>
-            <div class="stat-grid">
-                <div class="stat-item">
-                    <span class="stat-label">Engine Status</span>
-                    <span class="stat-value" th:text="${status.engine}">—</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Decision Cycle</span>
-                    <span class="stat-value accent">15s</span>
-                </div>
+    <!-- Top Stats Bar -->
+    <div class="sim-stats" th:fragment="cortex-telemetry" hx-get="/simulation/fragments/cortex-telemetry" hx-trigger="every 5s" hx-swap="outerHTML">
+        <div class="sim-stat-card">
+            <span class="sim-stat-icon">⏱</span>
+            <div>
+                <span class="sim-stat-label">TICK</span>
+                <span class="sim-stat-value" th:text="${status.tick}">0</span>
             </div>
-            <div class="table-wrapper" style="margin-top: 30px;">
-                <table>
-                    <thead><tr><th>Domain</th><th>Last Operation</th></tr></thead>
-                    <tbody>
-                        <tr><td>Strategic Logic</td><td th:text="${status.lastDecision}">—</td></tr>
-                        <tr><td>Rule Validator</td><td><span class="badge badge-active">PASS</span></td></tr>
-                    </tbody>
-                </table>
+        </div>
+        <div class="sim-stat-card">
+            <span class="sim-stat-icon">⚖</span>
+            <div>
+                <span class="sim-stat-label">ACTIVE RULES</span>
+                <span class="sim-stat-value" th:text="${status.activeRulesCount}">0</span>
             </div>
-        </section>
-
-        <!-- Automation Execution Status -->
-        <section class="card glass-morphism animate">
-            <h2><i data-lucide="bot" style="width: 18px; vertical-align: middle;"></i> Automation Sim</h2>
-            <div class="stat-grid" th:if="${automations != null}">
-                <div class="stat-item">
-                    <span class="stat-label">Active Units</span>
-                    <span class="stat-value" th:text="${automations.size()}">0</span>
-                </div>
-                <div class="stat-item">
-                    <span class="stat-label">Execution Mode</span>
-                    <span class="stat-value accent">AUTONOMOUS</span>
-                </div>
+        </div>
+        <div class="sim-stat-card">
+            <span class="sim-stat-icon">🧠</span>
+            <div>
+                <span class="sim-stat-label">ENGINE</span>
+                <span class="sim-stat-value" style="font-size: 0.7rem;" th:text="${status.engine}">—</span>
             </div>
-            <div class="table-wrapper" style="margin-top: 20px;">
-                <table>
-                    <thead><tr><th>Unit ID</th><th>Task</th><th>Status</th></tr></thead>
-                    <tbody>
-                        <tr th:each="a : ${automations}">
-                            <td th:text="${a.name}">—</td>
-                            <td th:text="${a.currentTask}">—</td>
-                            <td><span class="badge" th:classappend="${a.status == 'ACTIVE' ? 'badge-active' : 'badge-normal'}" th:text="${a.status}">—</span></td>
-                        </tr>
-                    </tbody>
-                </table>
+        </div>
+        <div class="sim-stat-card">
+            <span class="sim-stat-icon">📡</span>
+            <div>
+                <span class="sim-stat-label">CATEGORIES</span>
+                <span class="sim-stat-value" th:text="${status.monitoredCategories.size()}">0</span>
             </div>
-        </section>
+        </div>
     </div>
 
-    <!-- Active Rules Overlay -->
-    <section class="card glass-morphism animate" style="margin-top: 30px;">
-        <h2><i data-lucide="scale" style="width: 18px; vertical-align: middle;"></i> Validated Decisions</h2>
-        <p style="color: var(--text-dim); font-size: 0.8rem; margin-bottom: 15px;">Latest autonomous decisions synchronized with scientific governance.</p>
-        <div class="table-wrapper">
-             <table>
-                <thead><tr><th>Simulation Phase</th><th>Logic Result</th><th>Stability Impact</th></tr></thead>
-                <tbody>
-                    <tr><td>Resource Re-allocation</td><td>OPTIMIZED</td><td>POSITIVE</td></tr>
-                    <tr><td>Biosphere Guardrail</td><td>MONITORING</td><td>STABLE</td></tr>
-                </tbody>
-            </table>
+    <!-- Middle Section: Gauges + Decision Log -->
+    <div class="sim-mid">
+        <!-- Resource Gauges -->
+        <div class="sim-gauges">
+            <h2 class="sim-section-title"><i data-lucide="activity" style="width: 16px;"></i> RESOURCE BALANCE</h2>
+            <div class="gauge-grid" th:if="${balance != null}">
+                <div class="gauge-card" th:each="b : ${balance}">
+                    <svg class="gauge-ring" viewBox="0 0 120 120">
+                        <circle class="gauge-track" cx="60" cy="60" r="52"/>
+                        <circle class="gauge-fill" cx="60" cy="60" r="52"
+                                th:attr="stroke-dashoffset=${(100 - b.percentageMet) * 3.267}"
+                                stroke-dasharray="326.7"
+                                th:classappend="${b.percentageMet < 50 ? 'gauge-critical' : (b.percentageMet < 80 ? 'gauge-warning' : 'gauge-healthy')}"/>
+                    </svg>
+                    <div class="gauge-value">
+                        <span class="gauge-pct" th:text="${#numbers.formatDecimal(b.percentageMet, 0, 1)} + '%'">0%</span>
+                        <span class="gauge-label" th:text="${b.category}">—</span>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${balance == null or #lists.isEmpty(balance)}" style="color: var(--text-dim); padding: 40px; text-align: center;">
+                <i data-lucide="bar-chart-3" style="width: 40px; opacity: 0.3;"></i>
+                <p style="margin-top: 10px; font-size: 0.8rem;">No resource data yet. Start the simulation cycle.</p>
+            </div>
         </div>
-    </section>
+
+        <!-- Decision Log -->
+        <div class="sim-log">
+            <h2 class="sim-section-title">
+                <i data-lucide="terminal" style="width: 16px;"></i> DECISION LOG
+                <span class="live-badge">LIVE</span>
+            </h2>
+            <div class="log-container" th:fragment="decision-log" hx-get="/simulation/fragments/decision-log" hx-trigger="every 5s" hx-swap="outerHTML">
+                <div class="log-entry log-info" th:if="${status.decisionHistory == null or #lists.isEmpty(status.decisionHistory)}">
+                    <span class="log-time">--:--:--</span>
+                    <span class="log-msg">Awaiting first simulation cycle...</span>
+                </div>
+                <div class="log-entry" th:each="entry : ${status.decisionHistory}" th:classappend="${#strings.contains(entry, 'AUTO-REACTION') ? 'log-warn' : (#strings.contains(entry, 'DECISION') ? 'log-decision' : 'log-info')}">
+                    <span class="log-time" th:text="${#strings.substring(entry, 1, 9)}">00:00:00</span>
+                    <span class="log-msg" th:text="${#strings.substring(entry, 11)}">decision text</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom: Module Health + Automation -->
+    <div class="sim-bottom">
+        <div class="sim-panel">
+            <h2 class="sim-section-title"><i data-lucide="cpu" style="width: 16px;"></i> ACTIVE AUTOMATION</h2>
+            <div class="automation-grid" th:if="${automations != null}">
+                <div class="auto-unit" th:each="a : ${automations}">
+                    <span class="auto-name" th:text="${a.name}">Unit</span>
+                    <span class="auto-task" th:text="${a.currentTask}">Task</span>
+                    <span class="auto-status" th:classappend="${a.status == 'ACTIVE' ? 'status-green' : 'status-idle'}" th:text="${a.status}">—</span>
+                </div>
+            </div>
+            <div th:if="${automations == null or #lists.isEmpty(automations)}" style="color: var(--text-dim); padding: 20px; text-align: center; font-size: 0.8rem;">
+                No automation units deployed.
+            </div>
+        </div>
+
+        <div class="sim-panel">
+            <h2 class="sim-section-title"><i data-lucide="shield" style="width: 16px;"></i> BIOSPHERE STATUS</h2>
+            <div class="bios-status">
+                <span class="bios-dot bios-stable"></span>
+                <span>SYSTEM STABLE</span>
+            </div>
+            <p style="color: var(--text-dim); font-size: 0.7rem; margin-top: 10px;">
+                Cortex monitoring active. Rules validated against scientific consensus.
+            </p>
+        </div>
+    </div>
 </div>

@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/interactions")
-@CrossOrigin(origins = "*")
 public class InteractionController {
 
     private final InteractionRepository interactionRepository;

@@ -1,7 +1,8 @@
 package io.github.opencivilizationplatform.modules.simulation.application;
 
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
+import io.github.opencivilizationplatform.dto.BalanceDTO;
 import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
@@ -15,9 +16,7 @@ import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -62,11 +61,8 @@ class CortexEngineServiceTest {
         List<Rule> rules = List.of(rule);
         when(ruleService.getValidatedRules()).thenReturn(rules);
         
-        Map<String, Object> balanceItem = new HashMap<>();
-        balanceItem.put("category", "WATER");
-        balanceItem.put("percentageMet", 75.0);
-        
-        List<Map<String, Object>> balance = List.of(balanceItem);
+        BalanceDTO balanceItem = new BalanceDTO("WATER", 75.0, 100.0, "units", 75.0, "DEFICIT");
+        List<BalanceDTO> balance = List.of(balanceItem);
         when(balanceService.getBalanceReport()).thenReturn(balance);
         
         cortexEngineService.runSimulationCycle();

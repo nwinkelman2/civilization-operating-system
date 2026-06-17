@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/resources")
-@CrossOrigin(origins = "*")
 public class ResourceController {
 
     private final ResourceRepository resourceRepository;

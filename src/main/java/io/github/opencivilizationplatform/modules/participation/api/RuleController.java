@@ -8,7 +8,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/rules")
-@CrossOrigin(origins = "*")
 public class RuleController {
 
     private final RuleRepository ruleRepository;

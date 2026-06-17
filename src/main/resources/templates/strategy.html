@@ -7,13 +7,14 @@
         <h2><i data-lucide="pie-chart" style="width: 18px; vertical-align: middle;"></i> Logic Analysis</h2>
         <div class="table-wrapper">
             <table>
-                <thead><tr><th>Category</th><th>Available</th><th>Required</th><th>Delta</th></tr></thead>
+                <thead><tr><th>Category</th><th>Supply</th><th>Demand</th><th>Delta</th><th>Status</th></tr></thead>
                 <tbody>
                     <tr th:each="b : ${balance}">
-                        <td th:text="${b['category']}">—</td>
-                        <td th:text="${b['available']}">0</td>
-                        <td th:text="${b['required']}">0</td>
-                        <td><span class="badge" th:classappend="${b['available'] >= b['required'] ? 'badge-active' : 'badge-critical'}" th:text="${b['available'] - b['required']}">0</span></td>
+                        <td th:text="${b.category}">—</td>
+                        <td th:text="${#numbers.formatDecimal(b.supply, 0, 1)}">0</td>
+                        <td th:text="${#numbers.formatDecimal(b.demand, 0, 1)}">0</td>
+                        <td><span class="badge" th:classappend="${b.supply >= b.demand ? 'badge-active' : 'badge-critical'}" th:text="${#numbers.formatDecimal(b.supply - b.demand, 0, 1)}">0</span></td>
+                        <td><span class="badge" th:classappend="${b.status == 'STABLE' ? 'badge-active' : 'badge-critical'}" th:text="${b.status}">—</span></td>
                     </tr>
                 </tbody>
             </table>

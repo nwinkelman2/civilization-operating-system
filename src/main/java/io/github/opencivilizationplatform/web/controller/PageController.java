@@ -139,7 +139,22 @@ public class PageController {
     @GetMapping("/simulation")
     public String simulation(Model model) {
         model.addAttribute("status", cortexService.getStatus());
+        model.addAttribute("balance", balanceService.getBalanceReport());
         model.addAttribute("automations", automationRepository.findAll());
         return render(model, "simulation", "Cortex Engine", "simulation");
+    }
+
+    @GetMapping("/simulation/fragments/cortex-telemetry")
+    public String cortexTelemetry(Model model) {
+        model.addAttribute("status", cortexService.getStatus());
+        model.addAttribute("balance", balanceService.getBalanceReport());
+        model.addAttribute("automations", automationRepository.findAll());
+        return "simulation :: cortex-telemetry";
+    }
+
+    @GetMapping("/simulation/fragments/decision-log")
+    public String decisionLog(Model model) {
+        model.addAttribute("status", cortexService.getStatus());
+        return "simulation :: decision-log";
     }
 }

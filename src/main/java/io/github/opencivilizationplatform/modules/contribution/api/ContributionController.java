@@ -6,7 +6,6 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/purpose")
-@CrossOrigin(origins = "*")
 public class ContributionController {
 
     private final ContributionService contributionService;

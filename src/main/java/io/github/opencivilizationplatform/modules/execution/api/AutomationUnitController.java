@@ -8,7 +8,6 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/automation")
-@CrossOrigin(origins = "*")
 public class AutomationUnitController {
 
     private final AutomationUnitRepository automationUnitRepository;

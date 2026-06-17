@@ -1,3 +1,6 @@
+civilization:
+  scale: ${CIVILIZATION_SCALE:LOCAL}
+
 spring:
   application:
     name: civilization-os
