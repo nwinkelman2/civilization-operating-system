@@ -95,6 +95,12 @@
 			<artifactId>spring-boot-starter-actuator</artifactId>
 		</dependency>
 
+		<!-- Flyway -->
+		<dependency>
+			<groupId>org.flywaydb</groupId>
+			<artifactId>flyway-database-postgresql</artifactId>
+		</dependency>
+
 		<!-- DevTools -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
