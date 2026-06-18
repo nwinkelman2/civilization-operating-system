@@ -1,0 +1,221 @@
+<div th:fragment="content">
+    <header class="page-header">
+        <h1 class="glitch-text" th:attr="data-text='CIVILIZATION: ' + ${civ.name}">
+            <span class="glitch-scan">⟐</span> <span th:text="${civ.name}">CIVILIZATION</span> <span class="glitch-scan">⟐</span>
+        </h1>
+        <p class="subtitle">
+            Scale: <strong th:text="${civ.scale}">LOCAL</strong> &bull;
+            Status: <strong th:text="${civ.status}">ACTIVE</strong> &bull;
+            Population: <strong th:text="${civ.population}">100</strong>
+        </p>
+    </header>
+
+    <div class="civ-dashboard">
+        <!-- Top Stats -->
+        <div class="civ-stats-bar">
+            <div class="civ-stat-card">
+                <span class="civ-stat-icon">🎯</span>
+                <div>
+                    <span class="civ-stat-label">REPUTATION</span>
+                    <span class="civ-stat-value" th:text="${civ.reputationScore} + '/100'">50/100</span>
+                </div>
+            </div>
+            <div class="civ-stat-card">
+                <span class="civ-stat-icon">🏠</span>
+                <div>
+                    <span class="civ-stat-label">REGION</span>
+                    <span class="civ-stat-value region-name-display" th:text="${region?.name ?: 'No Region'}">—</span>
+                </div>
+            </div>
+            <div class="civ-stat-card">
+                <span class="civ-stat-icon">🧠</span>
+                <div>
+                    <span class="civ-stat-label">VOXTEX NODES</span>
+                    <span class="civ-stat-value" th:text="${#lists.size(nodes)}">0</span>
+                </div>
+            </div>
+            <div class="civ-stat-card">
+                <span class="civ-stat-icon">🔬</span>
+                <div>
+                    <span class="civ-stat-label">TECH RESEARCHED</span>
+                    <span class="civ-stat-value" th:text="${techCount}">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Region Resources -->
+        <div class="civ-panel" th:if="${region != null}">
+            <h2 class="panel-title">HOME REGION RESOURCES</h2>
+            <div class="civ-resource-grid">
+                <div class="civ-res-item" th:each="r : ${resourceList}">
+                    <span class="civ-res-label" th:text="${r.label}">FOOD</span>
+                    <div class="civ-res-track">
+                        <div class="civ-res-fill" th:style="'width:' + ${r.value} + '%'"
+                            th:styleappend="'background:' + ${r.color}"></div>
+                    </div>
+                    <span class="civ-res-pct" th:text="${r.value} + '%'">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="civ-grid-2col">
+            <!-- Voxtex Nodes -->
+            <div class="civ-panel">
+                <h2 class="panel-title">VOXTEX NODES</h2>
+                <div th:if="${#lists.isEmpty(nodes)}" style="color:var(--text-dim);padding:20px;text-align:center;font-size:0.8rem;">
+                    No voxtex nodes. Start your simulation to deploy nodes.
+                </div>
+                <div class="voxtex-nodes" th:unless="${#lists.isEmpty(nodes)}">
+                    <div class="voxtex-node-item" th:each="n : ${nodes}">
+                        <span class="voxtex-node-icon" th:classappend="${n.status == 'ACTIVE'} ? 'voxtex-active' : 'voxtex-idle'">●</span>
+                        <span class="voxtex-node-name" th:text="${n.name}">Node</span>
+                        <span class="voxtex-node-type" th:text="${n.type}">PRIMARY</span>
+                        <span class="voxtex-node-status" th:text="${n.status}">ACTIVE</span>
+                    </div>
+                </div>
+                <button class="btn-small" onclick="showAddNodeModal(${civ.id})" style="margin-top:12px;width:100%;">
+                    + DEPLOY NODE
+                </button>
+            </div>
+
+            <!-- Diplomacy / Voxtex Messages -->
+            <div class="civ-panel">
+                <h2 class="panel-title">MESH DIPLOMACY</h2>
+                <div th:if="${#lists.isEmpty(messages)}" style="color:var(--text-dim);padding:20px;text-align:center;font-size:0.8rem;">
+                    No diplomatic messages yet. The mesh is quiet...
+                </div>
+                <div class="diplo-list" th:unless="${#lists.isEmpty(messages)}">
+                    <div class="diplo-item" th:each="m : ${messages}">
+                        <span class="diplo-type" th:text="${m.messageType}">DIPLOMATIC</span>
+                        <span class="diplo-content" th:text="${m.content}">Message...</span>
+                        <span class="diplo-time" th:text="${#temporals.format(m.sentAt, 'HH:mm:ss')}">--:--</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Tree Preview -->
+        <div class="civ-panel">
+            <h2 class="panel-title">TECH TREE</h2>
+            <div class="tech-grid">
+                <div class="tech-card" th:each="t : ${techTree}" th:classappend="${t.status == 'COMPLETED'} ? 'tech-done' : (${t.status == 'RESEARCHING'} ? 'tech-ongoing' : 'tech-locked')">
+                    <span class="tech-name" th:text="${t.name}">Tech</span>
+                    <span class="tech-status" th:text="${t.status}">LOCKED</span>
+                    <span class="tech-progress" th:if="${t.researchCost}" th:text="${t.researchProgress} + '/' + ${t.researchCost}">0/100</span>
+                </div>
+            </div>
+            <a th:href="@{'/api/v1/tech-tree/' + ${civ.id}}" style="display:block;text-align:center;margin-top:12px;color:var(--accent-cyan);font-size:0.8rem;">
+                View Full Tech Tree →
+            </a>
+        </div>
+    </div>
+
+    <script>
+        function showAddNodeModal(civId) {
+            const modal = document.createElement('div');
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content glass-morphism">
+                    <h2>DEPLOY VOXTEX NODE</h2>
+                    <form id="nodeForm">
+                        <div class="form-group">
+                            <label>Node Name</label>
+                            <input type="text" name="name" required class="form-input" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label>Type</label>
+                            <select name="type" class="form-input" style="width:100%;">
+                                <option value="PRIMARY">Primary</option>
+                                <option value="CITY">City</option>
+                                <option value="OUTPOST">Outpost</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Region</label>
+                            <input type="text" name="region" class="form-input" style="width:100%;"
+                                placeholder="Leave blank for home region">
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" onclick="this.closest('.modal-overlay').remove()"
+                                class="btn-secondary">Cancel</button>
+                            <button type="submit" class="btn-primary">DEPLOY</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('nodeForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const res = await fetch('/api/v1/voxtex/nodes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: form.name.value,
+                        type: form.type.value,
+                        region: form.region.value || null,
+                        civilizationId: civId,
+                        knowledgeBase: 'New node booting...'
+                    })
+                });
+                if (res.ok) {
+                    location.reload();
+                } else {
+                    alert('Failed to deploy node');
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .civ-dashboard { display: flex; flex-direction: column; gap: 20px; }
+        .civ-stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+        .civ-stat-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.1);
+            border-radius: 8px; padding: 16px; display: flex; align-items: center; gap: 12px; }
+        .civ-stat-icon { font-size: 1.5rem; }
+        .civ-stat-label { display: block; font-size: 0.6rem; color: var(--text-dim); letter-spacing: 2px; }
+        .civ-stat-value { display: block; font-size: 0.95rem; color: var(--accent-cyan); font-weight: 700; }
+        .region-name-display { color: var(--text) !important; }
+        .civ-panel { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.1);
+            border-radius: 8px; padding: 20px; }
+        .panel-title { color: var(--accent-cyan); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 16px;
+            font-family: 'Outfit', sans-serif; }
+        .civ-resource-grid { display: flex; flex-direction: column; gap: 8px; }
+        .civ-res-item { display: flex; align-items: center; gap: 10px; }
+        .civ-res-label { width: 80px; font-size: 0.7rem; color: var(--text-dim); }
+        .civ-res-track { flex: 1; height: 10px; background: rgba(255,255,255,0.05); border-radius: 5px; overflow: hidden; }
+        .civ-res-fill { height: 100%; border-radius: 5px; transition: width 0.5s; }
+        .civ-res-pct { width: 35px; font-size: 0.7rem; text-align: right; }
+        .civ-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .voxtex-nodes { display: flex; flex-direction: column; gap: 8px; }
+        .voxtex-node-item { display: flex; align-items: center; gap: 10px; padding: 8px;
+            background: rgba(255,255,255,0.02); border-radius: 6px; font-size: 0.8rem; }
+        .voxtex-node-icon { font-size: 0.6rem; }
+        .voxtex-active { color: #00ff88; }
+        .voxtex-idle { color: var(--text-dim); }
+        .voxtex-node-name { flex: 1; }
+        .voxtex-node-type { color: var(--text-dim); font-size: 0.7rem; width: 70px; }
+        .voxtex-node-status { font-size: 0.7rem; width: 60px; text-align: right; }
+        .diplo-list { display: flex; flex-direction: column; gap: 6px; }
+        .diplo-item { display: flex; align-items: center; gap: 8px; padding: 8px;
+            background: rgba(255,255,255,0.02); border-radius: 4px; font-size: 0.75rem; }
+        .diplo-type { color: var(--accent-cyan); font-size: 0.6rem; width: 100px; }
+        .diplo-content { flex: 1; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .diplo-time { color: var(--text-dim); font-size: 0.65rem; }
+        .btn-small { padding: 8px 16px; background: rgba(0,242,255,0.1); border: 1px solid rgba(0,242,255,0.3);
+            border-radius: 6px; color: var(--accent-cyan); cursor: pointer; font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem; letter-spacing: 1px; transition: all 0.2s; }
+        .btn-small:hover { background: rgba(0,242,255,0.2); }
+        .tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .tech-card { padding: 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+            text-align: center; font-size: 0.75rem; }
+        .tech-done { border-color: #00ff88; background: rgba(0,255,136,0.05); }
+        .tech-ongoing { border-color: #ffd700; background: rgba(255,215,0,0.05); }
+        .tech-locked { opacity: 0.4; }
+        .tech-name { display: block; font-weight: 600; margin-bottom: 4px; }
+        .tech-status { display: block; font-size: 0.6rem; color: var(--text-dim); }
+        .tech-progress { display: block; font-size: 0.6rem; color: var(--accent-cyan); margin-top: 4px; }
+        @media (max-width: 768px) { .civ-grid-2col { grid-template-columns: 1fr; } }
+    </style>
+</div>

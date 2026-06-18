@@ -52,6 +52,9 @@ import io.github.opencivilizationplatform.modules.social.infrastructure.Incident
 import io.github.opencivilizationplatform.modules.contribution.domain.Citizen;
 import io.github.opencivilizationplatform.modules.contribution.domain.Contribution;
 import io.github.opencivilizationplatform.modules.contribution.domain.Project;
+import io.github.opencivilizationplatform.modules.region.domain.ResourceRegion;
+import io.github.opencivilizationplatform.modules.region.domain.ResourceType;
+import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
 import io.github.opencivilizationplatform.modules.contribution.domain.Skill;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ProjectRepository;
@@ -87,6 +90,7 @@ public class SeedDataConfig {
     private final CitizenRepository citizenRepository;
     private final SkillRepository skillRepository;
     private final ProjectRepository projectRepository;
+    private final ResourceRegionRepository resourceRegionRepository;
     private final GeometryFactory geometryFactory = new GeometryFactory(new PrecisionModel(), 4326);
 
     public SeedDataConfig(
@@ -105,7 +109,8 @@ public class SeedDataConfig {
             CaseRepository caseRepository,
             CitizenRepository citizenRepository,
             SkillRepository skillRepository,
-            ProjectRepository projectRepository) {
+            ProjectRepository projectRepository,
+            ResourceRegionRepository resourceRegionRepository) {
         this.scale = scale;
         this.resourceRepository = resourceRepository;
         this.needRepository = needRepository;
@@ -122,6 +127,7 @@ public class SeedDataConfig {
         this.citizenRepository = citizenRepository;
         this.skillRepository = skillRepository;
         this.projectRepository = projectRepository;
+        this.resourceRegionRepository = resourceRegionRepository;
     }
 
     @Bean
@@ -144,6 +150,7 @@ public class SeedDataConfig {
             seedCommittees();
             seedSocial();
             seedContribution();
+            seedResourceRegions();
 
             log.info("Seed complete at {} scale.", scale);
         };
@@ -800,6 +807,93 @@ public class SeedDataConfig {
         p.setRequiredSkillNames(requiredSkills);
         p.setStatus(status);
         return p;
+    }
+
+    private void seedResourceRegions() {
+        switch (scale) {
+            case LOCAL -> {
+                region("Fertile Valley", "Rich alluvial soil with abundant freshwater springs.",
+                    point(-23.55, -46.63), CivilizationScale.LOCAL,
+                    85.0, 90.0, 20.0, 30.0, 40.0, ResourceType.FOOD, 15.0);
+                region("Granite Highlands", "Mineral-rich highlands with strong winds for energy.",
+                    point(-22.5, -45.0), CivilizationScale.LOCAL,
+                    10.0, 40.0, 80.0, 70.0, 20.0, ResourceType.MINERAL, 20.0);
+                region("Coastal Delta", "Mangrove delta with abundant water and marine resources.",
+                    point(-24.0, -47.0), CivilizationScale.LOCAL,
+                    60.0, 95.0, 10.0, 50.0, 30.0, ResourceType.WATER, 18.0);
+            }
+            case REGIONAL -> {
+                region("Amazon Basin", "Dense rainforest with unparalleled biodiversity.",
+                    point(-3.0, -60.0), CivilizationScale.REGIONAL,
+                    80.0, 95.0, 30.0, 20.0, 10.0, ResourceType.WATER, 200.0);
+                region("Andean Plateau", "High-altitude lithium flats and mineral deposits.",
+                    point(-20.0, -67.0), CivilizationScale.REGIONAL,
+                    30.0, 20.0, 95.0, 60.0, 15.0, ResourceType.MINERAL, 250.0);
+                region("Pampas Plains", "Vast grasslands ideal for agriculture.",
+                    point(-35.0, -62.0), CivilizationScale.REGIONAL,
+                    95.0, 50.0, 15.0, 40.0, 50.0, ResourceType.FOOD, 180.0);
+                region("Patagonian Coast", "Wind-battered coast with immense wind energy potential.",
+                    point(-48.0, -68.0), CivilizationScale.REGIONAL,
+                    40.0, 60.0, 50.0, 90.0, 20.0, ResourceType.ENERGY, 220.0);
+            }
+            case CONTINENTAL -> {
+                region("Sahara Solar Corridor", "World's highest solar irradiance zone.",
+                    point(23.5, 12.0), CivilizationScale.CONTINENTAL,
+                    5.0, 5.0, 40.0, 98.0, 5.0, ResourceType.ENERGY, 800.0);
+                region("Congo Basin", "Second largest rainforest on Earth, vast water reserves.",
+                    point(0.0, 22.0), CivilizationScale.CONTINENTAL,
+                    75.0, 95.0, 60.0, 30.0, 20.0, ResourceType.WATER, 700.0);
+                region("Siberian Taiga", "Massive boreal forest with timber and mineral wealth.",
+                    point(62.0, 95.0), CivilizationScale.CONTINENTAL,
+                    30.0, 60.0, 85.0, 40.0, 10.0, ResourceType.MINERAL, 900.0);
+                region("North American Grain Belt", "World-class agricultural soil.",
+                    point(45.0, -100.0), CivilizationScale.CONTINENTAL,
+                    95.0, 50.0, 20.0, 30.0, 50.0, ResourceType.FOOD, 600.0);
+                region("North Sea Wind Zone", "Shallow waters with consistent high winds.",
+                    point(55.0, 3.0), CivilizationScale.CONTINENTAL,
+                    20.0, 80.0, 30.0, 95.0, 30.0, ResourceType.ENERGY, 500.0);
+            }
+            case GLOBAL -> {
+                region("Sahara Solar Belt", "Highest solar potential on Earth.",
+                    point(23.5, 12.0), CivilizationScale.GLOBAL,
+                    5.0, 5.0, 40.0, 99.0, 5.0, ResourceType.ENERGY, 800.0);
+                region("Amazon Rainforest", "Largest tropical rainforest, critical for climate.",
+                    point(-3.5, -60.0), CivilizationScale.GLOBAL,
+                    80.0, 98.0, 30.0, 20.0, 10.0, ResourceType.WATER, 700.0);
+                region("Himalayan Watershed", "Glacial freshwater reserve for billions.",
+                    point(28.0, 85.0), CivilizationScale.GLOBAL,
+                    40.0, 99.0, 60.0, 50.0, 15.0, ResourceType.WATER, 600.0);
+                region("Great Plains", "Most productive agricultural land on Earth.",
+                    point(45.0, -100.0), CivilizationScale.GLOBAL,
+                    97.0, 45.0, 20.0, 30.0, 55.0, ResourceType.FOOD, 550.0);
+                region("Atacama Lithium Triangle", "World's largest lithium brine reserves.",
+                    point(-23.5, -67.0), CivilizationScale.GLOBAL,
+                    10.0, 5.0, 98.0, 70.0, 5.0, ResourceType.MINERAL, 400.0);
+                region("North Sea Energy Hub", "Offshore wind + tidal + hydrogen potential.",
+                    point(55.0, 3.0), CivilizationScale.GLOBAL,
+                    20.0, 80.0, 30.0, 96.0, 35.0, ResourceType.ENERGY, 500.0);
+            }
+        }
+        log.info("  resource regions seeded");
+    }
+
+    private void region(String name, String description, Point location, CivilizationScale scale,
+                         Double food, Double water, Double mineral, Double energy, Double housing,
+                         ResourceType dominant, Double radius) {
+        ResourceRegion r = new ResourceRegion();
+        r.setName(name);
+        r.setDescription(description);
+        r.setLocation(location);
+        r.setScale(scale);
+        r.setFoodAvailability(food);
+        r.setWaterAvailability(water);
+        r.setMineralAvailability(mineral);
+        r.setEnergyAvailability(energy);
+        r.setHousingAvailability(housing);
+        r.setDominantResource(dominant);
+        r.setRadiusKm(radius);
+        r.setClaimed(false);
+        resourceRegionRepository.save(r);
     }
 
     private Point point(double lat, double lon) {

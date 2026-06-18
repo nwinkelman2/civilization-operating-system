@@ -1,0 +1,231 @@
+<div th:fragment="content">
+    <header class="page-header">
+        <h1 class="glitch-text" data-text="FOUND CIVILIZATION">
+            <span class="glitch-scan">⟐</span> FOUND CIVILIZATION <span class="glitch-scan">⟐</span>
+        </h1>
+        <p class="subtitle">Select a region on the map to see its resources and claim it for your civilization</p>
+    </header>
+
+    <div class="play-layout">
+        <div class="play-map-container">
+            <div id="playMap" style="height: 600px; width: 100%; border-radius: 8px; border: 1px solid rgba(0, 242, 255, 0.2);"></div>
+        </div>
+        <div class="play-sidebar" id="regionDetails">
+            <div class="region-placeholder">
+                <i data-lucide="map-pin" style="width: 48px; opacity: 0.3;"></i>
+                <p>Click a region on the map to see details</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const map = L.map('playMap', {
+            center: [20, 0],
+            zoom: 2,
+            zoomControl: true,
+            attributionControl: false
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            maxZoom: 19
+        }).addTo(map);
+
+        const regions = /*[[${regions}]]*/ [];
+        const resourceColors = {
+            FOOD: '#00f2ff',
+            WATER: '#006aff',
+            MINERAL: '#ff6b35',
+            ENERGY: '#ffd700',
+            HOUSING: '#00ff88',
+            MATERIAL: '#aa66ff'
+        };
+
+        regions.forEach(r => {
+            if (!r.location) return;
+            const lat = r.location.y;
+            const lng = r.location.x;
+            const color = resourceColors[r.dominantResource] || '#00f2ff';
+            const radius = (r.radiusKm || 100) * 1000;
+
+            const circle = L.circle([lat, lng], {
+                radius: radius,
+                color: color,
+                fillColor: color,
+                fillOpacity: 0.15,
+                weight: 2,
+                className: r.claimed ? 'region-claimed' : 'region-available'
+            }).addTo(map);
+
+            circle.bindTooltip(r.name, { direction: 'top', className: 'region-tooltip' });
+
+            circle.on('click', function() {
+                showRegionDetails(r);
+            });
+
+            // Marker with resource icon
+            const icon = L.divIcon({
+                html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px ${color};"></div>`,
+                className: '',
+                iconSize: [12, 12]
+            });
+            L.marker([lat, lng], { icon }).addTo(map);
+        });
+
+        function showRegionDetails(r) {
+            const sidebar = document.getElementById('regionDetails');
+            const bars = [
+                { label: 'FOOD', value: r.foodAvailability || 0, color: '#00f2ff' },
+                { label: 'WATER', value: r.waterAvailability || 0, color: '#006aff' },
+                { label: 'MINERAL', value: r.mineralAvailability || 0, color: '#ff6b35' },
+                { label: 'ENERGY', value: r.energyAvailability || 0, color: '#ffd700' },
+                { label: 'HOUSING', value: r.housingAvailability || 0, color: '#00ff88' }
+            ];
+
+            const barsHtml = bars.map(b => `
+                <div class="resource-bar-row">
+                    <span class="resource-bar-label">${b.label}</span>
+                    <div class="resource-bar-track">
+                        <div class="resource-bar-fill" style="width:${b.value}%;background:${b.color};"></div>
+                    </div>
+                    <span class="resource-bar-value">${b.value}%</span>
+                </div>
+            `).join('');
+
+            const claimBtn = !r.claimed
+                ? `<button class="btn-claim" onclick="showFoundModal(${r.id}, '${r.name}')">FOUND CIVILIZATION HERE</button>`
+                : `<p style="color:var(--text-dim);font-size:0.8rem;">This region has been claimed</p>`;
+
+            sidebar.innerHTML = `
+                <div class="region-card">
+                    <h2 class="region-name">${r.name}</h2>
+                    <p class="region-desc">${r.description || 'A promising region for a new civilization.'}</p>
+                    <div class="region-resources">
+                        <h3>RESOURCE AVAILABILITY</h3>
+                        ${barsHtml}
+                    </div>
+                    <div class="region-stats">
+                        <span>Dominant: <strong style="color:${resourceColors[r.dominantResource]}">${r.dominantResource || 'MIXED'}</strong></span>
+                        <span>Radius: ${r.radiusKm || '?'} km</span>
+                    </div>
+                    ${claimBtn}
+                </div>
+            `;
+
+            sidebar.style.opacity = '1';
+        }
+
+        function showFoundModal(regionId, regionName) {
+            const existing = document.getElementById('foundModal');
+            if (existing) existing.remove();
+
+            const modal = document.createElement('div');
+            modal.id = 'foundModal';
+            modal.className = 'modal-overlay';
+            modal.innerHTML = `
+                <div class="modal-content glass-morphism">
+                    <h2>FOUND CIVILIZATION</h2>
+                    <p>Region: <strong>${regionName}</strong></p>
+                    <form id="foundForm">
+                        <input type="hidden" name="regionId" value="${regionId}">
+                        <div class="form-group">
+                            <label>Civilization Name</label>
+                            <input type="text" name="name" required placeholder="Enter your civilization name..."
+                                class="form-input" style="width:100%;">
+                        </div>
+                        <div class="form-group">
+                            <label>Your Display Name</label>
+                            <input type="text" name="founderName" required placeholder="Enter your name..."
+                                class="form-input" style="width:100%;">
+                        </div>
+                        <div class="modal-actions">
+                            <button type="button" onclick="this.closest('.modal-overlay').remove()"
+                                class="btn-secondary">Cancel</button>
+                            <button type="submit" class="btn-primary">FOUND CIVILIZATION</button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            document.getElementById('foundForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const data = {
+                    name: form.name.value,
+                    regionId: parseInt(form.regionId.value),
+                    founderName: form.founderName.value
+                };
+
+                try {
+                    const res = await fetch('/api/v1/civilizations/found', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    });
+                    if (res.ok) {
+                        const civ = await res.json();
+                        window.location.href = '/civilization/' + civ.id;
+                    } else {
+                        const err = await res.text();
+                        alert('Failed to found civilization: ' + err);
+                    }
+                } catch (err) {
+                    alert('Network error: ' + err);
+                }
+            });
+        }
+    </script>
+
+    <style>
+        .play-layout { display: flex; gap: 20px; margin-top: 20px; }
+        .play-map-container { flex: 1; min-width: 0; }
+        .play-sidebar { width: 380px; flex-shrink: 0; transition: opacity 0.3s; }
+        .region-placeholder { display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 600px; color: var(--text-dim); gap: 10px;
+            border: 1px dashed rgba(255,255,255,0.1); border-radius: 8px; }
+        .region-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(0,242,255,0.15);
+            border-radius: 8px; padding: 20px; }
+        .region-name { color: var(--accent-cyan); font-family: 'Outfit', sans-serif; font-size: 1.2rem;
+            margin-bottom: 8px; }
+        .region-desc { color: var(--text-dim); font-size: 0.8rem; margin-bottom: 20px; }
+        .region-resources h3 { color: var(--accent-cyan); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 12px; }
+        .resource-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .resource-bar-label { width: 70px; font-size: 0.7rem; color: var(--text-dim); }
+        .resource-bar-track { flex: 1; height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden; }
+        .resource-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+        .resource-bar-value { width: 35px; font-size: 0.7rem; text-align: right; color: var(--text); }
+        .region-stats { display: flex; justify-content: space-between; margin: 16px 0; font-size: 0.75rem;
+            color: var(--text-dim); }
+        .btn-claim { width: 100%; padding: 12px; background: linear-gradient(135deg, #00f2ff, #006aff);
+            border: none; border-radius: 8px; color: #000; font-weight: 700; cursor: pointer;
+            font-family: 'Outfit', sans-serif; letter-spacing: 1px; transition: transform 0.2s; }
+        .btn-claim:hover { transform: scale(1.02); }
+        .btn-primary { padding: 10px 24px; background: linear-gradient(135deg, #00f2ff, #006aff);
+            border: none; border-radius: 6px; color: #000; font-weight: 700; cursor: pointer;
+            font-family: 'Outfit', sans-serif; letter-spacing: 1px; }
+        .btn-secondary { padding: 10px 24px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 6px; color: var(--text); cursor: pointer; font-family: 'Outfit', sans-serif; }
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center;
+            z-index: 9999; backdrop-filter: blur(4px); }
+        .modal-content { padding: 30px; border-radius: 12px; min-width: 400px; max-width: 500px;
+            border: 1px solid rgba(0,242,255,0.3); }
+        .modal-content h2 { color: var(--accent-cyan); font-family: 'Outfit', sans-serif; margin-bottom: 12px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 6px;
+            letter-spacing: 1px; }
+        .form-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 6px; padding: 10px 14px; color: var(--text); font-size: 0.9rem;
+            font-family: 'Inter', sans-serif; outline: none; }
+        .form-input:focus { border-color: var(--accent-cyan); }
+        .region-available { cursor: pointer; }
+        .region-claimed { opacity: 0.4; cursor: default; }
+        .region-tooltip { background: rgba(0,0,0,0.9); border: 1px solid rgba(0,242,255,0.3);
+            color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.75rem; }
+        @media (max-width: 900px) {
+            .play-layout { flex-direction: column; }
+            .play-sidebar { width: 100%; }
+        }
+    </style>
+</div>

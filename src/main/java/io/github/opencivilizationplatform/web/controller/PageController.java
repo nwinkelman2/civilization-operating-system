@@ -1,7 +1,9 @@
 package io.github.opencivilizationplatform.web.controller;
 
+import io.github.opencivilizationplatform.modules.civilization.application.CivilizationService;
 import io.github.opencivilizationplatform.modules.monitoring.application.BiosphereMetricService;
 import io.github.opencivilizationplatform.modules.needs.application.NeedService;
+import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
 import io.github.opencivilizationplatform.modules.resources.application.ResourceService;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.production.application.FacilityService;
@@ -12,11 +14,18 @@ import io.github.opencivilizationplatform.modules.contribution.application.Contr
 import io.github.opencivilizationplatform.modules.simulation.application.CortexEngineService;
 import io.github.opencivilizationplatform.modules.execution.application.AutomationUnitService;
 import io.github.opencivilizationplatform.modules.social.application.SocialStabilityService;
+import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
+import io.github.opencivilizationplatform.modules.technology.application.TechnologyService;
+import io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
+
+import java.util.List;
+import java.util.Map;
 
 @Controller
 public class PageController {
@@ -33,6 +42,10 @@ public class PageController {
     private final CortexEngineService cortexService;
     private final SocialStabilityService socialService;
     private final AutomationUnitService automationService;
+    private final CivilizationService civilizationService;
+    private final ResourceRegionService regionService;
+    private final VoxtexMeshService voxtexService;
+    private final TechnologyService technologyService;
 
     public PageController(BiosphereMetricService biosphereService,
                           NeedService needService,
@@ -45,7 +58,11 @@ public class PageController {
                           ContributionService contributionService,
                           CortexEngineService cortexService,
                           SocialStabilityService socialService,
-                           AutomationUnitService automationService) {
+                          AutomationUnitService automationService,
+                          CivilizationService civilizationService,
+                          ResourceRegionService regionService,
+                          VoxtexMeshService voxtexService,
+                          TechnologyService technologyService) {
         this.biosphereService = biosphereService;
         this.needService = needService;
         this.resourceService = resourceService;
@@ -58,6 +75,10 @@ public class PageController {
         this.cortexService = cortexService;
         this.socialService = socialService;
         this.automationService = automationService;
+        this.civilizationService = civilizationService;
+        this.regionService = regionService;
+        this.voxtexService = voxtexService;
+        this.technologyService = technologyService;
     }
 
     private String render(Model model, String viewName, String pageTitle, String currentPage) {
@@ -176,5 +197,68 @@ public class PageController {
                 .filter(n -> n.getRegion().toLowerCase().contains(region.toLowerCase()))
                 .toList());
         return "needs :: needs-table";
+    }
+
+    @GetMapping("/play")
+    public String play(Model model) {
+        model.addAttribute("regions", regionService.getAllRegions());
+        return render(model, "play", "Found Civilization", "play");
+    }
+
+    @GetMapping("/civilization/{id}")
+    public String civilizationDetail(@PathVariable Long id, Model model) {
+        var civ = civilizationService.getCivilizationOrNull(id);
+        if (civ == null) {
+            return "redirect:/play";
+        }
+        model.addAttribute("civ", civ);
+
+        var region = civ.getHomeRegion();
+        model.addAttribute("region", region);
+
+        var nodes = voxtexService.getNodesForCivilization(id);
+        model.addAttribute("nodes", nodes);
+
+        var messages = nodes.isEmpty() ? List.of() :
+            voxtexService.getConversation(nodes.get(0).getId(),
+                nodes.size() > 1 ? nodes.get(1).getId() : nodes.get(0).getId());
+        model.addAttribute("messages", messages);
+
+        var techTree = technologyService.getTechTree(id);
+        model.addAttribute("techTree", techTree);
+        model.addAttribute("techCount", techTree.stream()
+            .filter(t -> t.getStatus() == TechnologyStatus.COMPLETED).count());
+
+        // Build resource list from region
+        if (region != null) {
+            model.addAttribute("resourceList", List.of(
+                Map.of("label", "FOOD", "value", region.getFoodAvailability(), "color", "#00f2ff"),
+                Map.of("label", "WATER", "value", region.getWaterAvailability(), "color", "#006aff"),
+                Map.of("label", "MINERAL", "value", region.getMineralAvailability(), "color", "#ff6b35"),
+                Map.of("label", "ENERGY", "value", region.getEnergyAvailability(), "color", "#ffd700"),
+                Map.of("label", "HOUSING", "value", region.getHousingAvailability(), "color", "#00ff88")
+            ));
+        } else {
+            model.addAttribute("resourceList", List.of());
+        }
+
+        return render(model, "civilization", "Civilization: " + civ.getName(), "civilization");
+    }
+
+    @GetMapping("/voxtex")
+    public String voxtex(Model model) {
+        model.addAttribute("status", voxtexService.getNetworkStatus());
+        model.addAttribute("nodes", voxtexService.getAllNodes());
+        model.addAttribute("connections", voxtexService.getAllConnections());
+        model.addAttribute("recentMessages",
+            voxtexService.getAllNodes().isEmpty() ? List.of() :
+            voxtexService.getConversation(
+                voxtexService.getAllNodes().get(0).getId(),
+                voxtexService.getAllNodes().size() > 1 ?
+                    voxtexService.getAllNodes().get(1).getId() :
+                    voxtexService.getAllNodes().get(0).getId()
+            )
+        );
+        return render(model, "voxtex", "Voxtex Mesh", "voxtex");
     }
 }

@@ -37,6 +37,9 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/v1/simulation/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/civilizations/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/regions/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/voxtex/**").permitAll()
                 .requestMatchers("/api/v1/**").authenticated()
                 .anyRequest().permitAll()
             )
