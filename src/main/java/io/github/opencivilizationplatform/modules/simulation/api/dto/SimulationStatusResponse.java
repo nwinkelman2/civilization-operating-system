@@ -1,13 +1,21 @@
 package io.github.opencivilizationplatform.modules.simulation.api.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
 
+@Schema(description = "Simulation engine status response")
 public class SimulationStatusResponse {
+    @Schema(description = "Engine version identifier")
     private String engine;
+    @Schema(description = "Number of active rules in the engine")
     private int activeRulesCount;
+    @Schema(description = "Most recent decision made by the engine")
     private String lastDecision;
+    @Schema(description = "Categories being monitored by the engine")
     private List<String> monitoredCategories;
+    @Schema(description = "Current simulation tick number")
     private int tick;
+    @Schema(description = "History of recent decisions")
     private List<String> decisionHistory;
 
     public SimulationStatusResponse() {}

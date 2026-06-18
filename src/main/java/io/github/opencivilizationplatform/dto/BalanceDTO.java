@@ -1,12 +1,21 @@
 package io.github.opencivilizationplatform.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
+@Schema(description = "Balance report data")
 public class BalanceDTO {
+    @Schema(description = "Resource category name")
     private String category;
+    @Schema(description = "Current supply amount")
     private Double supply;
+    @Schema(description = "Current demand amount")
     private Double demand;
+    @Schema(description = "Measurement unit")
     private String unit;
+    @Schema(description = "Percentage of demand met by supply")
     private Double percentageMet;
-    private String status; // STABLE, DEFICIT, CRITICAL
+    @Schema(description = "Balance status: STABLE, DEFICIT, or CRITICAL")
+    private String status;
 
     public BalanceDTO() {}
 

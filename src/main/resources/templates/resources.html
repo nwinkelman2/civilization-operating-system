@@ -3,12 +3,21 @@
         <h1 class="glow-text"><i data-lucide="activity" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 15px;"></i>Global Resources</h1>
         <p class="subtitle">Planetary Resource Ledger | Automated Inventory System</p>
     </header>
-    <section class="card glass-morphism animate" th:if="${resources != null && !resources.isEmpty()}">
-        <h2><i data-lucide="database" style="width: 18px; vertical-align: middle;"></i> Stock Registry</h2>
+    <section class="card glass-morphism animate">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0;"><i data-lucide="database" style="width: 18px; vertical-align: middle;"></i> Stock Registry</h2>
+            <input type="text" class="search-input" placeholder="Filter by type..."
+                   hx-get="/resources/fragment"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#resource-table"
+                   hx-swap="outerHTML"
+                   name="type"
+                   style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
+        </div>
         <div class="table-wrapper">
             <table>
                 <thead><tr><th>Resource</th><th>Type</th><th>Quantity</th><th>Unit</th></tr></thead>
-                <tbody>
+                <tbody id="resource-table" th:fragment="resource-table">
                     <tr th:each="r : ${resources}">
                         <td th:text="${r.name}">—</td>
                         <td th:text="${r.type}">—</td>

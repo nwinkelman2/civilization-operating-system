@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.config;
 
 import io.github.opencivilizationplatform.dto.ErrorResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -13,11 +15,13 @@ import java.util.List;
 import java.util.NoSuchElementException;
 
 @ControllerAdvice
+@Tag(name = "Global Exception Handler", description = "Global exception handling endpoints")
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(NoSuchElementException.class)
+    @Operation(summary = "Handle not found", description = "Handles NoSuchElementException with 404 response")
     public ResponseEntity<ErrorResponse> handleNotFound(NoSuchElementException e) {
         log.warn("Resource not found: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -25,6 +29,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
+    @Operation(summary = "Handle bad request", description = "Handles IllegalArgumentException with 400 response")
     public ResponseEntity<ErrorResponse> handleBadRequest(IllegalArgumentException e) {
         log.warn("Bad request: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
@@ -32,6 +37,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
+    @Operation(summary = "Handle validation errors", description = "Handles MethodArgumentNotValidException with 400 response")
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException e) {
         log.warn("Validation failed: {}", e.getMessage());
         List<ErrorResponse.FieldError> fieldErrors = e.getBindingResult().getFieldErrors().stream()
@@ -42,6 +48,7 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception.class)
+    @Operation(summary = "Handle general errors", description = "Handles uncaught exceptions with 500 response")
     public ResponseEntity<ErrorResponse> handleGeneral(Exception e) {
         log.error("Unhandled exception: {}", e.getMessage(), e);
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

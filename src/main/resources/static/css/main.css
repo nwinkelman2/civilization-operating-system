@@ -329,6 +329,13 @@ a:hover { filter: drop-shadow(0 0 8px var(--accent-cyan)); }
     background: linear-gradient(90deg, rgba(0, 242, 255, 0.2), transparent);
 }
 
+/* ======== Search Input ======== */
+.search-input:focus {
+    outline: none;
+    border-color: var(--accent-cyan) !important;
+    box-shadow: 0 0 12px rgba(0, 242, 255, 0.15);
+}
+
 /* ======== Tables ======== */
 .table-wrapper {
     margin-top: 10px;

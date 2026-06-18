@@ -3,12 +3,21 @@
         <h1 class="glow-text"><i data-lucide="users" style="width: 48px; height: 48px; vertical-align: middle; margin-right: 15px;"></i>Human Needs</h1>
         <p class="subtitle">Planetary Requirement Matrix | Global Demand Orchestration</p>
     </header>
-    <section class="card glass-morphism animate" th:if="${needs != null && !needs.isEmpty()}">
-        <h2><i data-lucide="clipboard-list" style="width: 18px; vertical-align: middle;"></i> Active Demands</h2>
+    <section class="card glass-morphism animate">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h2 style="margin: 0;"><i data-lucide="clipboard-list" style="width: 18px; vertical-align: middle;"></i> Active Demands</h2>
+            <input type="text" class="search-input" placeholder="Filter by region..."
+                   hx-get="/needs/fragment"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#needs-table"
+                   hx-swap="outerHTML"
+                   name="region"
+                   style="padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text);">
+        </div>
         <div class="table-wrapper">
             <table>
                 <thead><tr><th>Category</th><th>Region</th><th>Quantity</th><th>Unit</th><th>Status</th></tr></thead>
-                <tbody>
+                <tbody id="needs-table" th:fragment="needs-table">
                     <tr th:each="n : ${needs}">
                         <td th:text="${n.category}">—</td>
                         <td th:text="${n.region}">—</td>

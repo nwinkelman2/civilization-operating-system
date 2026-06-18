@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class PageController {
@@ -157,5 +158,23 @@ public class PageController {
     public String decisionLog(Model model) {
         model.addAttribute("status", cortexService.getStatus());
         return "simulation :: decision-log";
+    }
+
+    @GetMapping("/resources/fragment")
+    public String resourceTable(Model model, @RequestParam(required = false, defaultValue = "") String type) {
+        var allResources = resourceService.getAllResources(Pageable.unpaged()).getContent();
+        model.addAttribute("resources", type.isBlank() ? allResources : allResources.stream()
+                .filter(r -> r.getType().name().toLowerCase().contains(type.toLowerCase()))
+                .toList());
+        return "resources :: resource-table";
+    }
+
+    @GetMapping("/needs/fragment")
+    public String needTable(Model model, @RequestParam(required = false, defaultValue = "") String region) {
+        var allNeeds = needService.getAllNeeds(Pageable.unpaged()).getContent();
+        model.addAttribute("needs", region.isBlank() ? allNeeds : allNeeds.stream()
+                .filter(n -> n.getRegion().toLowerCase().contains(region.toLowerCase()))
+                .toList());
+        return "needs :: needs-table";
     }
 }
