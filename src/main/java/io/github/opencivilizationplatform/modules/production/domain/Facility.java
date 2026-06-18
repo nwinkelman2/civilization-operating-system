@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.production.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "production_facilities")
@@ -11,13 +13,16 @@ public class Facility {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank
     private String name;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private FacilityType type;
 
     @Column(nullable = false)
+    @NotBlank
     private String region;
 
     @Column(nullable = false)
@@ -25,6 +30,7 @@ public class Facility {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private FacilityStatus status;
 
     private String currentOutput;

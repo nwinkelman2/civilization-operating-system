@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.monitoring.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,6 +14,7 @@ public class BiosphereMetric {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank
     private String name;
 
     @Column(name = "last_updated")
@@ -21,6 +24,7 @@ public class BiosphereMetric {
     private Double value;
 
     @Column(nullable = false)
+    @NotBlank
     private String unit;
 
     @Column(nullable = false)
@@ -28,6 +32,7 @@ public class BiosphereMetric {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private BiosphereMetricStatus status;
 
     @Column(nullable = false)

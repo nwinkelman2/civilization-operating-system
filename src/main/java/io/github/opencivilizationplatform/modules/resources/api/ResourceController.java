@@ -1,26 +1,29 @@
 package io.github.opencivilizationplatform.modules.resources.api;
 
+import io.github.opencivilizationplatform.modules.resources.application.ResourceService;
 import io.github.opencivilizationplatform.modules.resources.domain.Resource;
-import io.github.opencivilizationplatform.modules.resources.infrastructure.ResourceRepository;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/resources")
 public class ResourceController {
 
-    private final ResourceRepository resourceRepository;
+    private final ResourceService resourceService;
 
-    public ResourceController(ResourceRepository resourceRepository) {
-        this.resourceRepository = resourceRepository;
+    public ResourceController(ResourceService resourceService) {
+        this.resourceService = resourceService;
     }
 
     @GetMapping
-    public java.util.List<Resource> getAllResources() {
-        return resourceRepository.findAll();
+    public Page<Resource> getAllResources(Pageable pageable) {
+        return resourceService.getAllResources(pageable);
     }
 
     @PostMapping
-    public Resource saveResource(@RequestBody Resource resource) {
-        return resourceRepository.save(resource);
+    public Resource saveResource(@Valid @RequestBody Resource resource) {
+        return resourceService.saveResource(resource);
     }
 }

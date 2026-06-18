@@ -7,10 +7,10 @@ import io.github.opencivilizationplatform.modules.contribution.domain.ProjectSta
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ContributionRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ProjectRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @Transactional(readOnly = true)
@@ -28,8 +28,8 @@ public class ContributionService {
         this.contributionRepository = contributionRepository;
     }
 
-    public List<Citizen> getAllCitizens() {
-        return citizenRepository.findAll();
+    public Page<Citizen> getAllCitizens(Pageable pageable) {
+        return citizenRepository.findAll(pageable);
     }
 
     public List<Project> getActiveProjects() {
@@ -52,7 +52,7 @@ public class ContributionService {
         return contributionRepository.findByCitizen_CitizenId(citizenId);
     }
 
-    public List<Contribution> getAllContributions() {
-        return contributionRepository.findAll();
+    public Page<Contribution> getAllContributions(Pageable pageable) {
+        return contributionRepository.findAll(pageable);
     }
 }

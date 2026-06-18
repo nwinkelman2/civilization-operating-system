@@ -5,9 +5,9 @@ import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMet
 import io.github.opencivilizationplatform.modules.monitoring.infrastructure.BiosphereMetricRepository;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class BiosphereMetricService {
@@ -19,8 +19,8 @@ public class BiosphereMetricService {
         this.eventPublisher = eventPublisher;
     }
 
-    public List<BiosphereMetric> getAllMetrics() {
-        return metricRepository.findAll();
+    public Page<BiosphereMetric> getAllMetrics(Pageable pageable) {
+        return metricRepository.findAll(pageable);
     }
 
     public BiosphereMetric saveMetric(BiosphereMetric metric) {

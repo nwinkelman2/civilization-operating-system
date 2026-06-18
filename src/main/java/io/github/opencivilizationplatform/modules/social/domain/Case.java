@@ -1,6 +1,7 @@
 package io.github.opencivilizationplatform.modules.social.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -18,6 +19,7 @@ public class Case {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private CaseStatus status;
 
     @Column(columnDefinition = "TEXT")

@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.contribution.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,13 +15,16 @@ public class Contribution {
 
     @ManyToOne
     @JoinColumn(name = "citizen_id")
+    @NotNull
     private Citizen citizen;
 
     @ManyToOne
     @JoinColumn(name = "project_id")
+    @NotNull
     private Project project;
 
     @Column(nullable = false)
+    @NotBlank
     private String role;
 
     @Column(nullable = false)

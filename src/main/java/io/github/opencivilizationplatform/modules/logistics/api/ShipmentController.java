@@ -1,26 +1,29 @@
 package io.github.opencivilizationplatform.modules.logistics.api;
 
+import io.github.opencivilizationplatform.modules.logistics.application.ShipmentService;
 import io.github.opencivilizationplatform.modules.logistics.domain.Shipment;
-import io.github.opencivilizationplatform.modules.logistics.infrastructure.ShipmentRepository;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/shipments")
 public class ShipmentController {
 
-    private final ShipmentRepository shipmentRepository;
+    private final ShipmentService shipmentService;
 
-    public ShipmentController(ShipmentRepository shipmentRepository) {
-        this.shipmentRepository = shipmentRepository;
+    public ShipmentController(ShipmentService shipmentService) {
+        this.shipmentService = shipmentService;
     }
 
     @GetMapping
-    public java.util.List<Shipment> getAllShipments() {
-        return shipmentRepository.findAll();
+    public Page<Shipment> getAllShipments(Pageable pageable) {
+        return shipmentService.getAllShipments(pageable);
     }
 
     @PostMapping
-    public Shipment saveShipment(@RequestBody Shipment shipment) {
-        return shipmentRepository.save(shipment);
+    public Shipment saveShipment(@Valid @RequestBody Shipment shipment) {
+        return shipmentService.saveShipment(shipment);
     }
 }

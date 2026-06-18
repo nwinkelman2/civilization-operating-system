@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.resources.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.locationtech.jts.geom.Point;
 
 @Entity
@@ -13,18 +15,22 @@ public class Resource {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private ResourceType type;
 
     @Column(nullable = false, length = 1000)
+    @NotBlank
     private String description;
 
     @Column(nullable = false)
+    @NotBlank
     private String name;
 
     @Column(nullable = false)
     private Double quantity;
 
     @Column(nullable = false)
+    @NotBlank
     private String unit;
 
     @Column(columnDefinition = "geometry(Point, 4326)")

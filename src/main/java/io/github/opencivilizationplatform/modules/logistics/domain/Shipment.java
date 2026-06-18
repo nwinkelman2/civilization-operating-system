@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.logistics.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,22 +14,27 @@ public class Shipment {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank
     private String cargo;
 
     @Column(nullable = false)
+    @NotBlank
     private String origin;
 
     @Column(nullable = false)
+    @NotBlank
     private String destination;
 
     @Column(nullable = false)
     private Double quantity;
 
     @Column(nullable = false)
+    @NotBlank
     private String unit;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private ShipmentStatus status;
 
     private LocalDateTime eta;

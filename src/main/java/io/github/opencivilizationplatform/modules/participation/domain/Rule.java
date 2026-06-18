@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.participation.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,20 +14,25 @@ public class Rule {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank
     private String title;
 
     @Column(nullable = false, length = 2000)
+    @NotBlank
     private String description;
 
     @Column(nullable = false, columnDefinition = "TEXT")
+    @NotBlank
     private String logicCode;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private RuleStatus status;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private ValidationStatus validationStatus;
 
     private String validatedBy;

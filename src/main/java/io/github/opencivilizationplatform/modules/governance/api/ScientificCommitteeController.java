@@ -1,26 +1,29 @@
 package io.github.opencivilizationplatform.modules.governance.api;
 
+import io.github.opencivilizationplatform.modules.governance.application.ScientificCommitteeService;
 import io.github.opencivilizationplatform.modules.governance.domain.ScientificCommittee;
-import io.github.opencivilizationplatform.modules.governance.infrastructure.ScientificCommitteeRepository;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/governance")
 public class ScientificCommitteeController {
 
-    private final ScientificCommitteeRepository committeeRepository;
+    private final ScientificCommitteeService scientificCommitteeService;
 
-    public ScientificCommitteeController(ScientificCommitteeRepository committeeRepository) {
-        this.committeeRepository = committeeRepository;
+    public ScientificCommitteeController(ScientificCommitteeService scientificCommitteeService) {
+        this.scientificCommitteeService = scientificCommitteeService;
     }
 
     @GetMapping
-    public java.util.List<ScientificCommittee> getAllCommittees() {
-        return committeeRepository.findAll();
+    public Page<ScientificCommittee> getAllCommittees(Pageable pageable) {
+        return scientificCommitteeService.getAllCommittees(pageable);
     }
 
     @PostMapping
-    public ScientificCommittee saveCommittee(@RequestBody ScientificCommittee committee) {
-        return committeeRepository.save(committee);
+    public ScientificCommittee saveCommittee(@Valid @RequestBody ScientificCommittee committee) {
+        return scientificCommitteeService.saveCommittee(committee);
     }
 }

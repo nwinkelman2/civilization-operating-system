@@ -1,6 +1,7 @@
 package io.github.opencivilizationplatform.modules.social.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,6 +13,7 @@ public class BehaviorAssessment {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank
     private String citizenId;
 
     @Column(columnDefinition = "TEXT")

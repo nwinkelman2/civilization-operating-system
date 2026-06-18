@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.participation.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,19 +15,24 @@ public class Interaction {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private InteractionType type;
 
     @Column(nullable = false, length = 2000)
+    @NotBlank
     private String content;
 
     @Column(nullable = false)
+    @NotBlank
     private String region;
 
     @Column(nullable = false)
+    @NotBlank
     private String citizenId;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private InteractionStatus status;
 
     @Column(name = "created_at")

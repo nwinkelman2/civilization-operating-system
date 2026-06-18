@@ -1,26 +1,29 @@
 package io.github.opencivilizationplatform.modules.monitoring.api;
 
+import io.github.opencivilizationplatform.modules.monitoring.application.BiosphereMetricService;
 import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
-import io.github.opencivilizationplatform.modules.monitoring.infrastructure.BiosphereMetricRepository;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/biosphere")
 public class BiosphereMetricController {
 
-    private final BiosphereMetricRepository metricRepository;
+    private final BiosphereMetricService biosphereMetricService;
 
-    public BiosphereMetricController(BiosphereMetricRepository metricRepository) {
-        this.metricRepository = metricRepository;
+    public BiosphereMetricController(BiosphereMetricService biosphereMetricService) {
+        this.biosphereMetricService = biosphereMetricService;
     }
 
     @GetMapping
-    public java.util.List<BiosphereMetric> getAllMetrics() {
-        return metricRepository.findAll();
+    public Page<BiosphereMetric> getAllMetrics(Pageable pageable) {
+        return biosphereMetricService.getAllMetrics(pageable);
     }
 
     @PostMapping
-    public BiosphereMetric saveMetric(@RequestBody BiosphereMetric metric) {
-        return metricRepository.save(metric);
+    public BiosphereMetric saveMetric(@Valid @RequestBody BiosphereMetric metric) {
+        return biosphereMetricService.saveMetric(metric);
     }
 }

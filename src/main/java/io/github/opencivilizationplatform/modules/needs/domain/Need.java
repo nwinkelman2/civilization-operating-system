@@ -1,6 +1,9 @@
 package io.github.opencivilizationplatform.modules.needs.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 
 @Entity
 @Table(name = "needs")
@@ -12,25 +15,31 @@ public class Need {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private NeedCategory category;
 
     @Column(nullable = false)
+    @NotBlank
     private String region;
 
     @Column(nullable = false)
+    @NotBlank
     private String description;
 
     @Column(nullable = false)
     private Double quantity;
 
     @Column(nullable = false)
+    @NotBlank
     private String unit;
 
     @Column(nullable = false)
-    private Integer priority; // 1-5
+    @Positive
+    private Integer priority;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private NeedStatus status;
 
     public Need() {}

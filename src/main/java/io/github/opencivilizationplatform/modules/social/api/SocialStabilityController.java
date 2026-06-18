@@ -1,48 +1,41 @@
 package io.github.opencivilizationplatform.modules.social.api;
 
+import io.github.opencivilizationplatform.modules.social.application.SocialStabilityService;
 import io.github.opencivilizationplatform.modules.social.domain.BehaviorAssessment;
 import io.github.opencivilizationplatform.modules.social.domain.Case;
 import io.github.opencivilizationplatform.modules.social.domain.Incident;
-import io.github.opencivilizationplatform.modules.social.domain.IncidentStatus;
-import io.github.opencivilizationplatform.modules.social.infrastructure.BehaviorAssessmentRepository;
-import io.github.opencivilizationplatform.modules.social.infrastructure.CaseRepository;
-import io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/social")
 public class SocialStabilityController {
 
-    private final IncidentRepository incidentRepository;
-    private final BehaviorAssessmentRepository assessmentRepository;
-    private final CaseRepository caseRepository;
+    private final SocialStabilityService socialStabilityService;
 
-    public SocialStabilityController(IncidentRepository incidentRepository,
-                                     BehaviorAssessmentRepository assessmentRepository,
-                                     CaseRepository caseRepository) {
-        this.incidentRepository = incidentRepository;
-        this.assessmentRepository = assessmentRepository;
-        this.caseRepository = caseRepository;
+    public SocialStabilityController(SocialStabilityService socialStabilityService) {
+        this.socialStabilityService = socialStabilityService;
     }
 
     @GetMapping("/incidents")
-    public java.util.List<Incident> getAllIncidents() {
-        return incidentRepository.findAll();
+    public Page<Incident> getAllIncidents(Pageable pageable) {
+        return socialStabilityService.getAllIncidents(pageable);
     }
 
     @GetMapping("/cases")
-    public java.util.List<Case> getAllCases() {
-        return caseRepository.findAll();
+    public Page<Case> getAllCases(Pageable pageable) {
+        return socialStabilityService.getAllCases(pageable);
     }
 
     @PostMapping("/incidents")
-    public Incident reportIncident(@RequestBody Incident incident) {
-        incident.setStatus(IncidentStatus.REPORTED);
-        return incidentRepository.save(incident);
+    public Incident reportIncident(@Valid @RequestBody Incident incident) {
+        return socialStabilityService.reportIncident(incident);
     }
 
     @GetMapping("/assessments/{citizenId}")
     public java.util.List<BehaviorAssessment> getAssessments(@PathVariable String citizenId) {
-        return assessmentRepository.findByCitizenId(citizenId);
+        return socialStabilityService.getAssessmentsForCitizen(citizenId);
     }
 }

@@ -1,41 +1,40 @@
 package io.github.opencivilizationplatform.modules.execution.api;
 
+import io.github.opencivilizationplatform.modules.execution.application.AutomationUnitService;
 import io.github.opencivilizationplatform.modules.execution.domain.AutomationUnit;
 import io.github.opencivilizationplatform.modules.execution.domain.AutomationUnitStatus;
-import io.github.opencivilizationplatform.modules.execution.infrastructure.AutomationUnitRepository;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/automation")
 public class AutomationUnitController {
 
-    private final AutomationUnitRepository automationUnitRepository;
+    private final AutomationUnitService automationUnitService;
 
-    public AutomationUnitController(AutomationUnitRepository automationUnitRepository) {
-        this.automationUnitRepository = automationUnitRepository;
+    public AutomationUnitController(AutomationUnitService automationUnitService) {
+        this.automationUnitService = automationUnitService;
     }
 
     @GetMapping
-    public List<AutomationUnit> getAllUnits() {
-        return automationUnitRepository.findAll();
+    public Page<AutomationUnit> getAllUnits(Pageable pageable) {
+        return automationUnitService.getAllUnits(pageable);
     }
 
     @PostMapping("/{id}/status")
     public AutomationUnit updateStatus(@PathVariable Long id, @RequestParam AutomationUnitStatus status) {
-        AutomationUnit unit = automationUnitRepository.findById(id).orElseThrow();
-        unit.setStatus(status);
-        return automationUnitRepository.save(unit);
+        return automationUnitService.updateStatus(id, status);
     }
 
     @PostMapping
-    public AutomationUnit saveUnit(@RequestBody AutomationUnit unit) {
-        return automationUnitRepository.save(unit);
+    public AutomationUnit saveUnit(@Valid @RequestBody AutomationUnit unit) {
+        return automationUnitService.saveUnit(unit);
     }
 
     @DeleteMapping("/{id}")
     public void deleteUnit(@PathVariable Long id) {
-        automationUnitRepository.deleteById(id);
+        automationUnitService.deleteUnit(id);
     }
 }

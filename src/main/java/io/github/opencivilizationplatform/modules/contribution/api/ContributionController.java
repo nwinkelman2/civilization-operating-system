@@ -2,6 +2,9 @@ package io.github.opencivilizationplatform.modules.contribution.api;
 
 import io.github.opencivilizationplatform.modules.contribution.domain.Contribution;
 import io.github.opencivilizationplatform.modules.contribution.application.ContributionService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -15,18 +18,18 @@ public class ContributionController {
     }
 
     @PostMapping("/contribute")
-    public Contribution recordContribution(@RequestBody Contribution contribution) {
+    public Contribution recordContribution(@Valid @RequestBody Contribution contribution) {
         return contributionService.recordContribution(contribution);
     }
 
     @GetMapping("/contributions")
-    public java.util.List<Contribution> getAllContributions() {
-        return contributionService.getAllContributions();
+    public Page<Contribution> getAllContributions(Pageable pageable) {
+        return contributionService.getAllContributions(pageable);
     }
 
     @GetMapping("/citizens")
-    public java.util.List<io.github.opencivilizationplatform.modules.contribution.domain.Citizen> getAllCitizens() {
-        return contributionService.getAllCitizens();
+    public Page<io.github.opencivilizationplatform.modules.contribution.domain.Citizen> getAllCitizens(Pageable pageable) {
+        return contributionService.getAllCitizens(pageable);
     }
 
     @GetMapping("/projects")

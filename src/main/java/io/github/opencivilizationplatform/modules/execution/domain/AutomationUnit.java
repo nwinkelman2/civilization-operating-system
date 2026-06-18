@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.execution.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -12,20 +14,25 @@ public class AutomationUnit {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank
     private String name;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private AutomationUnitType type;
 
     @Column(nullable = false)
+    @NotBlank
     private String region;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private AutomationUnitStatus status;
 
     @Column(nullable = false)
+    @NotBlank
     private String currentTask;
 
     @Column(name = "last_ping")

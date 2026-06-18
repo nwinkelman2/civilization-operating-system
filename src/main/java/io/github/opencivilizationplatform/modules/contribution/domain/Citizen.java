@@ -1,6 +1,7 @@
 package io.github.opencivilizationplatform.modules.contribution.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 
 @Entity
@@ -12,9 +13,11 @@ public class Citizen {
     private Long id;
 
     @Column(nullable = false, unique = true)
+    @NotBlank
     private String citizenId;
 
     @Column(nullable = false)
+    @NotBlank
     private String name;
 
     @ManyToMany

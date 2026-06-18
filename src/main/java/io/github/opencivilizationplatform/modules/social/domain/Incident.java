@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.social.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -14,20 +16,25 @@ public class Incident {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private IncidentType type;
 
     @Column(nullable = false)
+    @NotBlank
     private String location;
 
     @Column(nullable = false, length = 1000)
+    @NotBlank
     private String description;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private RiskLevel riskLevel;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private IncidentStatus status;
 
     @ElementCollection

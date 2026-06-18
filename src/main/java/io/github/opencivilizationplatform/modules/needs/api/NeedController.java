@@ -1,31 +1,34 @@
 package io.github.opencivilizationplatform.modules.needs.api;
 
+import io.github.opencivilizationplatform.modules.needs.application.NeedService;
 import io.github.opencivilizationplatform.modules.needs.domain.Need;
-import io.github.opencivilizationplatform.modules.needs.infrastructure.NeedRepository;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/needs")
 public class NeedController {
 
-    private final NeedRepository needRepository;
+    private final NeedService needService;
 
-    public NeedController(NeedRepository needRepository) {
-        this.needRepository = needRepository;
+    public NeedController(NeedService needService) {
+        this.needService = needService;
     }
 
     @GetMapping
-    public java.util.List<Need> getAllNeeds() {
-        return needRepository.findAll();
+    public Page<Need> getAllNeeds(Pageable pageable) {
+        return needService.getAllNeeds(pageable);
     }
 
     @GetMapping("/region/{region}")
     public java.util.List<Need> getNeedsByRegion(@PathVariable String region) {
-        return needRepository.findByRegion(region);
+        return needService.getNeedsByRegion(region);
     }
 
     @PostMapping
-    public Need saveNeed(@RequestBody Need need) {
-        return needRepository.save(need);
+    public Need saveNeed(@Valid @RequestBody Need need) {
+        return needService.saveNeed(need);
     }
 }

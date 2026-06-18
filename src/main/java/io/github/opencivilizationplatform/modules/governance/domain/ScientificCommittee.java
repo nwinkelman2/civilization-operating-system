@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.governance.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,9 +15,11 @@ public class ScientificCommittee {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private CommitteeArea area;
 
     @Column(nullable = false)
+    @NotBlank
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -23,6 +27,7 @@ public class ScientificCommittee {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private ValidationLevel validationLevel;
 
     @Column(name = "last_audit")

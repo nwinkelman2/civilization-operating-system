@@ -4,6 +4,8 @@ import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
 import io.github.opencivilizationplatform.modules.participation.domain.ValidationStatus;
 import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -16,8 +18,8 @@ public class RuleService {
         this.ruleRepository = ruleRepository;
     }
 
-    public List<Rule> getAllRules() {
-        return ruleRepository.findAll();
+    public Page<Rule> getAllRules(Pageable pageable) {
+        return ruleRepository.findAll(pageable);
     }
 
     public List<Rule> getValidatedRules() {
@@ -27,6 +29,18 @@ public class RuleService {
     }
 
     public Rule saveRule(Rule rule) {
+        return ruleRepository.save(rule);
+    }
+
+    public Rule voteRule(Long id) {
+        Rule rule = ruleRepository.findById(id).orElseThrow();
+        rule.setVotesCount(rule.getVotesCount() + 1);
+        return ruleRepository.save(rule);
+    }
+
+    public Rule proposeRule(Rule rule) {
+        rule.setVotesCount(0);
+        rule.setStatus(RuleStatus.PROPOSED);
         return ruleRepository.save(rule);
     }
 }

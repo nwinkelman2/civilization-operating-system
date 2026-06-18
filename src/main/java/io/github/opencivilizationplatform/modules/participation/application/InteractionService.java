@@ -2,6 +2,8 @@ package io.github.opencivilizationplatform.modules.participation.application;
 
 import io.github.opencivilizationplatform.modules.participation.domain.Interaction;
 import io.github.opencivilizationplatform.modules.participation.infrastructure.InteractionRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,8 +14,8 @@ public class InteractionService {
         this.interactionRepository = interactionRepository;
     }
 
-    public java.util.List<Interaction> getAllInteractions() {
-        return interactionRepository.findAll();
+    public Page<Interaction> getAllInteractions(Pageable pageable) {
+        return interactionRepository.findAll(pageable);
     }
 
     public Interaction saveInteraction(Interaction interaction) {

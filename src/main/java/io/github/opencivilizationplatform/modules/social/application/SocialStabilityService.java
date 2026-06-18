@@ -7,6 +7,8 @@ import io.github.opencivilizationplatform.modules.social.domain.IncidentStatus;
 import io.github.opencivilizationplatform.modules.social.infrastructure.BehaviorAssessmentRepository;
 import io.github.opencivilizationplatform.modules.social.infrastructure.CaseRepository;
 import io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,12 +26,12 @@ public class SocialStabilityService {
         this.caseRepository = caseRepository;
     }
 
-    public java.util.List<Incident> getAllIncidents() {
-        return incidentRepository.findAll();
+    public Page<Incident> getAllIncidents(Pageable pageable) {
+        return incidentRepository.findAll(pageable);
     }
 
-    public java.util.List<Case> getAllCases() {
-        return caseRepository.findAll();
+    public Page<Case> getAllCases(Pageable pageable) {
+        return caseRepository.findAll(pageable);
     }
 
     public Incident reportIncident(Incident incident) {

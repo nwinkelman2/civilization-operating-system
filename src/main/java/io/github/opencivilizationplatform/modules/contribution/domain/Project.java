@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.contribution.domain;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,17 +15,21 @@ public class Project {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank
     private String title;
 
     @Column(nullable = false, length = 1000)
+    @NotBlank
     private String description;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private ProjectCategory category;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private ImpactArea impactArea;
 
     @ElementCollection
@@ -31,6 +37,7 @@ public class Project {
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
+    @NotNull
     private ProjectStatus status;
 
     @Column(name = "created_at")
