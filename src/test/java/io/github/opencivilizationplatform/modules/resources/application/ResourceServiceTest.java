@@ -7,11 +7,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class ResourceServiceTest {
@@ -31,12 +34,12 @@ class ResourceServiceTest {
     void testGetAllResources() {
         Resource res1 = new Resource();
         Resource res2 = new Resource();
-        when(resourceRepository.findAll()).thenReturn(Arrays.asList(res1, res2));
+        when(resourceRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Arrays.asList(res1, res2)));
 
-        List<Resource> result = resourceService.getAllResources();
+        Page<Resource> result = resourceService.getAllResources(Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        verify(resourceRepository, times(1)).findAll();
+        assertEquals(2, result.getContent().size());
+        verify(resourceRepository, times(1)).findAll(any(Pageable.class));
     }
 
     @Test

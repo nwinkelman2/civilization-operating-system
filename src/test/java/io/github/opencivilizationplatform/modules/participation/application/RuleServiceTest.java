@@ -9,10 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class RuleServiceTest {
@@ -32,12 +36,12 @@ class RuleServiceTest {
     void testGetAllRules() {
         Rule rule1 = new Rule();
         Rule rule2 = new Rule();
-        when(ruleRepository.findAll()).thenReturn(List.of(rule1, rule2));
+        when(ruleRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(rule1, rule2)));
 
-        List<Rule> result = ruleService.getAllRules();
+        Page<Rule> result = ruleService.getAllRules(Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        verify(ruleRepository, times(1)).findAll();
+        assertEquals(2, result.getContent().size());
+        verify(ruleRepository, times(1)).findAll(any(Pageable.class));
     }
 
     @Test
@@ -55,7 +59,7 @@ class RuleServiceTest {
         unvalidated.setValidationStatus(ValidationStatus.PENDING);
 
         List<Rule> allRules = List.of(activeValidated, deprecated, unvalidated);
-        when(ruleRepository.findAll()).thenReturn(allRules);
+        when(ruleRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(allRules));
 
         List<Rule> result = ruleService.getValidatedRules();
 

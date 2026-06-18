@@ -7,10 +7,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class InteractionServiceTest {
@@ -28,8 +32,9 @@ class InteractionServiceTest {
 
     @Test
     void testGetAllInteractions() {
-        when(interactionRepository.findAll()).thenReturn(Arrays.asList(new Interaction()));
-        assertEquals(1, interactionService.getAllInteractions().size());
+        when(interactionRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Arrays.asList(new Interaction())));
+        Page<Interaction> result = interactionService.getAllInteractions(Pageable.unpaged());
+        assertEquals(1, result.getContent().size());
     }
 
     @Test

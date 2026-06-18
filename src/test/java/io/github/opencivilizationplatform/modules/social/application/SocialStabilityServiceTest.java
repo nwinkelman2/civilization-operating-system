@@ -9,11 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class SocialStabilityServiceTest {
@@ -34,16 +37,16 @@ class SocialStabilityServiceTest {
 
     @Test
     void testGetAllIncidents() {
-        when(incidentRepository.findAll()).thenReturn(Arrays.asList(new Incident(), new Incident()));
-        List<Incident> result = socialStabilityService.getAllIncidents();
-        assertEquals(2, result.size());
+        when(incidentRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Arrays.asList(new Incident(), new Incident())));
+        Page<Incident> result = socialStabilityService.getAllIncidents(Pageable.unpaged());
+        assertEquals(2, result.getContent().size());
     }
 
     @Test
     void testGetAllCases() {
-        when(caseRepository.findAll()).thenReturn(Arrays.asList(new Case()));
-        List<Case> result = socialStabilityService.getAllCases();
-        assertEquals(1, result.size());
+        when(caseRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Arrays.asList(new Case())));
+        Page<Case> result = socialStabilityService.getAllCases(Pageable.unpaged());
+        assertEquals(1, result.getContent().size());
     }
 
     @Test

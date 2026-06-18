@@ -10,11 +10,14 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class BiosphereMetricServiceTest {
@@ -37,12 +40,12 @@ class BiosphereMetricServiceTest {
     void testGetAllMetrics() {
         BiosphereMetric metric1 = new BiosphereMetric();
         BiosphereMetric metric2 = new BiosphereMetric();
-        when(metricRepository.findAll()).thenReturn(Arrays.asList(metric1, metric2));
+        when(metricRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Arrays.asList(metric1, metric2)));
 
-        List<BiosphereMetric> result = biosphereMetricService.getAllMetrics();
+        Page<BiosphereMetric> result = biosphereMetricService.getAllMetrics(Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        verify(metricRepository, times(1)).findAll();
+        assertEquals(2, result.getContent().size());
+        verify(metricRepository, times(1)).findAll(any(Pageable.class));
     }
 
     @Test

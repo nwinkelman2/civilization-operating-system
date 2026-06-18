@@ -12,10 +12,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class ContributionServiceTest {
@@ -37,8 +41,9 @@ class ContributionServiceTest {
 
     @Test
     void testGetAllCitizens() {
-        when(citizenRepository.findAll()).thenReturn(Arrays.asList(new Citizen()));
-        assertEquals(1, contributionService.getAllCitizens().size());
+        when(citizenRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Arrays.asList(new Citizen())));
+        Page<Citizen> result = contributionService.getAllCitizens(Pageable.unpaged());
+        assertEquals(1, result.getContent().size());
     }
 
     @Test

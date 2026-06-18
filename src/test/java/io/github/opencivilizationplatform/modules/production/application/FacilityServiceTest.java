@@ -7,11 +7,14 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 class FacilityServiceTest {
@@ -31,12 +34,12 @@ class FacilityServiceTest {
     void testGetAllFacilities() {
         Facility f1 = new Facility();
         Facility f2 = new Facility();
-        when(facilityRepository.findAll()).thenReturn(Arrays.asList(f1, f2));
+        when(facilityRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(Arrays.asList(f1, f2)));
 
-        List<Facility> result = facilityService.getAllFacilities();
+        Page<Facility> result = facilityService.getAllFacilities(Pageable.unpaged());
 
-        assertEquals(2, result.size());
-        verify(facilityRepository, times(1)).findAll();
+        assertEquals(2, result.getContent().size());
+        verify(facilityRepository, times(1)).findAll(any(Pageable.class));
     }
 
     @Test

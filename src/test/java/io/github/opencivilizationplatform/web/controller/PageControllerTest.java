@@ -1,7 +1,7 @@
 package io.github.opencivilizationplatform.web.controller;
 
 import io.github.opencivilizationplatform.modules.contribution.application.ContributionService;
-import io.github.opencivilizationplatform.modules.execution.infrastructure.AutomationUnitRepository;
+import io.github.opencivilizationplatform.modules.execution.application.AutomationUnitService;
 import io.github.opencivilizationplatform.modules.logistics.application.ShipmentService;
 import io.github.opencivilizationplatform.modules.monitoring.application.BiosphereMetricService;
 import io.github.opencivilizationplatform.modules.needs.application.NeedService;
@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -23,6 +25,7 @@ import org.springframework.web.context.WebApplicationContext;
 
 import java.util.ArrayList;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -46,7 +49,7 @@ class PageControllerTest {
     @MockitoBean private ContributionService contributionService;
     @MockitoBean private SocialStabilityService socialStabilityService;
     @MockitoBean private BalanceService balanceService;
-    @MockitoBean private AutomationUnitRepository automationRepository;
+    @MockitoBean private AutomationUnitService automationService;
 
     @BeforeEach
     void setUp() {
@@ -55,7 +58,7 @@ class PageControllerTest {
 
     @Test
     void testDashboard() throws Exception {
-        when(resourceService.getAllResources()).thenReturn(new ArrayList<>());
+        when(resourceService.getAllResources(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -64,7 +67,7 @@ class PageControllerTest {
 
     @Test
     void testBiosphere() throws Exception {
-        when(biosphereMetricService.getAllMetrics()).thenReturn(new ArrayList<>());
+        when(biosphereMetricService.getAllMetrics(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/biosphere"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -73,7 +76,7 @@ class PageControllerTest {
 
     @Test
     void testResources() throws Exception {
-        when(resourceService.getAllResources()).thenReturn(new ArrayList<>());
+        when(resourceService.getAllResources(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/resources"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -82,7 +85,7 @@ class PageControllerTest {
 
     @Test
     void testNeeds() throws Exception {
-        when(needService.getAllNeeds()).thenReturn(new ArrayList<>());
+        when(needService.getAllNeeds(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/needs"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -99,7 +102,7 @@ class PageControllerTest {
 
     @Test
     void testProduction() throws Exception {
-        when(facilityService.getAllFacilities()).thenReturn(new ArrayList<>());
+        when(facilityService.getAllFacilities(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/production"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -108,7 +111,7 @@ class PageControllerTest {
 
     @Test
     void testLogistics() throws Exception {
-        when(shipmentService.getAllShipments()).thenReturn(new ArrayList<>());
+        when(shipmentService.getAllShipments(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/logistics"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -117,7 +120,7 @@ class PageControllerTest {
 
     @Test
     void testInteraction() throws Exception {
-        when(interactionService.getAllInteractions()).thenReturn(new ArrayList<>());
+        when(interactionService.getAllInteractions(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/interaction"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -126,7 +129,7 @@ class PageControllerTest {
 
     @Test
     void testConstitution() throws Exception {
-        when(ruleService.getAllRules()).thenReturn(new ArrayList<>());
+        when(ruleService.getAllRules(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/constitution"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -135,6 +138,8 @@ class PageControllerTest {
 
     @Test
     void testPurpose() throws Exception {
+        when(contributionService.getAllCitizens(any(Pageable.class))).thenReturn(Page.empty());
+        when(contributionService.getAllContributions(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/purpose"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -143,6 +148,8 @@ class PageControllerTest {
 
     @Test
     void testSocial() throws Exception {
+        when(socialStabilityService.getAllIncidents(any(Pageable.class))).thenReturn(Page.empty());
+        when(socialStabilityService.getAllCases(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/social"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
@@ -151,7 +158,7 @@ class PageControllerTest {
 
     @Test
     void testSimulation() throws Exception {
-        when(automationRepository.findAll()).thenReturn(new ArrayList<>());
+        when(automationService.getAllUnits(any(Pageable.class))).thenReturn(Page.empty());
         mockMvc.perform(get("/simulation"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))

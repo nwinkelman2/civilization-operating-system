@@ -3,6 +3,8 @@ package io.github.opencivilizationplatform.modules.strategy.application;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
 import io.github.opencivilizationplatform.modules.needs.infrastructure.NeedRepository;
 import io.github.opencivilizationplatform.modules.resources.infrastructure.ResourceRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +26,7 @@ public class BalanceService {
         this.needRepository = needRepository;
     }
 
+    @Cacheable("balance")
     public List<BalanceDTO> getBalanceReport() {
         Map<String, Double> supply = resourceRepository.findAll().stream()
                 .collect(Collectors.groupingBy(r -> r.getType(),

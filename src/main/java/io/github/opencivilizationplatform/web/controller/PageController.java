@@ -10,8 +10,9 @@ import io.github.opencivilizationplatform.modules.participation.application.Inte
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.contribution.application.ContributionService;
 import io.github.opencivilizationplatform.modules.simulation.application.CortexEngineService;
-import io.github.opencivilizationplatform.modules.execution.infrastructure.AutomationUnitRepository;
+import io.github.opencivilizationplatform.modules.execution.application.AutomationUnitService;
 import io.github.opencivilizationplatform.modules.social.application.SocialStabilityService;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,7 +31,7 @@ public class PageController {
     private final ContributionService contributionService;
     private final CortexEngineService cortexService;
     private final SocialStabilityService socialService;
-    private final AutomationUnitRepository automationRepository;
+    private final AutomationUnitService automationService;
 
     public PageController(BiosphereMetricService biosphereService,
                           NeedService needService,
@@ -43,7 +44,7 @@ public class PageController {
                           ContributionService contributionService,
                           CortexEngineService cortexService,
                           SocialStabilityService socialService,
-                          AutomationUnitRepository automationRepository) {
+                           AutomationUnitService automationService) {
         this.biosphereService = biosphereService;
         this.needService = needService;
         this.resourceService = resourceService;
@@ -55,7 +56,7 @@ public class PageController {
         this.contributionService = contributionService;
         this.cortexService = cortexService;
         this.socialService = socialService;
-        this.automationRepository = automationRepository;
+        this.automationService = automationService;
     }
 
     private String render(Model model, String viewName, String pageTitle, String currentPage) {
@@ -69,25 +70,25 @@ public class PageController {
     public String dashboard(Model model) {
         model.addAttribute("balance", balanceService.getBalanceReport());
         model.addAttribute("simulationStatus", cortexService.getStatus());
-        model.addAttribute("resources", resourceService.getAllResources());
+        model.addAttribute("resources", resourceService.getAllResources(Pageable.unpaged()).getContent());
         return render(model, "dashboard", "Dashboard", "dashboard");
     }
 
     @GetMapping("/biosphere")
     public String biosphere(Model model) {
-        model.addAttribute("metrics", biosphereService.getAllMetrics());
+        model.addAttribute("metrics", biosphereService.getAllMetrics(Pageable.unpaged()).getContent());
         return render(model, "biosphere", "Biosphere", "biosphere");
     }
 
     @GetMapping("/resources")
     public String resources(Model model) {
-        model.addAttribute("resources", resourceService.getAllResources());
+        model.addAttribute("resources", resourceService.getAllResources(Pageable.unpaged()).getContent());
         return render(model, "resources", "Resources", "resources");
     }
 
     @GetMapping("/needs")
     public String needs(Model model) {
-        model.addAttribute("needs", needService.getAllNeeds());
+        model.addAttribute("needs", needService.getAllNeeds(Pageable.unpaged()).getContent());
         return render(model, "needs", "Needs", "needs");
     }
 
@@ -99,40 +100,40 @@ public class PageController {
 
     @GetMapping("/production")
     public String production(Model model) {
-        model.addAttribute("facilities", facilityService.getAllFacilities());
+        model.addAttribute("facilities", facilityService.getAllFacilities(Pageable.unpaged()).getContent());
         return render(model, "production", "Production", "production");
     }
 
     @GetMapping("/logistics")
     public String logistics(Model model) {
-        model.addAttribute("shipments", shipmentService.getAllShipments());
+        model.addAttribute("shipments", shipmentService.getAllShipments(Pageable.unpaged()).getContent());
         return render(model, "logistics", "Logistics", "logistics");
     }
 
     @GetMapping("/interaction")
     public String interaction(Model model) {
-        model.addAttribute("interactions", interactionService.getAllInteractions());
+        model.addAttribute("interactions", interactionService.getAllInteractions(Pageable.unpaged()).getContent());
         return render(model, "interaction", "Interaction", "interaction");
     }
 
     @GetMapping("/constitution")
     public String constitution(Model model) {
-        model.addAttribute("rules", ruleService.getAllRules());
+        model.addAttribute("rules", ruleService.getAllRules(Pageable.unpaged()).getContent());
         return render(model, "constitution", "Governance", "constitution");
     }
 
     @GetMapping("/purpose")
     public String purpose(Model model) {
-        model.addAttribute("citizens", contributionService.getAllCitizens());
+        model.addAttribute("citizens", contributionService.getAllCitizens(Pageable.unpaged()).getContent());
         model.addAttribute("projects", contributionService.getActiveProjects());
-        model.addAttribute("contributions", contributionService.getAllContributions());
+        model.addAttribute("contributions", contributionService.getAllContributions(Pageable.unpaged()).getContent());
         return render(model, "purpose", "Contribution", "purpose");
     }
 
     @GetMapping("/social")
     public String social(Model model) {
-        model.addAttribute("incidents", socialService.getAllIncidents());
-        model.addAttribute("cases", socialService.getAllCases());
+        model.addAttribute("incidents", socialService.getAllIncidents(Pageable.unpaged()).getContent());
+        model.addAttribute("cases", socialService.getAllCases(Pageable.unpaged()).getContent());
         return render(model, "social", "Social Stability", "social");
     }
 
@@ -140,7 +141,7 @@ public class PageController {
     public String simulation(Model model) {
         model.addAttribute("status", cortexService.getStatus());
         model.addAttribute("balance", balanceService.getBalanceReport());
-        model.addAttribute("automations", automationRepository.findAll());
+        model.addAttribute("automations", automationService.getAllUnits(Pageable.unpaged()).getContent());
         return render(model, "simulation", "Cortex Engine", "simulation");
     }
 
@@ -148,7 +149,7 @@ public class PageController {
     public String cortexTelemetry(Model model) {
         model.addAttribute("status", cortexService.getStatus());
         model.addAttribute("balance", balanceService.getBalanceReport());
-        model.addAttribute("automations", automationRepository.findAll());
+        model.addAttribute("automations", automationService.getAllUnits(Pageable.unpaged()).getContent());
         return "simulation :: cortex-telemetry";
     }
 
