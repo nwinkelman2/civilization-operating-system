@@ -6,6 +6,10 @@
     <meta name="description" content="Civilization Operating System — A Resource-Based Economy Platform">
     <title th:text="'Civilization OS | ' + ${pageTitle ?: 'Dashboard'}">Civilization OS</title>
     <link rel="stylesheet" th:href="@{/css/main.css}">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00f2ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -43,6 +47,16 @@
     </footer>
     <script>
         lucide.createIcons();
+    </script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/service-worker.js')
+                .then(() => console.log('SW registered'))
+                .catch(e => console.log('SW failed:', e));
+        }
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            document.body.classList.add('pwa-mode');
+        }
     </script>
 </body>
 </html>

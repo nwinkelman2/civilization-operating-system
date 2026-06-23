@@ -204,6 +204,33 @@
                 console.log('SSE disconnected, retrying...');
             };
         }
+
+        // WebSocket for real-time messages
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = wsProtocol + '//' + window.location.host + '/ws/voxtex';
+        let ws = new WebSocket(wsUrl);
+
+        ws.onopen = () => console.log('WebSocket connected');
+        ws.onmessage = (event) => {
+            try {
+                const data = JSON.parse(event.data);
+                if (data.type === 'voxtex-message') {
+                    const div = document.createElement('div');
+                    div.className = 'voxtex-msg voxtex-msg-delivered';
+                    div.innerHTML = `<span class="msg-type">${data.messageType}</span>
+                        <span class="msg-text">${data.content}</span>
+                        <span class="msg-hops">${data.hopCount || 0} hops</span>`;
+                    msgLog.insertBefore(div, msgLog.firstChild);
+                    if (msgLog.children.length > 50) {
+                        msgLog.removeChild(msgLog.lastChild);
+                    }
+                }
+            } catch (e) {}
+        };
+        ws.onclose = () => {
+            console.log('WebSocket disconnected, reconnecting in 3s...');
+            setTimeout(() => { ws = new WebSocket(wsUrl); }, 3000);
+        };
     </script>
 
     <style>

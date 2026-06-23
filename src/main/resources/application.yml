@@ -38,3 +38,11 @@ springdoc:
 
 server:
   port: ${PORT:8080}
+
+game:
+  events:
+    enabled: true
+    tick-rate-ms: 30000
+  trade:
+    max-active: 10
+    auto-resolve-days: 7

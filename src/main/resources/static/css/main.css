@@ -807,3 +807,49 @@ tr:hover td {
 .tech-name { display: block; font-weight: 600; margin-bottom: 4px; }
 .tech-status { display: block; font-size: 0.6rem; color: var(--text-dim); }
 .tech-progress { display: block; font-size: 0.6rem; color: var(--accent-cyan); margin-top: 4px; }
+
+/* === PWA === */
+.pwa-mode .nav-bar { padding-top: env(safe-area-inset-top); }
+.pwa-mode .main-content { padding-bottom: env(safe-area-inset-bottom); }
+
+/* === MOBILE RESPONSIVE === */
+@media (max-width: 768px) {
+  .nav-bar { flex-direction: column; padding: 8px 12px; }
+  .nav-links { overflow-x: auto; gap: 4px; padding: 4px 0; width: 100%;
+    -webkit-overflow-scrolling: touch; }
+  .nav-links a { font-size: 0.6rem; padding: 6px 10px; white-space: nowrap; }
+  .main-content { padding: 12px; margin-top: 70px; }
+  .page-header h1 { font-size: 1.2rem; }
+  .subtitle { font-size: 0.65rem; }
+  .sim-stats { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .sim-mid { flex-direction: column; }
+  .gauge-grid { grid-template-columns: repeat(2, 1fr); }
+  .sim-bottom { flex-direction: column; }
+  .dashboard-grid { grid-template-columns: 1fr; }
+  .dashboard-card { padding: 12px; }
+  .civ-stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .civ-grid-2col { grid-template-columns: 1fr; }
+  .voxtex-stats { grid-template-columns: repeat(2, 1fr); }
+  .voxtex-content { flex-direction: column; }
+  .voxtex-sidebar { width: 100%; }
+  .play-layout { flex-direction: column; }
+  .play-sidebar { width: 100%; }
+  .play-map-container { height: 400px !important; }
+  #playMap { height: 400px !important; }
+  .modal-content { min-width: auto; width: 90%; margin: 0 5%; }
+  table { font-size: 0.7rem; }
+  th, td { padding: 6px 8px; }
+  .log-container { max-height: 200px; }
+  .tech-grid { grid-template-columns: repeat(2, 1fr); }
+  .voxtex-canvas-container { height: 300px; }
+}
+
+@media (max-width: 480px) {
+  .sim-stats { grid-template-columns: 1fr; }
+  .civ-stats-bar { grid-template-columns: 1fr; }
+  .gauge-grid { grid-template-columns: 1fr; }
+  .voxtex-stats { grid-template-columns: 1fr; }
+  .tech-grid { grid-template-columns: 1fr; }
+  .nav-links a { font-size: 0.55rem; padding: 4px 8px; }
+  .page-header h1 { font-size: 1rem; }
+}

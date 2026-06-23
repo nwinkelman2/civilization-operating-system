@@ -1,3 +1,11 @@
 target/
-!.mvn/wrapper/maven-wrapper.jar
-.mvn/wrapper/maven-wrapper.properties
+*.jar
+*.log
+.idea/
+.git/
+.gitignore
+.mvn/
+node_modules/
+README.md
+docs/
+effective-pom
