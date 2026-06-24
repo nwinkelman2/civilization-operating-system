@@ -1,6 +1,6 @@
 package io.github.opencivilizationplatform.web.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
 import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexMessage;
 import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexMessageType;

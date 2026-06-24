@@ -1,6 +1,5 @@
 package io.github.opencivilizationplatform.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import net.javacrumbs.shedlock.core.LockProvider;
 import net.javacrumbs.shedlock.provider.jdbctemplate.JdbcTemplateLockProvider;
 import net.javacrumbs.shedlock.spring.annotation.EnableSchedulerLock;
@@ -15,17 +14,17 @@ import javax.sql.DataSource;
 public class ShedLockConfig {
 
     @Bean
-    public LockProvider lockProvider(DataSource dataSource) {
-        return new JdbcTemplateLockProvider(
-            JdbcTemplateLockProvider.Configuration.builder()
-                .withJdbcTemplate(new JdbcTemplate(dataSource))
-                .usingDbTime()
-                .build()
-        );
-    }
+    public LockProvider lockProvider(DataSource dataSource, org.springframework.core.env.Environment env) {
+        JdbcTemplateLockProvider.Configuration.Builder builder = JdbcTemplateLockProvider.Configuration.builder()
+            .withJdbcTemplate(new JdbcTemplate(dataSource));
 
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
+        // H2 in PostgreSQL mode (used in tests) has compatibility and timezone issues with ShedLock's DB time queries.
+        // We only use central DB time in production/non-test profiles.
+        boolean isTestProfile = java.util.Arrays.asList(env.getActiveProfiles()).contains("test");
+        if (!isTestProfile) {
+            builder.usingDbTime();
+        }
+
+        return new JdbcTemplateLockProvider(builder.build());
     }
 }

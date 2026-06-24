@@ -5,6 +5,11 @@ spring:
     username: sa
     password:
 
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/migration/V7__add_shedlock.sql
+
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
