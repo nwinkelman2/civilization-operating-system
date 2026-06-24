@@ -45,8 +45,7 @@ public class VoxtexWebSocketHandler extends TextWebSocketHandler {
                 String content = (String) payload.get("content");
                 String typeStr = (String) payload.get("messageType");
                 VoxtexMessageType msgType = VoxtexMessageType.valueOf(typeStr);
-                var msg = meshService.sendMessage(sourceId, targetId, msgType, content);
-                broadcastMessage(msg);
+                meshService.sendMessage(sourceId, targetId, msgType, content);
             }
             case "ping" -> {
                 session.sendMessage(new TextMessage("{\"type\":\"pong\"}"));
@@ -60,7 +59,7 @@ public class VoxtexWebSocketHandler extends TextWebSocketHandler {
         log.info("WebSocket disconnected: {}", session.getId());
     }
 
-    public void broadcastMessage(VoxtexMessage msg) {
+    public void broadcastMessageLocally(VoxtexMessage msg) {
         try {
             String json = objectMapper.writeValueAsString(Map.of(
                 "type", "voxtex-message",
@@ -77,7 +76,7 @@ public class VoxtexWebSocketHandler extends TextWebSocketHandler {
                 }
             }
         } catch (Exception e) {
-            log.error("Failed to broadcast message", e);
+            log.error("Failed to broadcast message locally", e);
         }
     }
 }

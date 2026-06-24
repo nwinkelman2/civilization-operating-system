@@ -13,6 +13,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import tools.jackson.databind.ObjectMapper;
 
 @Service
 public class VoxtexMeshService {
@@ -22,16 +24,22 @@ public class VoxtexMeshService {
     private final VoxtexNodeRepository nodeRepository;
     private final VoxtexMessageRepository messageRepository;
     private final VoxtexConnectionRepository connectionRepository;
+    private final StringRedisTemplate redisTemplate;
+    private final ObjectMapper objectMapper;
 
     // SSE emitters for real-time streaming
     private final List<Consumer<VoxtexMessage>> messageListeners = new CopyOnWriteArrayList<>();
 
     public VoxtexMeshService(VoxtexNodeRepository nodeRepository,
                               VoxtexMessageRepository messageRepository,
-                              VoxtexConnectionRepository connectionRepository) {
+                              VoxtexConnectionRepository connectionRepository,
+                              StringRedisTemplate redisTemplate,
+                              ObjectMapper objectMapper) {
         this.nodeRepository = nodeRepository;
         this.messageRepository = messageRepository;
         this.connectionRepository = connectionRepository;
+        this.redisTemplate = redisTemplate;
+        this.objectMapper = objectMapper;
     }
 
     // --- Node Management ---
@@ -91,8 +99,8 @@ public class VoxtexMeshService {
         msg.setContent(content);
         msg = messageRepository.save(msg);
 
-        // Notify SSE listeners
-        notifyListeners(msg);
+        // Publish to Redis instead of notifying local listeners directly
+        publishEventToRedis(msg);
 
         log.info("VOXTEX MESH: {} -> {} [{}]", source.getName(), target.getName(), messageType);
         return msg;
@@ -178,7 +186,7 @@ public class VoxtexMeshService {
                     conn.setLastActivityAt(LocalDateTime.now());
                     connectionRepository.save(conn);
                     messageRepository.save(msg);
-                    notifyListeners(msg);
+                    publishEventToRedis(msg);
                     log.debug("VOXTEX: Message {} delivered ({} hops)", msg.getId(), msg.getHopCount());
                     break;
                 }
@@ -216,7 +224,7 @@ public class VoxtexMeshService {
             autoMsg.setDelivered(true);
             autoMsg.setDeliveredAt(LocalDateTime.now());
             messageRepository.save(autoMsg);
-            notifyListeners(autoMsg);
+            publishEventToRedis(autoMsg);
             log.debug("VOXTEX: Auto-message generated: {}", msg);
         }
     }
@@ -231,7 +239,16 @@ public class VoxtexMeshService {
         messageListeners.remove(listener);
     }
 
-    private void notifyListeners(VoxtexMessage msg) {
+    private void publishEventToRedis(VoxtexMessage msg) {
+        try {
+            String json = objectMapper.writeValueAsString(msg);
+            redisTemplate.convertAndSend("voxtex-mesh-events", json);
+        } catch (Exception e) {
+            log.error("Failed to publish message event to Redis", e);
+        }
+    }
+
+    public void notifyListenersLocally(VoxtexMessage msg) {
         for (var listener : messageListeners) {
             try {
                 listener.accept(msg);
