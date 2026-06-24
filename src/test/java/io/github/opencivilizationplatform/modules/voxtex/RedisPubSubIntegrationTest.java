@@ -25,6 +25,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 public class RedisPubSubIntegrationTest {
 
+    static {
+        try {
+            Process process = new ProcessBuilder("docker", "compose", "up", "-d", "redis").start();
+            process.waitFor();
+            Thread.sleep(2000);
+        } catch (Exception e) {
+            System.err.println("Failed to start Redis via docker compose: " + e.getMessage());
+        }
+    }
+
     @Autowired
     private VoxtexMeshService meshService;
 
