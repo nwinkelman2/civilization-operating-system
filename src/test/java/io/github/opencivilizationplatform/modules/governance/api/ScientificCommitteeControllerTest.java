@@ -2,25 +2,33 @@ package io.github.opencivilizationplatform.modules.governance.api;
 
 import io.github.opencivilizationplatform.modules.governance.application.ScientificCommitteeService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
-@WebMvcTest(ScientificCommitteeController.class)
+@ExtendWith(MockitoExtension.class)
 class ScientificCommitteeControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
     private ScientificCommitteeService scientificCommitteeService;
+
+    @BeforeEach
+    void setUp() {
+        scientificCommitteeService = mock(ScientificCommitteeService.class);
+        mockMvc = standaloneSetup(new ScientificCommitteeController(scientificCommitteeService))
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .build();
+    }
+
 
     @Test
     void testGetAllCommittees() throws Exception {
@@ -35,7 +43,8 @@ class ScientificCommitteeControllerTest {
                         .content("""
                                 {
                                     "name": "Ethics Committee",
-                                    "field": "BIOLOGY"
+                                    "area": "SOCIAL",
+                                    "validationLevel": "COMMUNITY_VALIDATED"
                                 }
                                 """))
                 .andExpect(status().isOk());

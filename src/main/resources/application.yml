@@ -46,3 +46,10 @@ game:
   trade:
     max-active: 10
     auto-resolve-days: 7
+  cortex:
+    engine:
+      tick-rate-ms: ${CORTEX_TICK_RATE_MS:30000}
+
+jwt:
+  secret: ${JWT_SECRET:civos-dev-secret-key-change-in-production-123456}
+  expiration-ms: ${JWT_EXPIRATION_MS:86400000}

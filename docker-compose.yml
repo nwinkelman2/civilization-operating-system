@@ -17,6 +17,7 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Primary app instance (also serves as primary)
   app:
     build: .
     container_name: civos-app
@@ -35,6 +36,38 @@ services:
       LOG_PATH: ${LOG_PATH:-/var/log/civilization-os}
     ports:
       - "8080:8080"
+    restart: unless-stopped
+
+  app-primary:
+    build: .
+    container_name: civos-app-primary
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/openciv
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-validate}
+      CIVILIZATION_SCALE: ${CIVILIZATION_SCALE:-LOCAL}
+      CIVILIZATION_ADMIN_USER: ${CIVILIZATION_ADMIN_USER:-admin}
+      CIVILIZATION_ADMIN_PASSWORD: ${CIVILIZATION_ADMIN_PASSWORD:-admin}
+      LOG_PATH: ${LOG_PATH:-/var/log/civilization-os}
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:alpine
+    container_name: civos-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+      - app-primary
     restart: unless-stopped
 
 volumes:

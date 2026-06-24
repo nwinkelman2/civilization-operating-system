@@ -18,7 +18,32 @@
         </div>
     </div>
 
-    <script>
+    <script th:inline="javascript">
+        async function ensureToken() {
+            let token = localStorage.getItem('civos_token');
+            if (!token) {
+                try {
+                    let resp = await fetch('/api/v1/auth/connect', { method: 'POST' });
+                    let data = await resp.json();
+                    token = data.token;
+                    localStorage.setItem('civos_token', token);
+                    localStorage.setItem('civos_clientId', data.clientId);
+                } catch(e) {
+                    console.error('Failed to get auth token:', e);
+                    return null;
+                }
+            }
+            return token;
+        }
+
+        async function apiFetch(url, options = {}) {
+            const token = await ensureToken();
+            if (token) {
+                options.headers = { ...options.headers, 'Authorization': 'Bearer ' + token };
+            }
+            return fetch(url, options);
+        }
+
         const map = L.map('playMap', {
             center: [20, 0],
             zoom: 2,
@@ -157,16 +182,19 @@
                 };
 
                 try {
-                    const res = await fetch('/api/v1/civilizations/found', {
+                    const resp = await apiFetch('/api/v1/civilizations/found', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...(await (async () => {
+                            const t = localStorage.getItem('civos_token');
+                            return t ? { 'Authorization': 'Bearer ' + t } : {};
+                        })()) },
                         body: JSON.stringify(data)
                     });
-                    if (res.ok) {
-                        const civ = await res.json();
+                    if (resp.ok) {
+                        const civ = await resp.json();
                         window.location.href = '/civilization/' + civ.id;
                     } else {
-                        const err = await res.text();
+                        const err = await resp.text();
                         alert('Failed to found civilization: ' + err);
                     }
                 } catch (err) {

@@ -9,52 +9,70 @@ import io.github.opencivilizationplatform.modules.participation.application.Inte
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.production.application.FacilityService;
 import io.github.opencivilizationplatform.modules.resources.application.ResourceService;
-import io.github.opencivilizationplatform.modules.simulation.application.CortexEngineService;
+import io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService;
 import io.github.opencivilizationplatform.modules.social.application.SocialStabilityService;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
+import io.github.opencivilizationplatform.modules.civilization.application.CivilizationService;
+import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
+import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
+import io.github.opencivilizationplatform.modules.technology.application.TechnologyService;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.web.context.WebApplicationContext;
-
 import java.util.ArrayList;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
-@SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class PageControllerTest {
 
     private MockMvc mockMvc;
-
-    @Autowired
-    private WebApplicationContext webApplicationContext;
-
-    @MockitoBean private BiosphereMetricService biosphereMetricService;
-    @MockitoBean private ResourceService resourceService;
-    @MockitoBean private NeedService needService;
-    @MockitoBean private CortexEngineService cortexEngineService;
-    @MockitoBean private RuleService ruleService;
-    @MockitoBean private InteractionService interactionService;
-    @MockitoBean private FacilityService facilityService;
-    @MockitoBean private ShipmentService shipmentService;
-    @MockitoBean private ContributionService contributionService;
-    @MockitoBean private SocialStabilityService socialStabilityService;
-    @MockitoBean private BalanceService balanceService;
-    @MockitoBean private AutomationUnitService automationService;
+    private BiosphereMetricService biosphereMetricService;
+    private NeedService needService;
+    private ResourceService resourceService;
+    private BalanceService balanceService;
+    private FacilityService facilityService;
+    private ShipmentService shipmentService;
+    private InteractionService interactionService;
+    private RuleService ruleService;
+    private ContributionService contributionService;
+    private SimulationEngineService simulationEngineService;
+    private SocialStabilityService socialStabilityService;
+    private AutomationUnitService automationService;
+    private CivilizationService civilizationService;
+    private ResourceRegionService regionService;
+    private VoxtexMeshService voxtexService;
+    private TechnologyService technologyService;
 
     @BeforeEach
     void setUp() {
-        this.mockMvc = MockMvcBuilders.webAppContextSetup(webApplicationContext).build();
+        biosphereMetricService = mock(BiosphereMetricService.class);
+        needService = mock(NeedService.class);
+        resourceService = mock(ResourceService.class);
+        balanceService = mock(BalanceService.class);
+        facilityService = mock(FacilityService.class);
+        shipmentService = mock(ShipmentService.class);
+        interactionService = mock(InteractionService.class);
+        ruleService = mock(RuleService.class);
+        contributionService = mock(ContributionService.class);
+        simulationEngineService = mock(SimulationEngineService.class);
+        socialStabilityService = mock(SocialStabilityService.class);
+        automationService = mock(AutomationUnitService.class);
+        civilizationService = mock(CivilizationService.class);
+        regionService = mock(ResourceRegionService.class);
+        voxtexService = mock(VoxtexMeshService.class);
+        technologyService = mock(TechnologyService.class);
+        mockMvc = standaloneSetup(new PageController(biosphereMetricService, needService, resourceService, balanceService, facilityService, shipmentService, interactionService, ruleService, contributionService, simulationEngineService, socialStabilityService, automationService, civilizationService, regionService, voxtexService, technologyService)).build();
     }
+
 
     @Test
     void testDashboard() throws Exception {

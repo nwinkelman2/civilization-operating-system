@@ -2,25 +2,33 @@ package io.github.opencivilizationplatform.modules.contribution.api;
 
 import io.github.opencivilizationplatform.modules.contribution.application.ContributionService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
-@WebMvcTest(ContributionController.class)
+@ExtendWith(MockitoExtension.class)
 class ContributionControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
     private ContributionService contributionService;
+
+    @BeforeEach
+    void setUp() {
+        contributionService = mock(ContributionService.class);
+        mockMvc = standaloneSetup(new ContributionController(contributionService))
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .build();
+    }
+
 
     @Test
     void testGetAllContributions() throws Exception {
@@ -46,9 +54,10 @@ class ContributionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                    "citizenId": "C-001",
-                                    "projectId": "P-001",
-                                    "hours": 10
+                                    "citizen": {"id": 1},
+                                    "project": {"id": 1},
+                                    "role": "Engineer",
+                                    "impactScore": 10.0
                                 }
                                 """))
                 .andExpect(status().isOk());

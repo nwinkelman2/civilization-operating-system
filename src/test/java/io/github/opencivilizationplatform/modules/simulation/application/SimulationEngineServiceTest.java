@@ -21,7 +21,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-class CortexEngineServiceTest {
+class SimulationEngineServiceTest {
 
     @Mock
     private RuleService ruleService;
@@ -33,7 +33,7 @@ class CortexEngineServiceTest {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @InjectMocks
-    private CortexEngineService cortexEngineService;
+    private SimulationEngineService simulationEngineService;
 
     @BeforeEach
     void setUp() {
@@ -44,9 +44,9 @@ class CortexEngineServiceTest {
     void testRunSimulationCycleNoRules() {
         when(ruleService.getValidatedRules()).thenReturn(new ArrayList<>());
         
-        cortexEngineService.runSimulationCycle();
+        simulationEngineService.runSimulationCycle();
         
-        SimulationStatusResponse status = cortexEngineService.getStatus();
+        SimulationStatusResponse status = simulationEngineService.getStatus();
         assertEquals(0, status.getActiveRulesCount());
         verify(balanceService, never()).getBalanceReport();
     }
@@ -65,9 +65,9 @@ class CortexEngineServiceTest {
         List<BalanceDTO> balance = List.of(balanceItem);
         when(balanceService.getBalanceReport()).thenReturn(balance);
         
-        cortexEngineService.runSimulationCycle();
+        simulationEngineService.runSimulationCycle();
         
-        SimulationStatusResponse status = cortexEngineService.getStatus();
+        SimulationStatusResponse status = simulationEngineService.getStatus();
         assertEquals(1, status.getActiveRulesCount());
         assertTrue(status.getLastDecision().contains("WATER deficiency detected (75.0%)"));
     }
@@ -80,9 +80,9 @@ class CortexEngineServiceTest {
         
         BiosphereCriticalEvent event = new BiosphereCriticalEvent(this, metric);
         
-        cortexEngineService.onBiosphereCritical(event);
+        simulationEngineService.onBiosphereCritical(event);
         
-        SimulationStatusResponse status = cortexEngineService.getStatus();
+        SimulationStatusResponse status = simulationEngineService.getStatus();
         assertTrue(status.getLastDecision().contains("AUTO-REACTION: Biosphere Redline! Target: CO2_LEVEL"));
     }
 }

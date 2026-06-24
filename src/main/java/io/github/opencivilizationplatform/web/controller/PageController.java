@@ -11,7 +11,7 @@ import io.github.opencivilizationplatform.modules.logistics.application.Shipment
 import io.github.opencivilizationplatform.modules.participation.application.InteractionService;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.contribution.application.ContributionService;
-import io.github.opencivilizationplatform.modules.simulation.application.CortexEngineService;
+import io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService;
 import io.github.opencivilizationplatform.modules.execution.application.AutomationUnitService;
 import io.github.opencivilizationplatform.modules.social.application.SocialStabilityService;
 import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
@@ -39,7 +39,7 @@ public class PageController {
     private final InteractionService interactionService;
     private final RuleService ruleService;
     private final ContributionService contributionService;
-    private final CortexEngineService cortexService;
+    private final SimulationEngineService simulationEngineService;
     private final SocialStabilityService socialService;
     private final AutomationUnitService automationService;
     private final CivilizationService civilizationService;
@@ -56,7 +56,7 @@ public class PageController {
                           InteractionService interactionService,
                           RuleService ruleService,
                           ContributionService contributionService,
-                          CortexEngineService cortexService,
+                          SimulationEngineService simulationEngineService,
                           SocialStabilityService socialService,
                           AutomationUnitService automationService,
                           CivilizationService civilizationService,
@@ -72,7 +72,7 @@ public class PageController {
         this.interactionService = interactionService;
         this.ruleService = ruleService;
         this.contributionService = contributionService;
-        this.cortexService = cortexService;
+        this.simulationEngineService = simulationEngineService;
         this.socialService = socialService;
         this.automationService = automationService;
         this.civilizationService = civilizationService;
@@ -91,7 +91,7 @@ public class PageController {
     @GetMapping("/")
     public String dashboard(Model model) {
         model.addAttribute("balance", balanceService.getBalanceReport());
-        model.addAttribute("simulationStatus", cortexService.getStatus());
+        model.addAttribute("simulationStatus", simulationEngineService.getStatus());
         model.addAttribute("resources", resourceService.getAllResources(Pageable.unpaged()).getContent());
         return render(model, "dashboard", "Dashboard", "dashboard");
     }
@@ -161,7 +161,7 @@ public class PageController {
 
     @GetMapping("/simulation")
     public String simulation(Model model) {
-        model.addAttribute("status", cortexService.getStatus());
+        model.addAttribute("status", simulationEngineService.getStatus());
         model.addAttribute("balance", balanceService.getBalanceReport());
         model.addAttribute("automations", automationService.getAllUnits(Pageable.unpaged()).getContent());
         return render(model, "simulation", "Cortex Engine", "simulation");
@@ -169,7 +169,7 @@ public class PageController {
 
     @GetMapping("/simulation/fragments/cortex-telemetry")
     public String cortexTelemetry(Model model) {
-        model.addAttribute("status", cortexService.getStatus());
+        model.addAttribute("status", simulationEngineService.getStatus());
         model.addAttribute("balance", balanceService.getBalanceReport());
         model.addAttribute("automations", automationService.getAllUnits(Pageable.unpaged()).getContent());
         return "simulation :: cortex-telemetry";
@@ -177,7 +177,7 @@ public class PageController {
 
     @GetMapping("/simulation/fragments/decision-log")
     public String decisionLog(Model model) {
-        model.addAttribute("status", cortexService.getStatus());
+        model.addAttribute("status", simulationEngineService.getStatus());
         return "simulation :: decision-log";
     }
 
@@ -245,6 +245,11 @@ public class PageController {
         return render(model, "civilization", "Civilization: " + civ.getName(), "civilization");
     }
 
+    @GetMapping("/leaderboard")
+    public String leaderboard() {
+        return "leaderboard";
+    }
+
     @GetMapping("/voxtex")
     public String voxtex(Model model) {
         model.addAttribute("status", voxtexService.getNetworkStatus());
@@ -260,5 +265,25 @@ public class PageController {
             )
         );
         return render(model, "voxtex", "Voxtex Mesh", "voxtex");
+    }
+
+    @GetMapping("/trade")
+    public String trade(Model model) {
+        return render(model, "trade", "Trade Network", "trade");
+    }
+
+    @GetMapping("/events")
+    public String events(Model model) {
+        return render(model, "events", "Game Events", "events");
+    }
+
+    @GetMapping("/tech-tree")
+    public String techTree(Model model) {
+        return render(model, "tech-tree", "Tech Tree", "tech-tree");
+    }
+
+    @GetMapping("/civilizations")
+    public String civilizations(Model model) {
+        return render(model, "civilizations", "Civilizations", "civilizations");
     }
 }

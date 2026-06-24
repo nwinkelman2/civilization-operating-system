@@ -3,6 +3,7 @@ package io.github.opencivilizationplatform.config;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
 import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
 import io.github.opencivilizationplatform.modules.voxtex.infrastructure.VoxtexNodeRepository;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 @Testcontainers
 @ActiveProfiles("test")
+@Disabled("Requires Docker/Testcontainers")
 class PostgresIntegrationTest {
 
     @Container

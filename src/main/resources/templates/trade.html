@@ -1,0 +1,171 @@
+<div th:fragment="content">
+    <header class="page-header">
+        <h1 class="glitch-text" data-text="TRADE NETWORK">
+            <span class="glitch-scan">⟐</span> TRADE NETWORK <span class="glitch-scan">⟐</span>
+        </h1>
+        <p class="subtitle">Propose and manage trade agreements between civilizations</p>
+    </header>
+
+    <div class="trade-layout">
+        <div class="trade-section">
+            <h2>Propose Trade</h2>
+            <form id="tradeForm" class="trade-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Your Civilization ID</label>
+                        <input type="number" name="fromCivId" class="form-input" required placeholder="e.g. 1">
+                    </div>
+                    <div class="form-group">
+                        <label>Target Civilization ID</label>
+                        <input type="number" name="toCivId" class="form-input" required placeholder="e.g. 2">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Resource Type</label>
+                        <select name="resourceType" class="form-input" required>
+                            <option value="FOOD">Food</option>
+                            <option value="WATER">Water</option>
+                            <option value="MINERALS">Minerals</option>
+                            <option value="ENERGY">Energy</option>
+                            <option value="HOUSING">Housing</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" name="quantity" class="form-input" required min="1" placeholder="100">
+                    </div>
+                </div>
+                <button type="submit" class="btn-primary">PROPOSE TRADE</button>
+            </form>
+        </div>
+
+        <div class="trade-section">
+            <h2>Active Trades</h2>
+            <div id="tradeList">
+                <p class="loading-text">Loading trades...</p>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        async function loadTrades() {
+            try {
+                const resp = await fetch('/api/v1/trade');
+                if (!resp.ok) {
+                    document.getElementById('tradeList').innerHTML = '<p class="empty-text">No trades found. <a href="/play">Found a civilization</a> to start trading.</p>';
+                    return;
+                }
+                const trades = await resp.json();
+                const container = document.getElementById('tradeList');
+
+                if (!trades || trades.length === 0) {
+                    container.innerHTML = '<p class="empty-text">No active trades. Propose one above!</p>';
+                    return;
+                }
+
+                container.innerHTML = trades.map(t => `
+                    <div class="trade-card">
+                        <div class="trade-header">
+                            <span class="trade-id">#${t.id}</span>
+                            <span class="trade-status status-${(t.status || 'PROPOSED').toLowerCase()}">${t.status || 'PROPOSED'}</span>
+                        </div>
+                        <div class="trade-details">
+                            <span>Civ ${t.fromCivilizationId} → Civ ${t.toCivilizationId}</span>
+                            <span class="trade-resource">${t.resourceType || 'N/A'}: ${t.quantity || 0}</span>
+                        </div>
+                        <div class="trade-actions">
+                            ${(t.status === 'PROPOSED' || t.status === 'PENDING') ? `
+                                <button class="btn-sm btn-accept" onclick="acceptTrade(${t.id})">Accept</button>
+                                <button class="btn-sm btn-reject" onclick="rejectTrade(${t.id})">Reject</button>
+                            ` : ''}
+                            ${t.status === 'ACTIVE' ? `
+                                <button class="btn-sm btn-complete" onclick="completeTrade(${t.id})">Complete</button>
+                                <button class="btn-sm btn-cancel" onclick="cancelTrade(${t.id})">Cancel</button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                document.getElementById('tradeList').innerHTML = '<p class="error-text">Failed to load trades. Is the server running?</p>';
+            }
+        }
+
+        async function acceptTrade(id) {
+            try { await fetch('/api/v1/trade/' + id + '/accept', { method: 'POST' }); loadTrades(); }
+            catch(e) { alert('Failed: ' + e); }
+        }
+
+        async function rejectTrade(id) {
+            try { await fetch('/api/v1/trade/' + id + '/reject', { method: 'POST' }); loadTrades(); }
+            catch(e) { alert('Failed: ' + e); }
+        }
+
+        async function completeTrade(id) {
+            try { await fetch('/api/v1/trade/' + id + '/complete', { method: 'POST' }); loadTrades(); }
+            catch(e) { alert('Failed: ' + e); }
+        }
+
+        async function cancelTrade(id) {
+            try { await fetch('/api/v1/trade/' + id + '/cancel', { method: 'POST' }); loadTrades(); }
+            catch(e) { alert('Failed: ' + e); }
+        }
+
+        document.getElementById('tradeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(e.target));
+            try {
+                const resp = await fetch('/api/v1/trade', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (resp.ok) {
+                    e.target.reset();
+                    loadTrades();
+                } else {
+                    alert('Failed to propose trade: ' + (await resp.text()));
+                }
+            } catch(err) {
+                alert('Error: ' + err);
+            }
+        });
+
+        loadTrades();
+        setInterval(loadTrades, 15000);
+    </script>
+
+    <style>
+        .trade-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-top: 20px; }
+        .trade-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.1);
+            border-radius: 8px; padding: 20px; }
+        .trade-section h2 { color: var(--accent-cyan); font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem; letter-spacing: 2px; margin-bottom: 20px; }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .trade-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px; padding: 14px; margin-bottom: 10px; }
+        .trade-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .trade-id { color: var(--text-dim); font-size: 0.75rem; }
+        .trade-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; }
+        .status-proposed { background: rgba(255,215,0,0.15); color: #ffd700; }
+        .status-active { background: rgba(0,255,136,0.15); color: #00ff88; }
+        .status-completed { background: rgba(0,242,255,0.15); color: #00f2ff; }
+        .status-cancelled, .status-rejected { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+        .trade-details { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 10px; }
+        .trade-resource { color: var(--accent-cyan); font-weight: bold; }
+        .trade-actions { display: flex; gap: 6px; }
+        .btn-sm { padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer;
+            font-family: 'Outfit', sans-serif; font-size: 0.7rem; letter-spacing: 1px; }
+        .btn-accept { background: rgba(0,255,136,0.2); color: #00ff88; }
+        .btn-reject { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+        .btn-complete { background: rgba(0,242,255,0.2); color: #00f2ff; }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: var(--text-dim); }
+        .loading-text, .empty-text, .error-text { text-align: center; padding: 40px; color: var(--text-dim); }
+        .error-text { color: #ff6b6b; }
+        @media (max-width: 768px) {
+            .trade-layout { grid-template-columns: 1fr; }
+            .form-row { flex-direction: column; }
+        }
+    </style>
+</div>

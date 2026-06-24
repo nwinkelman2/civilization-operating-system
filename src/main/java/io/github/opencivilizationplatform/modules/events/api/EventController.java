@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.events.api;
 
 import io.github.opencivilizationplatform.modules.events.application.EventService;
+import io.github.opencivilizationplatform.modules.events.domain.EventSeverity;
+import io.github.opencivilizationplatform.modules.events.domain.EventType;
 import io.github.opencivilizationplatform.modules.events.domain.GameEvent;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

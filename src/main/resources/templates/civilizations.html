@@ -1,0 +1,72 @@
+<div th:fragment="content">
+    <header class="page-header">
+        <h1 class="glitch-text" data-text="CIVILIZATIONS">
+            <span class="glitch-scan">⟐</span> CIVILIZATIONS <span class="glitch-scan">⟐</span>
+        </h1>
+        <p class="subtitle">All founded civilizations in the world</p>
+    </header>
+
+    <div id="civList" class="civ-grid">
+        <p class="loading-text">Loading civilizations...</p>
+    </div>
+
+    <script th:inline="javascript">
+        async function loadCivilizations() {
+            try {
+                const resp = await fetch('/api/v1/civilizations');
+                const container = document.getElementById('civList');
+                if (!resp.ok) {
+                    container.innerHTML = '<p class="empty-text">No civilizations founded yet. <a href="/play">Be the first!</a></p>';
+                    return;
+                }
+                const page = await resp.json();
+                const civs = page.content || page;
+
+                if (!civs || civs.length === 0) {
+                    container.innerHTML = '<p class="empty-text">No civilizations founded yet. <a href="/play">Be the first!</a></p>';
+                    return;
+                }
+
+                container.innerHTML = civs.map(c => `
+                    <a href="/civilization/${c.id}" class="civ-card-link">
+                        <div class="civ-card">
+                            <div class="civ-name">${c.name}</div>
+                            <div class="civ-stats">
+                                <span>Population: ${c.population || 0}</span>
+                                <span>Reputation: ${c.reputationScore != null ? c.reputationScore.toFixed(1) : '50.0'}</span>
+                            </div>
+                            <div class="civ-meta">
+                                <span class="civ-status">${c.status || 'EMERGING'}</span>
+                                <span class="civ-scale">${c.scale || 'LOCAL'}</span>
+                            </div>
+                        </div>
+                    </a>
+                `).join('');
+            } catch(e) {
+                document.getElementById('civList').innerHTML = '<p class="error-text">Failed to load civilizations: ' + e + '</p>';
+            }
+        }
+
+        loadCivilizations();
+        setInterval(loadCivilizations, 30000);
+    </script>
+
+    <style>
+        .civ-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-top: 20px; }
+        .civ-card-link { text-decoration: none; }
+        .civ-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px; padding: 20px; transition: border-color 0.3s, background 0.3s; }
+        .civ-card:hover { border-color: rgba(0,242,255,0.3); background: rgba(0,242,255,0.03); }
+        .civ-name { color: var(--accent-cyan); font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem; margin-bottom: 10px; }
+        .civ-stats { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim); margin-bottom: 10px; }
+        .civ-meta { display: flex; gap: 8px; }
+        .civ-status { font-size: 0.65rem; padding: 2px 8px; background: rgba(0,242,255,0.1);
+            color: var(--accent-cyan); border-radius: 4px; }
+        .civ-scale { font-size: 0.65rem; padding: 2px 8px; background: rgba(255,255,255,0.05);
+            color: var(--text-dim); border-radius: 4px; }
+        @media (max-width: 480px) {
+            .civ-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</div>

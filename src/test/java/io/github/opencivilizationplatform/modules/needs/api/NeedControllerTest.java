@@ -2,25 +2,33 @@ package io.github.opencivilizationplatform.modules.needs.api;
 
 import io.github.opencivilizationplatform.modules.needs.application.NeedService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
-@WebMvcTest(NeedController.class)
+@ExtendWith(MockitoExtension.class)
 class NeedControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
     private NeedService needService;
+
+    @BeforeEach
+    void setUp() {
+        needService = mock(NeedService.class);
+        mockMvc = standaloneSetup(new NeedController(needService))
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .build();
+    }
+
 
     @Test
     void testGetAllNeeds() throws Exception {
@@ -34,9 +42,13 @@ class NeedControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
+                                    "category": "FOOD",
                                     "region": "Sector-7",
-                                    "resource": "Water",
-                                    "priority": "HIGH"
+                                    "description": "Need clean water supply",
+                                    "quantity": 500.0,
+                                    "unit": "Liters",
+                                    "priority": 5,
+                                    "status": "UNMET"
                                 }
                                 """))
                 .andExpect(status().isOk());

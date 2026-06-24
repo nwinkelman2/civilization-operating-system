@@ -7,6 +7,7 @@ import io.github.opencivilizationplatform.modules.contribution.domain.ProjectSta
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ContributionRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.ProjectRepository;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;

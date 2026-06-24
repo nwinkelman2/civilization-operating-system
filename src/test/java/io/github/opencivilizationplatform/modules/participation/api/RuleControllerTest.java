@@ -2,25 +2,33 @@ package io.github.opencivilizationplatform.modules.participation.api;
 
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
-@WebMvcTest(RuleController.class)
+@ExtendWith(MockitoExtension.class)
 class RuleControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
     private RuleService ruleService;
+
+    @BeforeEach
+    void setUp() {
+        ruleService = mock(RuleService.class);
+        mockMvc = standaloneSetup(new RuleController(ruleService))
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .build();
+    }
+
 
     @Test
     void testGetAllRules() throws Exception {
@@ -35,7 +43,10 @@ class RuleControllerTest {
                         .content("""
                                 {
                                     "title": "Limit resource usage",
-                                    "description": "Cap water usage at 500L/day"
+                                    "description": "Cap water usage at 500L/day",
+                                    "logicCode": "water_cap",
+                                    "status": "PROPOSED",
+                                    "validationStatus": "PENDING"
                                 }
                                 """))
                 .andExpect(status().isOk());

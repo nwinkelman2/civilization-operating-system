@@ -1,0 +1,102 @@
+<div th:fragment="content">
+    <header class="page-header">
+        <h1 class="glitch-text" data-text="GAME EVENTS">
+            <span class="glitch-scan">⟐</span> GAME EVENTS <span class="glitch-scan">⟐</span>
+        </h1>
+        <p class="subtitle">Historical record of events affecting civilizations</p>
+    </header>
+
+    <div class="events-controls">
+        <div class="form-group">
+            <label>Civilization ID</label>
+            <input type="number" id="civIdInput" class="form-input" placeholder="Enter civilization ID..." min="1" style="width:200px;">
+        </div>
+        <button onclick="loadEvents()" class="btn-primary">LOAD EVENTS</button>
+    </div>
+
+    <div id="eventsContainer" class="events-list">
+        <p class="loading-text">Enter a civilization ID and click LOAD EVENTS</p>
+    </div>
+
+    <script th:inline="javascript">
+        async function loadEvents() {
+            const civId = document.getElementById('civIdInput').value;
+            if (!civId) { alert('Please enter a civilization ID'); return; }
+
+            const container = document.getElementById('eventsContainer');
+            container.innerHTML = '<p class="loading-text">Loading events...</p>';
+
+            try {
+                const resp = await fetch('/api/v1/events/' + civId);
+                if (!resp.ok) {
+                    container.innerHTML = '<p class="empty-text">No events found for this civilization.</p>';
+                    return;
+                }
+                const events = await resp.json();
+
+                if (!events || events.length === 0) {
+                    container.innerHTML = '<p class="empty-text">No events recorded yet. Events trigger every 30 seconds.</p>';
+                    return;
+                }
+
+                container.innerHTML = events.map(e => `
+                    <div class="event-card severity-${(e.severity || 'minor').toLowerCase()}">
+                        <div class="event-header">
+                            <span class="event-type type-${(e.type || '').toLowerCase()}">${e.type || 'EVENT'}</span>
+                            <span class="event-severity">${e.severity || 'MINOR'}</span>
+                            <span class="event-date">${e.createdAt ? new Date(e.createdAt).toLocaleString() : 'recent'}</span>
+                        </div>
+                        <h3 class="event-title">${e.title}</h3>
+                        <p class="event-desc">${e.description || ''}</p>
+                        ${e.effects ? `<div class="event-effects">${formatEffects(e.effects)}</div>` : ''}
+                    </div>
+                `).join('');
+            } catch(e) {
+                container.innerHTML = '<p class="error-text">Failed to load events: ' + e + '</p>';
+            }
+        }
+
+        function formatEffects(effects) {
+            try {
+                const obj = typeof effects === 'string' ? JSON.parse(effects) : effects;
+                return Object.entries(obj).map(([k, v]) =>
+                    `<span class="effect-badge">${k}: ${v > 0 ? '+' : ''}${v}</span>`
+                ).join(' ');
+            } catch {
+                return '<span class="effect-badge">' + effects + '</span>';
+            }
+        }
+
+        document.getElementById('civIdInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') loadEvents();
+        });
+    </script>
+
+    <style>
+        .events-controls { display: flex; gap: 12px; align-items: flex-end; margin: 20px 0; }
+        .events-list { display: flex; flex-direction: column; gap: 12px; }
+        .event-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px; padding: 16px; border-left: 3px solid var(--text-dim); }
+        .event-card.severity-minor { border-left-color: #4caf50; }
+        .event-card.severity-moderate { border-left-color: #ff9800; }
+        .event-card.severity-major { border-left-color: #f44336; }
+        .event-card.severity-catastrophic { border-left-color: #9c27b0; }
+        .event-header { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+        .event-type { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px;
+            background: rgba(0,242,255,0.1); color: var(--accent-cyan); letter-spacing: 1px; }
+        .event-severity { font-size: 0.65rem; padding: 2px 8px; border-radius: 4px;
+            background: rgba(255,255,255,0.05); color: var(--text-dim); }
+        .event-date { margin-left: auto; font-size: 0.7rem; color: var(--text-dim); }
+        .event-title { color: var(--text); font-family: 'Outfit', sans-serif; font-size: 1rem; margin-bottom: 6px; }
+        .event-desc { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 8px; }
+        .event-effects { display: flex; gap: 6px; flex-wrap: wrap; }
+        .effect-badge { font-size: 0.7rem; padding: 2px 8px; background: rgba(0,242,255,0.05);
+            border: 1px solid rgba(0,242,255,0.15); border-radius: 4px; color: var(--accent-cyan); }
+        .loading-text, .empty-text, .error-text { text-align: center; padding: 40px; color: var(--text-dim); }
+        .error-text { color: #ff6b6b; }
+        @media (max-width: 768px) {
+            .events-controls { flex-direction: column; align-items: stretch; }
+            #civIdInput { width: 100% !important; }
+        }
+    </style>
+</div>

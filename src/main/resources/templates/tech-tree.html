@@ -1,0 +1,136 @@
+<div th:fragment="content">
+    <header class="page-header">
+        <h1 class="glitch-text" data-text="TECH TREE">
+            <span class="glitch-scan">⟐</span> TECH TREE <span class="glitch-scan">⟐</span>
+        </h1>
+        <p class="subtitle">Research technologies to unlock bonuses and advance your civilization</p>
+    </header>
+
+    <div class="tech-controls">
+        <div class="form-group">
+            <label>Civilization ID</label>
+            <input type="number" id="techCivId" class="form-input" placeholder="Enter civilization ID..." min="1" style="width:200px;">
+        </div>
+        <button onclick="loadTechTree()" class="btn-primary">LOAD TECH TREE</button>
+    </div>
+
+    <div id="techContainer">
+        <p class="loading-text">Enter a civilization ID and click LOAD TECH TREE</p>
+    </div>
+
+    <script th:inline="javascript">
+        async function loadTechTree() {
+            const civId = document.getElementById('techCivId').value;
+            if (!civId) { alert('Please enter a civilization ID'); return; }
+
+            const container = document.getElementById('techContainer');
+            container.innerHTML = '<p class="loading-text">Loading tech tree...</p>';
+
+            try {
+                const resp = await fetch('/api/v1/tech-tree/' + civId);
+                if (!resp.ok) {
+                    container.innerHTML = '<p class="empty-text">No tech tree found for this civilization.</p>';
+                    return;
+                }
+                const techs = await resp.json();
+
+                if (!techs || techs.length === 0) {
+                    container.innerHTML = '<p class="empty-text">No technologies available yet.</p>';
+                    return;
+                }
+
+                const tiers = [...new Set(techs.map(t => t.tier))].sort((a,b) => a-b);
+                container.innerHTML = tiers.map(tier => `
+                    <div class="tech-tier">
+                        <h3 class="tier-title">TIER ${tier}</h3>
+                        <div class="tech-grid">
+                            ${techs.filter(t => t.tier === tier).map(t => `
+                                <div class="tech-card status-${(t.status || 'available').toLowerCase()}">
+                                    <div class="tech-header">
+                                        <span class="tech-category">${t.category || ''}</span>
+                                        <span class="tech-status">${t.status || 'AVAILABLE'}</span>
+                                    </div>
+                                    <h4 class="tech-name">${t.name}</h4>
+                                    <div class="tech-cost">Cost: ${t.researchCost || 0}</div>
+                                    ${t.researchProgress != null ? `
+                                        <div class="tech-progress">
+                                            <div class="progress-bar">
+                                                <div class="progress-fill" style="width:${Math.min(100, (t.researchProgress / t.researchCost) * 100)}%"></div>
+                                            </div>
+                                            <span>${t.researchProgress}/${t.researchCost}</span>
+                                        </div>
+                                    ` : ''}
+                                    ${t.resourceBonus ? `
+                                        <div class="tech-bonus">+${t.bonusAmount || ''} ${t.resourceBonus}</div>
+                                    ` : ''}
+                                    ${t.status === 'AVAILABLE' ? `
+                                        <button class="btn-research" onclick="startResearch(${civId}, ${t.id})">RESEARCH</button>
+                                    ` : ''}
+                                    ${t.status === 'RESEARCHING' ? `
+                                        <button class="btn-advance" onclick="advanceResearch(${civId}, ${t.id})">ADVANCE +10</button>
+                                    ` : ''}
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } catch(e) {
+                container.innerHTML = '<p class="error-text">Failed to load tech tree: ' + e + '</p>';
+            }
+        }
+
+        async function startResearch(civId, techId) {
+            try {
+                const resp = await fetch('/api/v1/tech-tree/' + civId + '/research/' + techId, { method: 'POST' });
+                if (resp.ok) { loadTechTree(); }
+                else { alert('Failed: ' + (await resp.text())); }
+            } catch(e) { alert('Error: ' + e); }
+        }
+
+        async function advanceResearch(civId, techId) {
+            try {
+                const resp = await fetch('/api/v1/tech-tree/' + civId + '/advance/' + techId, { method: 'POST' });
+                if (resp.ok) { loadTechTree(); }
+                else { alert('Failed: ' + (await resp.text())); }
+            } catch(e) { alert('Error: ' + e); }
+        }
+    </script>
+
+    <style>
+        .tech-controls { display: flex; gap: 12px; align-items: flex-end; margin: 20px 0; }
+        .tech-tier { margin-bottom: 32px; }
+        .tier-title { color: var(--accent-cyan); font-family: 'Outfit', sans-serif;
+            font-size: 0.85rem; letter-spacing: 3px; margin-bottom: 16px; padding-bottom: 8px;
+            border-bottom: 1px solid rgba(0,242,255,0.1); }
+        .tech-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .tech-card { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 6px; }
+        .tech-card.status-completed { border-color: rgba(0,255,136,0.3); }
+        .tech-card.status-completed .tech-status { color: #00ff88; }
+        .tech-card.status-researching { border-color: rgba(0,242,255,0.3); }
+        .tech-card.status-researching .tech-status { color: #00f2ff; }
+        .tech-card.status-locked { opacity: 0.4; }
+        .tech-header { display: flex; justify-content: space-between; align-items: center; }
+        .tech-category { font-size: 0.6rem; padding: 2px 6px; background: rgba(0,242,255,0.1);
+            color: var(--accent-cyan); border-radius: 3px; letter-spacing: 1px; }
+        .tech-status { font-size: 0.6rem; color: var(--text-dim); }
+        .tech-name { color: var(--text); font-family: 'Outfit', sans-serif; font-size: 0.9rem; }
+        .tech-cost { font-size: 0.75rem; color: var(--text-dim); }
+        .tech-progress { display: flex; align-items: center; gap: 8px; font-size: 0.7rem; color: var(--text-dim); }
+        .progress-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--accent-cyan); border-radius: 2px; transition: width 0.5s; }
+        .tech-bonus { font-size: 0.7rem; color: #00ff88; }
+        .btn-research, .btn-advance { margin-top: auto; padding: 6px; border: none; border-radius: 4px;
+            cursor: pointer; font-family: 'Outfit', sans-serif; font-size: 0.7rem; letter-spacing: 1px; }
+        .btn-research { background: linear-gradient(135deg, #00f2ff, #006aff); color: #000; }
+        .btn-advance { background: rgba(0,242,255,0.15); color: var(--accent-cyan); }
+        @media (max-width: 768px) {
+            .tech-controls { flex-direction: column; align-items: stretch; }
+            #techCivId { width: 100% !important; }
+            .tech-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .tech-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</div>

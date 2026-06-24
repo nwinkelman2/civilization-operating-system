@@ -55,6 +55,21 @@ public class Civilization {
     @JoinColumn(name = "home_region_id")
     private ResourceRegion homeRegion;
 
+    @Column(nullable = false)
+    private Double food = 100.0;
+
+    @Column(nullable = false)
+    private Double water = 100.0;
+
+    @Column(nullable = false)
+    private Double minerals = 50.0;
+
+    @Column(nullable = false)
+    private Double energy = 75.0;
+
+    @Column(nullable = false)
+    private Double housing = 50.0;
+
     public Civilization() {}
 
     // getters + setters for ALL fields
@@ -80,6 +95,17 @@ public class Civilization {
     public void setPopulation(Integer population) { this.population = population; }
     public ResourceRegion getHomeRegion() { return homeRegion; }
     public void setHomeRegion(ResourceRegion homeRegion) { this.homeRegion = homeRegion; }
+    public Long getHomeRegionId() { return homeRegion != null ? homeRegion.getId() : null; }
+    public Double getFood() { return food; }
+    public void setFood(Double food) { this.food = food; }
+    public Double getWater() { return water; }
+    public void setWater(Double water) { this.water = water; }
+    public Double getMinerals() { return minerals; }
+    public void setMinerals(Double minerals) { this.minerals = minerals; }
+    public Double getEnergy() { return energy; }
+    public void setEnergy(Double energy) { this.energy = energy; }
+    public Double getHousing() { return housing; }
+    public void setHousing(Double housing) { this.housing = housing; }
 
     @PrePersist
     protected void onCreate() {

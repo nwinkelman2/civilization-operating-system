@@ -46,14 +46,15 @@
         <!-- Region Resources -->
         <div class="civ-panel" th:if="${region != null}">
             <h2 class="panel-title">HOME REGION RESOURCES</h2>
-            <div class="civ-resource-grid">
-                <div class="civ-res-item" th:each="r : ${resourceList}">
-                    <span class="civ-res-label" th:text="${r.label}">FOOD</span>
-                    <div class="civ-res-track">
-                        <div class="civ-res-fill" th:style="'width:' + ${r.value} + '%'"
-                            th:styleappend="'background:' + ${r.color}"></div>
+            <div class="civ-resources">
+                <div class="resource-bars" th:each="res : ${resourceList}">
+                    <div class="resource-bar-item" th:style="'--bar-color: ' + ${res.color}">
+                        <span class="rb-label" th:text="${res.label}">RESOURCE</span>
+                        <div class="rb-track">
+                            <div class="rb-fill" th:style="'width: ' + ${res.value} + '%'"></div>
+                        </div>
+                        <span class="rb-value" th:text="${res.value} + '%'">0%</span>
                     </div>
-                    <span class="civ-res-pct" th:text="${r.value} + '%'">0%</span>
                 </div>
             </div>
         </div>
@@ -108,8 +109,17 @@
                 View Full Tech Tree →
             </a>
         </div>
+
+        <!-- Quick Links -->
+        <div class="civ-quick-links">
+            <a th:href="@{|/trade|}" class="ql-link">Trade Network</a>
+            <a th:href="@{|/events|}" class="ql-link">Game Events</a>
+            <a th:href="@{|/tech-tree|}" class="ql-link">Tech Tree</a>
+            <a th:href="@{|/leaderboard|}" class="ql-link">Leaderboard</a>
+        </div>
     </div>
 
+    <script src="/js/auth.js"></script>
     <script>
         function showAddNodeModal(civId) {
             const modal = document.createElement('div');
@@ -217,5 +227,19 @@
         .tech-status { display: block; font-size: 0.6rem; color: var(--text-dim); }
         .tech-progress { display: block; font-size: 0.6rem; color: var(--accent-cyan); margin-top: 4px; }
         @media (max-width: 768px) { .civ-grid-2col { grid-template-columns: 1fr; } }
+        .civ-resources { margin: 20px 0; }
+        .civ-resources h3 { color: var(--accent-cyan); font-family: 'Outfit', sans-serif;
+            font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 12px; }
+        .resource-bar-item { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .rb-label { width: 80px; font-size: 0.7rem; color: var(--text-dim); letter-spacing: 1px; }
+        .rb-track { flex: 1; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; }
+        .rb-fill { height: 100%; border-radius: 3px; transition: width 0.5s;
+            background: var(--bar-color, var(--accent-cyan)); }
+        .rb-value { width: 40px; font-size: 0.7rem; text-align: right; color: var(--text); }
+        .civ-quick-links { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 20px; }
+        .ql-link { padding: 8px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(0,242,255,0.1);
+            border-radius: 6px; color: var(--accent-cyan); text-decoration: none; font-size: 0.75rem;
+            letter-spacing: 1px; transition: background 0.3s; }
+        .ql-link:hover { background: rgba(0,242,255,0.1); }
     </style>
 </div>

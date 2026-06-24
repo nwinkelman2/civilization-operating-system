@@ -23,9 +23,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
-public class CortexEngineService {
+public class SimulationEngineService {
 
-    private static final Logger log = LoggerFactory.getLogger(CortexEngineService.class);
+    private static final Logger log = LoggerFactory.getLogger(SimulationEngineService.class);
     private static final int MAX_DECISION_HISTORY = 15;
 
     private final RuleService ruleService;
@@ -38,7 +38,7 @@ public class CortexEngineService {
     private final List<String> monitoredCategories = new ArrayList<>();
     private final LinkedList<String> decisionHistory = new LinkedList<>();
 
-    public CortexEngineService(RuleService ruleService, BalanceService balanceService, ObjectMapper objectMapper) {
+    public SimulationEngineService(RuleService ruleService, BalanceService balanceService, ObjectMapper objectMapper) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
@@ -70,13 +70,13 @@ public class CortexEngineService {
                 JsonNode typeNode = logic.get("type");
                 if (typeNode == null) continue;
 
-                String type = typeNode.asString();
+                String type = typeNode.asText();
 
                 if ("RESERVE_CHECK".equals(type)) {
                     JsonNode metricNode = logic.get("metric");
                     if (metricNode == null) continue;
 
-                    String metricCat = metricNode.asString();
+                    String metricCat = metricNode.asText();
                     balance.stream()
                         .filter(b -> metricCat.equals(b.getCategory()))
                         .findFirst()

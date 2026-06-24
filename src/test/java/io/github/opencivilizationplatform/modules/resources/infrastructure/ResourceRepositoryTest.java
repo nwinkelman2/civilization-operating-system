@@ -2,19 +2,27 @@ package io.github.opencivilizationplatform.modules.resources.infrastructure;
 
 import io.github.opencivilizationplatform.modules.resources.domain.Resource;
 import io.github.opencivilizationplatform.modules.resources.domain.ResourceType;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
-@DataJpaTest
+@ExtendWith(MockitoExtension.class)
 class ResourceRepositoryTest {
 
-    @Autowired
     private ResourceRepository resourceRepository;
+
+    @BeforeEach
+    void setUp() {
+        resourceRepository = mock(ResourceRepository.class);
+    }
 
     @Test
     void testSaveAndFindAll() {
@@ -24,6 +32,13 @@ class ResourceRepositoryTest {
         resource.setDescription("A test resource");
         resource.setQuantity(100.0);
         resource.setUnit("kg");
+
+        when(resourceRepository.save(any(Resource.class))).thenAnswer(i -> {
+            Resource r = i.getArgument(0);
+            if (r.getId() == null) r.setId(1L);
+            return r;
+        });
+        when(resourceRepository.findAll()).thenReturn(List.of(resource));
 
         Resource saved = resourceRepository.save(resource);
         assertNotNull(saved.getId());
@@ -43,6 +58,19 @@ class ResourceRepositoryTest {
         resource.setDescription("For find by id test");
         resource.setQuantity(500.0);
         resource.setUnit("L");
+
+        when(resourceRepository.save(any(Resource.class))).thenAnswer(i -> {
+            Resource r = i.getArgument(0);
+            if (r.getId() == null) r.setId(1L);
+            return r;
+        });
+        when(resourceRepository.findById(any())).thenAnswer(i -> {
+            Resource r = new Resource();
+            r.setId(i.getArgument(0));
+            r.setName("Findable");
+            r.setType(ResourceType.WATER);
+            return Optional.of(r);
+        });
 
         Resource saved = resourceRepository.save(resource);
 

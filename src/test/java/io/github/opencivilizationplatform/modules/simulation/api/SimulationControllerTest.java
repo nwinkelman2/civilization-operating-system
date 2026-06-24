@@ -1,23 +1,28 @@
 package io.github.opencivilizationplatform.modules.simulation.api;
 
-import io.github.opencivilizationplatform.modules.simulation.application.CortexEngineService;
+import io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
-@WebMvcTest(SimulationController.class)
+@ExtendWith(MockitoExtension.class)
 class SimulationControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
+    private SimulationEngineService simulationEngineService;
 
-    @MockitoBean
-    private CortexEngineService cortexEngineService;
+    @BeforeEach
+    void setUp() {
+        simulationEngineService = mock(SimulationEngineService.class);
+        mockMvc = standaloneSetup(new SimulationController(simulationEngineService)).build();
+    }
+
 
     @Test
     void testGetStatus() throws Exception {

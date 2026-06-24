@@ -59,7 +59,7 @@ class RuleServiceTest {
         unvalidated.setValidationStatus(ValidationStatus.PENDING);
 
         List<Rule> allRules = List.of(activeValidated, deprecated, unvalidated);
-        when(ruleRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(allRules));
+        when(ruleRepository.findAll()).thenReturn(allRules);
 
         List<Rule> result = ruleService.getValidatedRules();
 

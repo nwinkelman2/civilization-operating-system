@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leaderboard — Civilization OS</title>
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+    <nav>
+        <a href="/">Home</a>
+        <a href="/play" class="active">Map</a>
+        <a href="/leaderboard">Leaderboard</a>
+    </nav>
+
+    <main>
+        <h1>Civilization Leaderboard</h1>
+        <p class="subtitle">Ranked by total score (reputation + population + techs + trades)</p>
+
+        <div id="leaderboard-container">
+            <table id="leaderboard-table">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Civilization</th>
+                        <th>Score</th>
+                        <th>Reputation</th>
+                        <th>Population</th>
+                        <th>Technologies</th>
+                        <th>Trades</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body">
+                    <tr><td colspan="7" class="loading">Loading leaderboard...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+
+    <script>
+        async function loadLeaderboard() {
+            try {
+                const resp = await fetch('/api/v1/leaderboard');
+                const scores = await resp.json();
+                const tbody = document.getElementById('leaderboard-body');
+
+                if (!scores || scores.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" class="empty">No civilizations founded yet. <a href="/play">Be the first!</a></td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = scores.map((s, i) => `
+                    <tr>
+                        <td class="rank">${i + 1}</td>
+                        <td><a href="/civilization/${s.civilizationId}">${s.name}</a></td>
+                        <td class="score">${s.totalScore.toFixed(1)}</td>
+                        <td>${s.reputationScore.toFixed(1)}</td>
+                        <td>${s.population}</td>
+                        <td>${s.techCount}</td>
+                        <td>${s.tradeCount}</td>
+                    </tr>
+                `).join('');
+            } catch(e) {
+                document.getElementById('leaderboard-body').innerHTML =
+                    '<tr><td colspan="7" class="error">Failed to load leaderboard. Is the server running?</td></tr>';
+            }
+        }
+
+        loadLeaderboard();
+        setInterval(loadLeaderboard, 15000);
+    </script>
+</body>
+</html>

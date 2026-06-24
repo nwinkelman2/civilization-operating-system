@@ -41,6 +41,12 @@ public class Technology {
     @Column(name = "unlocks_resource_bonus")
     private String unlocksResourceBonus; // JSON: {"type": "FOOD", "bonus": 0.15}
 
+    @Column(name = "resource_bonus")
+    private String resourceBonus;
+
+    @Column(name = "bonus_amount")
+    private Double bonusAmount = 0.0;
+
     // prerequisite tech IDs as comma-separated string
     @Column(name = "prerequisites")
     private String prerequisites;
@@ -68,6 +74,10 @@ public class Technology {
     public void setTier(Integer tier) { this.tier = tier; }
     public String getUnlocksResourceBonus() { return unlocksResourceBonus; }
     public void setUnlocksResourceBonus(String unlocksResourceBonus) { this.unlocksResourceBonus = unlocksResourceBonus; }
+    public String getResourceBonus() { return resourceBonus; }
+    public void setResourceBonus(String resourceBonus) { this.resourceBonus = resourceBonus; }
+    public Double getBonusAmount() { return bonusAmount; }
+    public void setBonusAmount(Double bonusAmount) { this.bonusAmount = bonusAmount; }
     public String getPrerequisites() { return prerequisites; }
     public void setPrerequisites(String prerequisites) { this.prerequisites = prerequisites; }
     public Long getCivilizationId() { return civilizationId; }

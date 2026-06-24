@@ -29,11 +29,11 @@ public class BalanceService {
     @Cacheable("balance")
     public List<BalanceDTO> getBalanceReport() {
         Map<String, Double> supply = resourceRepository.findAll().stream()
-                .collect(Collectors.groupingBy(r -> r.getType(),
+                .collect(Collectors.groupingBy(r -> r.getType().name(),
                         Collectors.summingDouble(r -> r.getQuantity())));
 
         Map<String, Double> demand = needRepository.findAll().stream()
-                .collect(Collectors.groupingBy(n -> n.getCategory(),
+                .collect(Collectors.groupingBy(n -> n.getCategory().name(),
                         Collectors.summingDouble(n -> n.getQuantity())));
 
         Set<String> allCategories = new HashSet<>(supply.keySet());

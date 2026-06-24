@@ -14,6 +14,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script th:src="@{/js/auth.js}"></script>
 </head>
 <body>
     <nav class="nav-bar glass-morphism">
@@ -23,18 +24,14 @@
         </div>
         <div class="nav-links">
             <a th:href="@{/}" th:classappend="${#strings.equals(currentPage, 'dashboard')} ? 'active' : ''">Dashboard</a>
-            <a th:href="@{/biosphere}" th:classappend="${#strings.equals(currentPage, 'biosphere')} ? 'active' : ''">Biosphere</a>
-            <a th:href="@{/resources}" th:classappend="${#strings.equals(currentPage, 'resources')} ? 'active' : ''">Resources</a>
-            <a th:href="@{/needs}" th:classappend="${#strings.equals(currentPage, 'needs')} ? 'active' : ''">Needs</a>
-            <a th:href="@{/strategy}" th:classappend="${#strings.equals(currentPage, 'strategy')} ? 'active' : ''">Strategy</a>
-            <a th:href="@{/production}" th:classappend="${#strings.equals(currentPage, 'production')} ? 'active' : ''">Production</a>
-            <a th:href="@{/logistics}" th:classappend="${#strings.equals(currentPage, 'logistics')} ? 'active' : ''">Logistics</a>
-            <a th:href="@{/constitution}" th:classappend="${#strings.equals(currentPage, 'constitution')} ? 'active' : ''">Governance</a>
-            <a th:href="@{/purpose}" th:classappend="${#strings.equals(currentPage, 'purpose')} ? 'active' : ''">Contribution</a>
-            <a th:href="@{/social}" th:classappend="${#strings.equals(currentPage, 'social')} ? 'active' : ''">Social</a>
-            <a th:href="@{/simulation}" th:classappend="${#strings.equals(currentPage, 'simulation')} ? 'active' : ''">Cortex</a>
-            <a th:href="@{/play}" th:classappend="${#strings.equals(currentPage, 'play')} ? 'active' : ''">Play</a>
+            <a th:href="@{/play}" th:classappend="${#strings.equals(currentPage, 'play')} ? 'active' : ''">Map</a>
+            <a th:href="@{/civilizations}" th:classappend="${#strings.equals(currentPage, 'civilizations')} ? 'active' : ''">Civilizations</a>
+            <a th:href="@{/leaderboard}" th:classappend="${#strings.equals(currentPage, 'leaderboard')} ? 'active' : ''">Leaderboard</a>
+            <a th:href="@{/trade}" th:classappend="${#strings.equals(currentPage, 'trade')} ? 'active' : ''">Trade</a>
+            <a th:href="@{/tech-tree}" th:classappend="${#strings.equals(currentPage, 'tech-tree')} ? 'active' : ''">Tech</a>
+            <a th:href="@{/events}" th:classappend="${#strings.equals(currentPage, 'events')} ? 'active' : ''">Events</a>
             <a th:href="@{/voxtex}" th:classappend="${#strings.equals(currentPage, 'voxtex')} ? 'active' : ''">Voxtex</a>
+            <a th:href="@{/simulation}" th:classappend="${#strings.equals(currentPage, 'simulation')} ? 'active' : ''">Cortex</a>
         </div>
     </nav>
 

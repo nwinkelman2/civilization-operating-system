@@ -2,25 +2,33 @@ package io.github.opencivilizationplatform.modules.participation.api;
 
 import io.github.opencivilizationplatform.modules.participation.application.InteractionService;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.web.PageableHandlerMethodArgumentResolver;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.junit.jupiter.MockitoExtension;
+import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 
-@WebMvcTest(InteractionController.class)
+@ExtendWith(MockitoExtension.class)
 class InteractionControllerTest {
 
-    @Autowired
     private MockMvc mockMvc;
-
-    @MockitoBean
     private InteractionService interactionService;
+
+    @BeforeEach
+    void setUp() {
+        interactionService = mock(InteractionService.class);
+        mockMvc = standaloneSetup(new InteractionController(interactionService))
+                .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
+                .build();
+    }
+
 
     @Test
     void testGetAllInteractions() throws Exception {
@@ -34,8 +42,11 @@ class InteractionControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
-                                    "type": "POLL",
-                                    "description": "Vote on new policy"
+                                    "type": "INNOVATION",
+                                    "content": "Vote on new policy",
+                                    "region": "Sector-7",
+                                    "citizenId": "C-001",
+                                    "status": "PENDING"
                                 }
                                 """))
                 .andExpect(status().isOk());

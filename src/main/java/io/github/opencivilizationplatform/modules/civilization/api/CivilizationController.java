@@ -1,5 +1,6 @@
 package io.github.opencivilizationplatform.modules.civilization.api;
 
+import io.github.opencivilizationplatform.config.JwtService;
 import io.github.opencivilizationplatform.config.seed.CivilizationScale;
 import io.github.opencivilizationplatform.modules.civilization.application.CivilizationService;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
@@ -23,13 +24,16 @@ public class CivilizationController {
     private final CivilizationService service;
     private final ResourceRegionService regionService;
     private final VoxtexMeshService voxtexService;
+    private final JwtService jwtService;
 
     public CivilizationController(CivilizationService service,
                                    ResourceRegionService regionService,
-                                   VoxtexMeshService voxtexService) {
+                                   VoxtexMeshService voxtexService,
+                                   JwtService jwtService) {
         this.service = service;
         this.regionService = regionService;
         this.voxtexService = voxtexService;
+        this.jwtService = jwtService;
     }
 
     @GetMapping
@@ -101,6 +105,16 @@ public class CivilizationController {
     }
 
     private String resolveToken(HttpServletRequest request) {
+        String clientId = (String) request.getAttribute("X-Client-Id");
+        if (clientId != null) return clientId;
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            try {
+                return jwtService.extractClientId(authHeader.substring(7));
+            } catch (Exception e) {
+                // fall through
+            }
+        }
         String token = request.getHeader("X-Client-Token");
         if (token == null || token.isBlank()) {
             token = request.getRemoteAddr() + ":" + (request.getRemotePort());
