@@ -1,12 +1,7 @@
 package io.github.opencivilizationplatform.config;
 
 import io.github.opencivilizationplatform.dto.BalanceDTO;
-import io.github.opencivilizationplatform.modules.needs.domain.Need;
-import io.github.opencivilizationplatform.modules.needs.domain.NeedCategory;
-import io.github.opencivilizationplatform.modules.needs.domain.NeedStatus;
-import io.github.opencivilizationplatform.modules.needs.infrastructure.NeedRepository;
 import io.github.opencivilizationplatform.modules.resources.application.ResourceService;
-import io.github.opencivilizationplatform.modules.resources.infrastructure.ResourceRepository;
 import io.github.opencivilizationplatform.modules.resources.domain.Resource;
 import io.github.opencivilizationplatform.modules.resources.domain.ResourceType;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
@@ -20,16 +15,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.redis.cache.RedisCacheManager;
-import org.springframework.data.redis.core.StringRedisTemplate;
-import org.springframework.data.redis.serializer.JdkSerializationRedisSerializer;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import java.util.List;
 
@@ -52,16 +40,7 @@ public class RedisCacheIntegrationTest {
     private ResourceService resourceService;
 
     @Autowired
-    private ResourceRepository resourceRepository;
-
-    @Autowired
-    private StringRedisTemplate redisTemplate;
-
-    @Autowired
     private BalanceService balanceService;
-
-    @Autowired
-    private NeedRepository needRepository;
 
     @Test
     void shouldVerifyRedisCacheManagerActive() {
@@ -115,19 +94,29 @@ public class RedisCacheIntegrationTest {
     }
 
     @Test
-    void shouldCacheBalanceReportAndSucceedSerialization() {
-        // Direct serialization/deserialization test to verify Redis caching capability for BalanceDTO
-        JdkSerializationRedisSerializer serializer = new JdkSerializationRedisSerializer();
-        
-        BalanceDTO dto = new BalanceDTO("SPECIAL_CACHED_CATEGORY", 999.0, 111.0, "units", 900.0, "STABLE");
-        List<BalanceDTO> report = List.of(dto);
+    void shouldCacheBalanceReport() {
+        Cache cache = cacheManager.getCache("balance");
+        assertThat(cache).isNotNull();
+        cache.clear();
 
-        byte[] serialized = serializer.serialize(report);
-        assertThat(serialized).isNotNull().isNotEmpty();
+        // 1. Invoke balanceService.getBalanceReport() once (this fetches real data)
+        List<BalanceDTO> firstCall = balanceService.getBalanceReport();
 
-        List<BalanceDTO> deserialized = (List<BalanceDTO>) serializer.deserialize(serialized);
-        assertThat(deserialized).isNotEmpty();
-        assertThat(deserialized.get(0).getCategory()).isEqualTo("SPECIAL_CACHED_CATEGORY");
-        assertThat(deserialized.get(0).getStatus()).isEqualTo("STABLE");
+        // 2. Mutate the cache directly: put a dummy list containing a specific dummy BalanceDTO
+        BalanceDTO dummyDto = new BalanceDTO("dummy-category", 999.0, 999.0, "units", 100.0, "STABLE");
+        List<BalanceDTO> dummyList = List.of(dummyDto);
+        cache.put(SimpleKey.EMPTY, dummyList);
+
+        // 3. Invoke balanceService.getBalanceReport() a second time
+        List<BalanceDTO> secondCall = balanceService.getBalanceReport();
+
+        // 4. Assert that the second call returns the dummy list from the cache instead of the real data!
+        assertThat(secondCall).hasSize(1);
+        assertThat(secondCall.get(0).getCategory()).isEqualTo("dummy-category");
+        assertThat(secondCall.get(0).getSupply()).isEqualTo(999.0);
+        assertThat(secondCall.get(0).getDemand()).isEqualTo(999.0);
+        assertThat(secondCall.get(0).getUnit()).isEqualTo("units");
+        assertThat(secondCall.get(0).getPercentageMet()).isEqualTo(100.0);
+        assertThat(secondCall.get(0).getStatus()).isEqualTo("STABLE");
     }
 }
