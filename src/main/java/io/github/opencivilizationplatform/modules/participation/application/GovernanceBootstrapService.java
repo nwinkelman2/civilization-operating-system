@@ -67,102 +67,74 @@ public class GovernanceBootstrapService {
 
             new RuleTemplate(
                 "Law of Collective Wellbeing",
-                "No decision of the civilization may be executed if it systematically reduces the wellbeing " +
-                "of more than 20% of its population without democratic consent and a compensatory plan.",
-                """
-                RULE collective_wellbeing {
-                  WHEN decision.impactedPopulationPct > 0.20 AND decision.wellbeingDelta < 0
-                  REQUIRE consensus(threshold: 0.66) AND compensatoryPlan != null
-                  ELSE BLOCK decision
-                }
-                """
+                "No decision of the civilization may be executed if it systematically reduces the wellbeing of more than 20% of its population without democratic consent and a compensatory plan.",
+                "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"WELLBEING\", \"action\": \"BLOCK_DECISION\"}"
             ),
 
             new RuleTemplate(
                 "Resource Transparency Mandate",
-                "All resource flows (food, water, energy, minerals, housing) must be logged and publicly " +
-                "auditable within the civilization's Voxtex mesh. No hidden extraction is permitted.",
-                """
-                RULE resource_transparency {
-                  ON resource.transfer OR resource.extraction
-                  EMIT voxtex.event(type: RESOURCE_FLOW, payload: {resource, quantity, origin, destination})
-                  VERIFY auditLog.contains(event) WITHIN 60s
-                  ELSE FLAG violation(severity: HIGH)
-                }
-                """
+                "All resource flows (food, water, energy, minerals, housing) must be logged and publicly auditable within the civilization's Voxtex mesh. No hidden extraction is permitted.",
+                "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"RESOURCE_FLOW\", \"action\": \"AUDIT\"}"
             ),
 
             new RuleTemplate(
                 "Non-Predatory Trade Clause",
-                "Trade agreements with other civilizations must not exploit asymmetric information. " +
-                "All trade terms must be visible to both parties before acceptance.",
-                """
-                RULE fair_trade {
-                  WHEN trade.propose(agreement)
-                  REQUIRE agreement.terms.visibleTo(BOTH_PARTIES)
-                  AND NOT EXISTS asymmetricInfoAdvantage(initiator, receiver)
-                  ELSE REJECT agreement WITH reason: "PREDATORY_TRADE_DETECTED"
-                }
-                """
+                "Trade agreements with other civilizations must not exploit asymmetric information. All trade terms must be visible to both parties before acceptance.",
+                "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"TRADE_BALANCE\", \"action\": \"MONITOR\"}"
             ),
 
             new RuleTemplate(
                 "Agent Right to Voice",
-                "Every agent (citizen) of the civilization has the inalienable right to propose, " +
-                "vote on, and contest any constitutional rule through the Voxtex participation channel.",
-                """
-                RULE agent_voice {
-                  GRANT TO ALL(role: AGENT) {
-                    PROPOSE rule
-                    VOTE ON rule
-                    CONTEST rule WITH evidence
-                  }
-                  PROHIBIT suppression(right: VOICE) FOR ANY agent
-                }
-                """
+                "Every agent (citizen) of the civilization has the inalienable right to propose, vote on, and contest any constitutional rule through the Voxtex participation channel.",
+                "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"PARTICIPATION\", \"action\": \"GRANT_ACCESS\"}"
             ),
 
             new RuleTemplate(
                 "Ecological Preservation Protocol",
-                "Extraction of natural resources must not permanently deplete any single resource type " +
-                "below 15% of its baseline availability in any 30-day window.",
-                """
-                RULE ecological_preservation {
-                  MONITOR resource.availability WINDOW 30d
-                  WHEN resource.availability < 0.15 * resource.baseline
-                  HALT extraction(resource) UNTIL availability > 0.25 * baseline
-                  ALERT voxtex.mesh(severity: CRITICAL, resource: resource)
-                }
-                """
+                "Extraction of natural resources must not permanently deplete any single resource type below 15% of its baseline availability in any 30-day window.",
+                "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"BIOSPHERE_HEALTH\", \"action\": \"SUSPEND_PRODUCTION\"}"
             ),
 
             new RuleTemplate(
                 "Knowledge Commons Act",
-                "All scientific discoveries, technologies, and strategic insights produced with " +
-                "civilization resources must be catalogued in the Voxtex knowledge base within 7 days.",
-                """
-                RULE knowledge_commons {
-                  WHEN technology.researched OR discovery.made
-                  REQUIRE voxtex.knowledgeBase.add(entry) WITHIN 7d
-                  GRANT read_access TO ALL(role: AGENT)
-                  GRANT read_access TO civilizations.withTreaty(type: KNOWLEDGE_SHARING)
-                }
-                """
+                "All scientific discoveries, technologies, and strategic insights produced with civilization resources must be catalogued in the Voxtex knowledge base within 7 days.",
+                "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"KNOWLEDGE\", \"action\": \"SHARE\"}"
             ),
 
             new RuleTemplate(
                 "Conflict Resolution via Voxtex Consensus",
-                "Internal disputes between agents must be resolved through the Voxtex consensus " +
-                "mechanism before any unilateral action is taken. Force is a last resort.",
-                """
-                RULE conflict_resolution {
-                  WHEN dispute.detected BETWEEN agents
-                  INITIATE voxtex.consensus(parties: dispute.agents, timeout: 72h)
-                  IF consensus.reached THEN apply(consensus.resolution)
-                  IF consensus.failed THEN escalate(committee: ARBITRATION)
-                  PROHIBIT unilateral_action DURING consensus.pending
-                }
-                """
+                "Internal disputes between agents must be resolved through the Voxtex consensus mechanism before any unilateral action is taken. Force is a last resort.",
+                "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"SOCIAL_STABILITY\", \"action\": \"MEDIATE\"}"
+            ),
+
+            new RuleTemplate(
+                "Birth Control Policy",
+                "Se as reservas de alimento da civilização caírem abaixo de 30.0, o Vortex reduzirá a taxa de natalidade natural em 75% para conservar recursos.",
+                "{\"type\": \"DEMOGRAPHIC_LIMIT\", \"metric\": \"FOOD\", \"threshold\": 30.0, \"action\": \"LIMIT_BIRTHS\"}"
+            ),
+
+            new RuleTemplate(
+                "Agent Entry Cap Act",
+                "Se a disponibilidade de moradia na região da civilização for menor que 15.0%, a admissão de novos agentes/jogadores será suspensa até que novos projetos habitacionais sejam construídos.",
+                "{\"type\": \"DEMOGRAPHIC_LIMIT\", \"metric\": \"HOUSING\", \"threshold\": 15.0, \"action\": \"LOCK_ENTRY\"}"
+            ),
+
+            new RuleTemplate(
+                "Emergency Agricultural Push",
+                "Se as reservas de alimento caírem abaixo de 35.0, o Vortex ativará um subsídio agrícola de emergência adicionando +5.0 de comida por tick.",
+                "{\"type\": \"PRODUCTION_BOOST\", \"metric\": \"FOOD\", \"threshold\": 35.0, \"action\": \"BOOST_AGRI\"}"
+            ),
+
+            new RuleTemplate(
+                "Autonomous Robotic Labor Act",
+                "Autoriza o Vortex a fabricar e operar robôs autônomos para exploração, agropecuária e manutenção de infraestrutura, gastando 15 minerais e 10 energia por robô, e consumindo 0.15 de energia por tick.",
+                "{\"type\": \"AUTOMATION\", \"metric\": \"ENERGY\", \"action\": \"OPERATE_ROBOTS\"}"
+            ),
+
+            new RuleTemplate(
+                "Inter-Civilization Vortex Barter Protocol",
+                "Habilita o Vortex a realizar negociações e escambos autônomos com outras civilizações para importar recursos críticos em falta (< 30.0) em troca de excedentes físicos ou pessoal (população/trabalhadores).",
+                "{\"type\": \"AUTOMATION\", \"metric\": \"RESOURCES\", \"action\": \"AUTONOMOUS_TRADE\"}"
             )
         );
     }

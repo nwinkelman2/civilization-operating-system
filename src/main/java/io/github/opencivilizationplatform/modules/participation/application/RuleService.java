@@ -34,13 +34,26 @@ public class RuleService {
 
     public Rule voteRule(Long id) {
         Rule rule = ruleRepository.findById(id).orElseThrow();
-        rule.setVotesCount(rule.getVotesCount() + 1);
+        rule.setVotesCount((rule.getVotesCount() == null ? 0 : rule.getVotesCount()) + 1);
+        if (RuleStatus.PROPOSED.equals(rule.getStatus()) && rule.getVotesCount() >= 3) {
+            rule.setStatus(RuleStatus.ACTIVE);
+            rule.setValidationStatus(ValidationStatus.SCIENTIFICALLY_VALIDATED);
+            rule.setValidatedBy("Voxtex Consensus");
+        }
         return ruleRepository.save(rule);
     }
 
     public Rule proposeRule(Rule rule) {
         rule.setVotesCount(0);
         rule.setStatus(RuleStatus.PROPOSED);
+        return ruleRepository.save(rule);
+    }
+
+    public Rule proposeRuleForCivilization(Rule rule, io.github.opencivilizationplatform.modules.civilization.domain.Civilization civ) {
+        rule.setCivilization(civ);
+        rule.setVotesCount(0);
+        rule.setStatus(RuleStatus.PROPOSED);
+        rule.setValidationStatus(ValidationStatus.PENDING);
         return ruleRepository.save(rule);
     }
 }

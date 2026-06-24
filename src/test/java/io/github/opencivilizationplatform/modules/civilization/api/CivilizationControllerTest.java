@@ -37,6 +37,9 @@ class CivilizationControllerTest {
     private VoxtexMeshService voxtexMeshService;
     private JwtService jwtService;
     private GovernanceBootstrapService governanceBootstrapService;
+    private io.github.opencivilizationplatform.modules.participation.application.RuleService ruleService;
+    private io.github.opencivilizationplatform.modules.contribution.application.ContributionService contributionService;
+    private io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService;
 
     @BeforeEach
     void setUp() {
@@ -45,7 +48,10 @@ class CivilizationControllerTest {
         voxtexMeshService = mock(VoxtexMeshService.class);
         jwtService = mock(JwtService.class);
         governanceBootstrapService = mock(GovernanceBootstrapService.class);
-        mockMvc = standaloneSetup(new CivilizationController(civilizationService, resourceRegionService, voxtexMeshService, jwtService, governanceBootstrapService))
+        ruleService = mock(io.github.opencivilizationplatform.modules.participation.application.RuleService.class);
+        contributionService = mock(io.github.opencivilizationplatform.modules.contribution.application.ContributionService.class);
+        socialService = mock(io.github.opencivilizationplatform.modules.social.application.SocialStabilityService.class);
+        mockMvc = standaloneSetup(new CivilizationController(civilizationService, resourceRegionService, voxtexMeshService, jwtService, governanceBootstrapService, ruleService, contributionService, socialService))
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }

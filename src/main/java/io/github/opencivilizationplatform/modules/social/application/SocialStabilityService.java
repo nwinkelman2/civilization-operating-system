@@ -42,4 +42,22 @@ public class SocialStabilityService {
     public java.util.List<BehaviorAssessment> getAssessmentsForCitizen(String citizenId) {
         return assessmentRepository.findByCitizenId(citizenId);
     }
+
+    public java.util.List<Incident> getIncidentsForCivilization(Long civId) {
+        return incidentRepository.findByCivilizationId(civId);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Incident mediateIncident(Long incidentId) {
+        Incident inc = incidentRepository.findById(incidentId).orElseThrow(() -> new IllegalArgumentException("Incident not found: " + incidentId));
+        inc.setStatus(IncidentStatus.RESOLVED);
+        return incidentRepository.save(inc);
+    }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Incident createIncidentForCivilization(Incident incident, io.github.opencivilizationplatform.modules.civilization.domain.Civilization civ) {
+        incident.setCivilization(civ);
+        incident.setStatus(IncidentStatus.REPORTED);
+        return incidentRepository.save(incident);
+    }
 }

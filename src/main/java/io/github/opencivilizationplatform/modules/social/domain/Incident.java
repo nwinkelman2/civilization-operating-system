@@ -43,6 +43,13 @@ public class Incident {
     @Column(name = "reported_at")
     private LocalDateTime reportedAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "civilization_id")
+    private io.github.opencivilizationplatform.modules.civilization.domain.Civilization civilization;
+
+    public io.github.opencivilizationplatform.modules.civilization.domain.Civilization getCivilization() { return civilization; }
+    public void setCivilization(io.github.opencivilizationplatform.modules.civilization.domain.Civilization civilization) { this.civilization = civilization; }
+
     public Incident() {}
 
     public Long getId() { return id; }

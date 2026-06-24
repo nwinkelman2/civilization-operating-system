@@ -5,6 +5,13 @@ import io.github.opencivilizationplatform.modules.civilization.infrastructure.Ci
 import io.github.opencivilizationplatform.modules.cortex.domain.ResourceTick;
 import io.github.opencivilizationplatform.modules.region.domain.ResourceRegion;
 import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
+import io.github.opencivilizationplatform.modules.participation.domain.Rule;
+import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
+import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -14,6 +21,7 @@ import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 import java.util.List;
 import java.util.Random;
+import java.util.ArrayList;
 
 @Service
 public class CortexEngineService {
@@ -22,12 +30,18 @@ public class CortexEngineService {
 
     private final CivilizationRepository civilizationRepository;
     private final ResourceRegionRepository resourceRegionRepository;
+    private final RuleRepository ruleRepository;
+    private final ObjectMapper objectMapper;
     private final Random random = new Random();
 
     public CortexEngineService(CivilizationRepository civilizationRepository,
-                               ResourceRegionRepository resourceRegionRepository) {
+                               ResourceRegionRepository resourceRegionRepository,
+                               RuleRepository ruleRepository,
+                               ObjectMapper objectMapper) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
+        this.ruleRepository = ruleRepository;
+        this.objectMapper = objectMapper;
     }
 
     @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
@@ -56,9 +70,106 @@ public class CortexEngineService {
     }
 
     private ResourceTick computeTick(Civilization civ) {
+        List<String> vortexLogs = new ArrayList<>();
         double[] resourceDelta = new double[]{0, 0, 0, 0, 0};
         double populationDelta = 0, reputationDelta = 0;
 
+        // 1. Carregar regras de governança ativas
+        List<Rule> activeRules = ruleRepository.findByCivilizationId(civ.getId()).stream()
+            .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
+            .toList();
+
+        boolean isBirthControlActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("LIMIT_BIRTHS"));
+        boolean isAgriPushActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("BOOST_AGRI"));
+        boolean isRobotsActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("OPERATE_ROBOTS"));
+        boolean isAutonomousTradeActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("AUTONOMOUS_TRADE"));
+
+        // 2. Parsear histórico anterior para ler contagem de robôs
+        ArrayNode historyArray;
+        try {
+            if (civ.getResourceHistory() == null || civ.getResourceHistory().isBlank() || civ.getResourceHistory().equals("[]")) {
+                historyArray = objectMapper.createArrayNode();
+            } else {
+                historyArray = (ArrayNode) objectMapper.readTree(civ.getResourceHistory());
+            }
+        } catch (Exception e) {
+            historyArray = objectMapper.createArrayNode();
+        }
+
+        int agriBots = 0;
+        int aquaBots = 0;
+        int exploreBots = 0;
+        int utilityBots = 0;
+
+        if (historyArray.size() > 0) {
+            JsonNode lastTick = historyArray.get(historyArray.size() - 1);
+            if (lastTick.has("agriBots")) agriBots = lastTick.get("agriBots").asInt();
+            if (lastTick.has("aquaBots")) aquaBots = lastTick.get("aquaBots").asInt();
+            if (lastTick.has("exploreBots")) exploreBots = lastTick.get("exploreBots").asInt();
+            if (lastTick.has("utilityBots")) utilityBots = lastTick.get("utilityBots").asInt();
+        }
+
+        // 3. Processar Automação Robótica pelo Vortex
+        double robotFoodBonus = 0;
+        double robotWaterBonus = 0;
+        double robotMineralBonus = 0;
+        double robotHousingBonus = 0;
+
+        if (isRobotsActive) {
+            int totalRobots = agriBots + aquaBots + exploreBots + utilityBots;
+            int pop = civ.getPopulation() != null ? civ.getPopulation() : 100;
+            int maxRobots = 1 + (pop / 50);
+            if (maxRobots > 12) maxRobots = 12;
+
+            double currentMinerals = civ.getMinerals() != null ? civ.getMinerals() : 0;
+            double currentEnergy = civ.getEnergy() != null ? civ.getEnergy() : 0;
+
+            // Decidir se fabrica um novo robô
+            if (totalRobots < maxRobots && currentMinerals >= 15.0 && currentEnergy >= 10.0) {
+                civ.setMinerals(currentMinerals - 15.0);
+                civ.setEnergy(currentEnergy - 10.0);
+                currentMinerals -= 15.0;
+                currentEnergy -= 10.0;
+
+                double food = civ.getFood() != null ? civ.getFood() : 100;
+                double water = civ.getWater() != null ? civ.getWater() : 100;
+                double housing = civ.getHousing() != null ? civ.getHousing() : 50;
+
+                String botType;
+                if (food < 40.0) {
+                    agriBots++;
+                    botType = "Agri-Bot (Agropecuária)";
+                } else if (water < 40.0) {
+                    aquaBots++;
+                    botType = "Aqua-Bot (Recursos Hídricos)";
+                } else if (housing < 25.0) {
+                    utilityBots++;
+                    botType = "Utility-Bot (Infraestrutura/Moradia)";
+                } else {
+                    exploreBots++;
+                    botType = "Explorer-Bot (Exploração Mineral)";
+                }
+                totalRobots++;
+                vortexLogs.add("[Automação] Vortex fabricou 1 " + botType + " (Custo: 15 minerais, 10 energia).");
+            }
+
+            // Operar robôs (consomem 0.15 energia cada)
+            if (totalRobots > 0) {
+                double energyRequired = totalRobots * 0.15;
+                if (currentEnergy >= energyRequired) {
+                    civ.setEnergy(currentEnergy - energyRequired);
+                    robotFoodBonus = agriBots * 0.8;
+                    robotWaterBonus = aquaBots * 0.6;
+                    robotMineralBonus = exploreBots * 0.5;
+                    robotHousingBonus = utilityBots * 0.4;
+                    vortexLogs.add("[Automação] Sistemas Robóticos ONLINE: " + totalRobots + " drones operando (Consumo: " + String.format("%.2f", energyRequired) + " energia).");
+                } else {
+                    vortexLogs.add("[Alerta Automação] Sistemas Robóticos OFFLINE: Reserva de energia insuficiente.");
+                }
+            }
+        }
+
+        // 4. Calcular baselines da região
         if (civ.getHomeRegionId() != null) {
             resourceRegionRepository.findById(civ.getHomeRegionId()).ifPresent(region -> {
                 resourceDelta[0] += region.getFoodAvailability() * 0.5;
@@ -69,36 +180,148 @@ public class CortexEngineService {
             });
         }
 
-        double population = civ.getPopulation() != null ? civ.getPopulation() : 0;
-        double consumptionRate = 1.0 + (population / 100.0);
-        resourceDelta[0] -= consumptionRate * 0.3;
-        resourceDelta[1] -= consumptionRate * 0.2;
-        resourceDelta[3] -= consumptionRate * 0.1;
+        // Adicionar bônus de produção dos robôs autônomos
+        resourceDelta[0] += robotFoodBonus;
+        resourceDelta[1] += robotWaterBonus;
+        resourceDelta[2] += robotMineralBonus;
+        resourceDelta[4] += robotHousingBonus;
 
+        // Consumo dinâmico baseado em custos reais por habitante
+        double population = civ.getPopulation() != null ? civ.getPopulation() : 0;
+        double foodConsumption = population * 0.10;
+        double waterConsumption = population * 0.08;
+        double energyConsumption = population * 0.04;
+
+        resourceDelta[0] -= foodConsumption;
+        resourceDelta[1] -= waterConsumption;
+        resourceDelta[3] -= energyConsumption;
+
+        // Ruídos aleatórios de simulação para variação
         resourceDelta[0] += random.nextDouble() * 2 - 1;
         resourceDelta[1] += random.nextDouble() * 1.5 - 0.75;
         resourceDelta[2] += random.nextDouble() * 1 - 0.5;
         resourceDelta[3] += random.nextDouble() * 1.5 - 0.75;
         resourceDelta[4] += random.nextDouble() * 0.5 - 0.25;
 
+        // 5. Natalidade vegetativa e mortes por fome
         double currentFood = civ.getFood() != null ? civ.getFood() : 100;
         double currentWater = civ.getWater() != null ? civ.getWater() : 100;
 
         if (currentFood > 0 && currentWater > 0) {
-            populationDelta = 0.1 + random.nextDouble() * 0.2;
+            double growth = 0.02 * population + 1.0;
+            if (isBirthControlActive && currentFood < 30.0) {
+                growth *= 0.25;
+                vortexLogs.add("[Remediação Vortex] Birth Control Policy ativo devido a baixa reserva de comida (Natalidade natural -75%).");
+            }
+            populationDelta = growth;
         } else {
-            populationDelta = -0.5 - random.nextDouble() * 0.5;
+            populationDelta = -0.05 * population - 2.0;
+            reputationDelta -= 5.0;
+            vortexLogs.add("[Alerta Crítico] FOME E ESCASSEZ EXTREMA: Ocorrendo óbitos e migrações na sociedade.");
         }
 
+        // Regra de Subsídio Agrícola de Emergência
+        if (isAgriPushActive && currentFood < 35.0) {
+            resourceDelta[0] += 5.0;
+            vortexLogs.add("[Remediação Vortex] Emergency Agricultural Push ativo: Subsídio de +5.0 comida injetado.");
+        }
+
+        // Reputação baseada em recursos
         if (currentFood <= 5 || currentWater <= 5) {
             reputationDelta -= 2.0;
         } else if (currentFood > 50 && currentWater > 50) {
             reputationDelta += 0.5;
         }
 
+        // 6. Negociação e Escambo Autônomo entre nós Vortex
+        if (isAutonomousTradeActive && (currentFood < 30.0 || currentWater < 30.0)) {
+            String criticalResource = currentFood < 30.0 ? "FOOD" : "WATER";
+            List<Civilization> allCivs = civilizationRepository.findAll();
+            Civilization partner = null;
+
+            for (Civilization potentialPartner : allCivs) {
+                if (potentialPartner.getId().equals(civ.getId())) continue;
+
+                double partnerAmount = criticalResource.equals("FOOD") ? 
+                    (potentialPartner.getFood() != null ? potentialPartner.getFood() : 0) : 
+                    (potentialPartner.getWater() != null ? potentialPartner.getWater() : 0);
+
+                if (partnerAmount > 80.0) {
+                    boolean partnerTradeActive = ruleRepository.findByCivilizationId(potentialPartner.getId()).stream()
+                        .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
+                        .anyMatch(r -> r.getLogicCode().contains("AUTONOMOUS_TRADE"));
+
+                    if (partnerTradeActive) {
+                        partner = potentialPartner;
+                        break;
+                    }
+                }
+            }
+
+            if (partner != null) {
+                double currentMinerals = civ.getMinerals() != null ? civ.getMinerals() : 0;
+                double currentEnergy = civ.getEnergy() != null ? civ.getEnergy() : 0;
+
+                if (currentMinerals > 60.0 || currentEnergy > 60.0) {
+                    String offeredResource = currentMinerals > 60.0 ? "MINERALS" : "ENERGY";
+                    
+                    if (criticalResource.equals("FOOD")) {
+                        resourceDelta[0] += 30.0;
+                        partner.setFood(partner.getFood() - 30.0);
+                    } else {
+                        resourceDelta[1] += 30.0;
+                        partner.setWater(partner.getWater() - 30.0);
+                    }
+
+                    if (offeredResource.equals("MINERALS")) {
+                        resourceDelta[2] -= 30.0;
+                        partner.setMinerals((partner.getMinerals() != null ? partner.getMinerals() : 0) + 30.0);
+                    } else {
+                        resourceDelta[3] -= 30.0;
+                        partner.setEnergy((partner.getEnergy() != null ? partner.getEnergy() : 0) + 30.0);
+                    }
+
+                    String logMsg = "[Comércio Autônomo] Vortex importou 30.0 de " + (criticalResource.equals("FOOD") ? "Alimento" : "Água") + 
+                        " da sociedade '" + partner.getName() + "' em troca de 30.0 de " + (offeredResource.equals("MINERALS") ? "Minerais" : "Energia") + ".";
+                    vortexLogs.add(logMsg);
+                    
+                    addLogToPartnerHistory(partner, "[Comércio Autônomo] Vortex exportou 30.0 de " + (criticalResource.equals("FOOD") ? "Alimento" : "Água") + 
+                        " para '" + civ.getName() + "' em troca de 30.0 de " + (offeredResource.equals("MINERALS") ? "Minerais" : "Energia") + ".");
+                    
+                    civilizationRepository.save(partner);
+                } else if (population >= 40) {
+                    int partnerPop = partner.getPopulation() != null ? partner.getPopulation() : 0;
+                    if (partnerPop < 300) {
+                        if (criticalResource.equals("FOOD")) {
+                            resourceDelta[0] += 35.0;
+                            partner.setFood(partner.getFood() - 35.0);
+                        } else {
+                            resourceDelta[1] += 35.0;
+                            partner.setWater(partner.getWater() - 35.0);
+                        }
+
+                        populationDelta -= 5;
+                        partner.setPopulation(partnerPop + 5);
+
+                        String logMsg = "[Comércio Autônomo] Vortex importou 35.0 de " + (criticalResource.equals("FOOD") ? "Alimento" : "Água") + 
+                            " de '" + partner.getName() + "' transferindo 5 trabalhadores (pessoal/população).";
+                        vortexLogs.add(logMsg);
+
+                        addLogToPartnerHistory(partner, "[Comércio Autônomo] Vortex recebeu 5 trabalhadores de '" + civ.getName() + 
+                            "' em troca de 35.0 de " + (criticalResource.equals("FOOD") ? "Alimento" : "Água") + ".");
+
+                        civilizationRepository.save(partner);
+                    }
+                }
+            } else {
+                vortexLogs.add("[Alerta Comércio] Escassez crítica detectada. Nenhum nó comercial parceiro disponível no mesh.");
+            }
+        }
+
         return new ResourceTick(
             civ.getId(), resourceDelta[0], resourceDelta[1], resourceDelta[2],
-            resourceDelta[3], resourceDelta[4], populationDelta, reputationDelta
+            resourceDelta[3], resourceDelta[4], populationDelta, reputationDelta,
+            agriBots, aquaBots, exploreBots, utilityBots, vortexLogs
         );
     }
 
@@ -113,6 +336,89 @@ public class CortexEngineService {
             (civ.getReputationScore() != null ? civ.getReputationScore() : 50) + tick.reputationDelta(),
             0, 100
         ));
+
+        // Gravar no histórico de recursos (JSON sliding window de 20 elementos)
+        try {
+            ArrayNode historyArray;
+            if (civ.getResourceHistory() == null || civ.getResourceHistory().isBlank() || civ.getResourceHistory().equals("[]")) {
+                historyArray = objectMapper.createArrayNode();
+            } else {
+                historyArray = (ArrayNode) objectMapper.readTree(civ.getResourceHistory());
+            }
+
+            ObjectNode newTick = objectMapper.createObjectNode();
+            newTick.put("tick", historyArray.size() + 1);
+            newTick.put("pop", civ.getPopulation());
+            newTick.put("food", Math.round(civ.getFood() * 100.0) / 100.0);
+            newTick.put("water", Math.round(civ.getWater() * 100.0) / 100.0);
+            newTick.put("minerals", Math.round(civ.getMinerals() * 100.0) / 100.0);
+            newTick.put("energy", Math.round(civ.getEnergy() * 100.0) / 100.0);
+            newTick.put("housing", Math.round(civ.getHousing() * 100.0) / 100.0);
+            newTick.put("agriBots", tick.agriBots());
+            newTick.put("aquaBots", tick.aquaBots());
+            newTick.put("exploreBots", tick.exploreBots());
+            newTick.put("utilityBots", tick.utilityBots());
+
+            ArrayNode logsArray = objectMapper.createArrayNode();
+            for (String logMsg : tick.logs()) {
+                logsArray.add(logMsg);
+            }
+            newTick.set("logs", logsArray);
+
+            historyArray.add(newTick);
+
+            while (historyArray.size() > 20) {
+                historyArray.remove(0);
+            }
+
+            civ.setResourceHistory(objectMapper.writeValueAsString(historyArray));
+        } catch (Exception e) {
+            log.error("Erro ao serializar histórico de recursos: {}", e.getMessage());
+        }
+    }
+
+    private void addLogToPartnerHistory(Civilization partner, String logMsg) {
+        try {
+            ArrayNode historyArray;
+            if (partner.getResourceHistory() == null || partner.getResourceHistory().isBlank() || partner.getResourceHistory().equals("[]")) {
+                historyArray = objectMapper.createArrayNode();
+            } else {
+                historyArray = (ArrayNode) objectMapper.readTree(partner.getResourceHistory());
+            }
+
+            if (historyArray.size() > 0) {
+                ObjectNode lastTick = (ObjectNode) historyArray.get(historyArray.size() - 1);
+                ArrayNode logs;
+                if (lastTick.has("logs")) {
+                    logs = (ArrayNode) lastTick.get("logs");
+                } else {
+                    logs = objectMapper.createArrayNode();
+                    lastTick.set("logs", logs);
+                }
+                logs.add(logMsg);
+            } else {
+                ObjectNode newTick = objectMapper.createObjectNode();
+                newTick.put("tick", 1);
+                newTick.put("pop", partner.getPopulation() != null ? partner.getPopulation() : 100);
+                newTick.put("food", partner.getFood() != null ? partner.getFood() : 100.0);
+                newTick.put("water", partner.getWater() != null ? partner.getWater() : 100.0);
+                newTick.put("minerals", partner.getMinerals() != null ? partner.getMinerals() : 50.0);
+                newTick.put("energy", partner.getEnergy() != null ? partner.getEnergy() : 75.0);
+                newTick.put("housing", partner.getHousing() != null ? partner.getHousing() : 50.0);
+                newTick.put("agriBots", 0);
+                newTick.put("aquaBots", 0);
+                newTick.put("exploreBots", 0);
+                newTick.put("utilityBots", 0);
+
+                ArrayNode logs = objectMapper.createArrayNode();
+                logs.add(logMsg);
+                newTick.set("logs", logs);
+                historyArray.add(newTick);
+            }
+            partner.setResourceHistory(objectMapper.writeValueAsString(historyArray));
+        } catch (Exception e) {
+            log.error("Erro ao adicionar log na civilização parceira: {}", e.getMessage());
+        }
     }
 
     private double clamp(double value, double min, double max) {

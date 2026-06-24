@@ -43,6 +43,13 @@ public class Project {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "civilization_id")
+    private io.github.opencivilizationplatform.modules.civilization.domain.Civilization civilization;
+
+    public io.github.opencivilizationplatform.modules.civilization.domain.Civilization getCivilization() { return civilization; }
+    public void setCivilization(io.github.opencivilizationplatform.modules.civilization.domain.Civilization civilization) { this.civilization = civilization; }
+
     public Project() {}
 
     public Long getId() { return id; }

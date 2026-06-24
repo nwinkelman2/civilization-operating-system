@@ -27,17 +27,26 @@ public class CivilizationController {
     private final VoxtexMeshService voxtexService;
     private final JwtService jwtService;
     private final GovernanceBootstrapService governanceBootstrap;
+    private final io.github.opencivilizationplatform.modules.participation.application.RuleService ruleService;
+    private final io.github.opencivilizationplatform.modules.contribution.application.ContributionService contributionService;
+    private final io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService;
 
     public CivilizationController(CivilizationService service,
                                    ResourceRegionService regionService,
                                    VoxtexMeshService voxtexService,
                                    JwtService jwtService,
-                                   GovernanceBootstrapService governanceBootstrap) {
+                                   GovernanceBootstrapService governanceBootstrap,
+                                   io.github.opencivilizationplatform.modules.participation.application.RuleService ruleService,
+                                   io.github.opencivilizationplatform.modules.contribution.application.ContributionService contributionService,
+                                   io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService) {
         this.service = service;
         this.regionService = regionService;
         this.voxtexService = voxtexService;
         this.jwtService = jwtService;
         this.governanceBootstrap = governanceBootstrap;
+        this.ruleService = ruleService;
+        this.contributionService = contributionService;
+        this.socialService = socialService;
     }
 
     @GetMapping
@@ -126,6 +135,84 @@ public class CivilizationController {
         return service.joinAsAgent(id);
     }
 
+    @GetMapping("/{id}/rules")
+    @Operation(summary = "Get constitutional rules of a civilization")
+    public java.util.List<io.github.opencivilizationplatform.modules.participation.domain.Rule> getRules(@PathVariable Long id) {
+        return ruleService.getAllRules(org.springframework.data.domain.Pageable.unpaged()).getContent().stream()
+            .filter(r -> r.getCivilization() != null && id.equals(r.getCivilization().getId()))
+            .toList();
+    }
+
+    @PostMapping("/{id}/rules/propose")
+    @Operation(summary = "Propose a constitutional rule for a civilization")
+    @ResponseStatus(HttpStatus.CREATED)
+    public io.github.opencivilizationplatform.modules.participation.domain.Rule proposeRule(@PathVariable Long id, @RequestBody ProposeRuleRequest request) {
+        Civilization civ = service.getCivilization(id);
+        io.github.opencivilizationplatform.modules.participation.domain.Rule rule = new io.github.opencivilizationplatform.modules.participation.domain.Rule();
+        rule.setTitle(request.title());
+        rule.setDescription(request.description());
+        rule.setLogicCode(request.logicCode() != null && !request.logicCode().isBlank() ? request.logicCode() : "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"ENERGY\", \"action\": \"RESTRICT\"}");
+        return ruleService.proposeRuleForCivilization(rule, civ);
+    }
+
+    @PostMapping("/{id}/rules/{ruleId}/vote")
+    @Operation(summary = "Vote on a constitutional rule")
+    public io.github.opencivilizationplatform.modules.participation.domain.Rule voteRule(@PathVariable Long id, @PathVariable Long ruleId) {
+        return ruleService.voteRule(ruleId);
+    }
+
+    @GetMapping("/{id}/projects")
+    @Operation(summary = "Get cooperative projects of a civilization")
+    public java.util.List<io.github.opencivilizationplatform.modules.contribution.domain.Project> getProjects(@PathVariable Long id) {
+        return contributionService.getProjectsForCivilization(id);
+    }
+
+    @PostMapping("/{id}/projects/propose")
+    @Operation(summary = "Propose a cooperative project for a civilization")
+    @ResponseStatus(HttpStatus.CREATED)
+    public io.github.opencivilizationplatform.modules.contribution.domain.Project proposeProject(@PathVariable Long id, @RequestBody ProposeProjectRequest request) {
+        Civilization civ = service.getCivilization(id);
+        io.github.opencivilizationplatform.modules.contribution.domain.Project proj = new io.github.opencivilizationplatform.modules.contribution.domain.Project();
+        proj.setTitle(request.title());
+        proj.setDescription(request.description());
+        proj.setCategory(request.category());
+        proj.setImpactArea(request.impactArea() != null ? request.impactArea() : io.github.opencivilizationplatform.modules.contribution.domain.ImpactArea.INFRASTRUCTURE);
+        proj.setRequiredSkillNames(java.util.List.of("Engineering", "Science"));
+        return contributionService.proposeProjectForCivilization(proj, civ);
+    }
+
+    @PostMapping("/{id}/projects/{projectId}/contribute")
+    @Operation(summary = "Contribute skills to a cooperative project")
+    public io.github.opencivilizationplatform.modules.contribution.domain.Contribution contributeProject(@PathVariable Long id, @PathVariable Long projectId, @RequestBody ContributeProjectRequest request) {
+        return contributionService.contributeToProject(projectId, request.citizenId(), request.role());
+    }
+
+    @GetMapping("/{id}/incidents")
+    @Operation(summary = "Get social and ecological incidents of a civilization")
+    public java.util.List<io.github.opencivilizationplatform.modules.social.domain.Incident> getIncidents(@PathVariable Long id) {
+        return socialService.getIncidentsForCivilization(id);
+    }
+
+    @PostMapping("/{id}/incidents/propose")
+    @Operation(summary = "Report an incident for a civilization")
+    @ResponseStatus(HttpStatus.CREATED)
+    public io.github.opencivilizationplatform.modules.social.domain.Incident proposeIncident(@PathVariable Long id, @RequestBody ProposeIncidentRequest request) {
+        Civilization civ = service.getCivilization(id);
+        io.github.opencivilizationplatform.modules.social.domain.Incident inc = new io.github.opencivilizationplatform.modules.social.domain.Incident();
+        inc.setType(request.type() != null ? request.type() : io.github.opencivilizationplatform.modules.social.domain.IncidentType.CONFLICT);
+        inc.setLocation(civ.getHomeRegion() != null ? civ.getHomeRegion().getName() : "Local Settlement");
+        inc.setDescription(request.description());
+        inc.setRiskLevel(request.riskLevel() != null ? request.riskLevel() : io.github.opencivilizationplatform.modules.social.domain.RiskLevel.MEDIUM);
+        inc.setParticipantIds(java.util.List.of("CIT-0001", "CIT-0002"));
+        return socialService.createIncidentForCivilization(inc, civ);
+    }
+
+    @PostMapping("/{id}/incidents/{incidentId}/mediate")
+    @Operation(summary = "Mediate and resolve an incident")
+    public io.github.opencivilizationplatform.modules.social.domain.Incident mediateIncident(@PathVariable Long id, @PathVariable Long incidentId) {
+        return socialService.mediateIncident(incidentId);
+    }
+
     private String resolveToken(HttpServletRequest request) {
         String clientId = (String) request.getAttribute("X-Client-Id");
         if (clientId != null) return clientId;
@@ -149,3 +236,8 @@ record CreateCivilizationRequest(String name, CivilizationScale scale, String re
 record UpdateStatusRequest(CivilizationStatus status) {}
 record FoundCivilizationRequest(String name, CivilizationScale scale, Long regionId, String founderName) {}
 record MapStatusResponse(long total, long claimed, long available, boolean allClaimed) {}
+
+record ProposeRuleRequest(String title, String description, String logicCode) {}
+record ProposeProjectRequest(String title, String description, io.github.opencivilizationplatform.modules.contribution.domain.ProjectCategory category, io.github.opencivilizationplatform.modules.contribution.domain.ImpactArea impactArea) {}
+record ContributeProjectRequest(String citizenId, String role) {}
+record ProposeIncidentRequest(io.github.opencivilizationplatform.modules.social.domain.IncidentType type, String description, io.github.opencivilizationplatform.modules.social.domain.RiskLevel riskLevel) {}

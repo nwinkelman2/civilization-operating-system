@@ -4,6 +4,8 @@ import io.github.opencivilizationplatform.config.seed.CivilizationScale;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
+import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
+import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,11 @@ import java.util.List;
 public class CivilizationService {
 
     private final CivilizationRepository repository;
+    private final RuleRepository ruleRepository;
 
-    public CivilizationService(CivilizationRepository repository) {
+    public CivilizationService(CivilizationRepository repository, RuleRepository ruleRepository) {
         this.repository = repository;
+        this.ruleRepository = ruleRepository;
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +75,16 @@ public class CivilizationService {
     @Transactional
     public Civilization joinAsAgent(Long civilizationId) {
         Civilization civ = repository.findById(civilizationId).orElseThrow();
+
+        // Verificar se a regra "Agent Entry Cap" está ativa e moradia é crítica (< 15%)
+        boolean isEntryCapActive = ruleRepository.findByCivilizationId(civilizationId).stream()
+            .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
+            .anyMatch(r -> r.getLogicCode().contains("LOCK_ENTRY"));
+
+        if (isEntryCapActive && civ.getHousing() != null && civ.getHousing() < 15.0) {
+            throw new IllegalStateException("A admissão de novos agentes foi bloqueada temporariamente pelo Vortex devido a déficit crítico de moradia (< 15.0%).");
+        }
+
         civ.setPopulation((civ.getPopulation() == null ? 100 : civ.getPopulation()) + 1);
         civ.setLastActiveAt(LocalDateTime.now());
         return repository.save(civ);

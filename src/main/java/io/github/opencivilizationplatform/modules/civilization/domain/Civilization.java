@@ -70,6 +70,12 @@ public class Civilization {
     @Column(nullable = false)
     private Double housing = 50.0;
 
+    @Column(name = "resource_history", columnDefinition = "TEXT")
+    private String resourceHistory = "[]";
+
+    public String getResourceHistory() { return resourceHistory; }
+    public void setResourceHistory(String resourceHistory) { this.resourceHistory = resourceHistory; }
+
     public Civilization() {}
 
     // getters + setters for ALL fields
