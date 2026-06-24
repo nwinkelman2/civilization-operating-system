@@ -24,3 +24,8 @@ spring:
   h2:
     console:
       enabled: false
+
+logging:
+  level:
+    org.springframework.cache: DEBUG
+    org.springframework.data.redis: DEBUG

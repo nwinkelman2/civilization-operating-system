@@ -20,8 +20,6 @@ public class CacheConfig {
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultCacheConfig)
-                .withCacheConfiguration("resources", defaultCacheConfig.entryTtl(Duration.ofMinutes(5)))
-                .withCacheConfiguration("balance", defaultCacheConfig.entryTtl(Duration.ofMinutes(5)))
                 .build();
     }
 }
