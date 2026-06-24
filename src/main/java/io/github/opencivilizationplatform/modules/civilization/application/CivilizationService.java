@@ -67,4 +67,12 @@ public class CivilizationService {
             repository.save(civ);
         });
     }
+
+    @Transactional
+    public Civilization joinAsAgent(Long civilizationId) {
+        Civilization civ = repository.findById(civilizationId).orElseThrow();
+        civ.setPopulation((civ.getPopulation() == null ? 100 : civ.getPopulation()) + 1);
+        civ.setLastActiveAt(LocalDateTime.now());
+        return repository.save(civ);
+    }
 }

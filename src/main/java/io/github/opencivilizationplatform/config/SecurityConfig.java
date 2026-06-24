@@ -45,6 +45,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/v1/simulation/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/civilizations/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/civilizations/*/join").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/leaderboard").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/regions/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/voxtex/**").permitAll()

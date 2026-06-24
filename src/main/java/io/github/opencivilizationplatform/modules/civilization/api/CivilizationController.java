@@ -5,6 +5,7 @@ import io.github.opencivilizationplatform.config.seed.CivilizationScale;
 import io.github.opencivilizationplatform.modules.civilization.application.CivilizationService;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
+import io.github.opencivilizationplatform.modules.participation.application.GovernanceBootstrapService;
 import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
 import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
 import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeType;
@@ -25,15 +26,18 @@ public class CivilizationController {
     private final ResourceRegionService regionService;
     private final VoxtexMeshService voxtexService;
     private final JwtService jwtService;
+    private final GovernanceBootstrapService governanceBootstrap;
 
     public CivilizationController(CivilizationService service,
                                    ResourceRegionService regionService,
                                    VoxtexMeshService voxtexService,
-                                   JwtService jwtService) {
+                                   JwtService jwtService,
+                                   GovernanceBootstrapService governanceBootstrap) {
         this.service = service;
         this.regionService = regionService;
         this.voxtexService = voxtexService;
         this.jwtService = jwtService;
+        this.governanceBootstrap = governanceBootstrap;
     }
 
     @GetMapping
@@ -101,7 +105,25 @@ public class CivilizationController {
             "Primary neural node for " + civ.getName()
         );
 
+        // Bootstrap default Voxtex governance rules
+        governanceBootstrap.bootstrapGovernance(civ);
+
         return civ;
+    }
+
+    @GetMapping("/map-status")
+    @Operation(summary = "Get world map claim status", description = "Returns total cities, claimed count, available count, and whether all cities are claimed")
+    public MapStatusResponse mapStatus() {
+        long total = regionService.countTotal();
+        long available = regionService.countAvailable();
+        long claimed = total - available;
+        return new MapStatusResponse(total, claimed, available, available == 0);
+    }
+
+    @PostMapping("/{id}/join")
+    @Operation(summary = "Join a civilization as an agent")
+    public Civilization joinAsAgent(@PathVariable Long id) {
+        return service.joinAsAgent(id);
     }
 
     private String resolveToken(HttpServletRequest request) {
@@ -126,3 +148,4 @@ public class CivilizationController {
 record CreateCivilizationRequest(String name, CivilizationScale scale, String region) {}
 record UpdateStatusRequest(CivilizationStatus status) {}
 record FoundCivilizationRequest(String name, CivilizationScale scale, Long regionId, String founderName) {}
+record MapStatusResponse(long total, long claimed, long available, boolean allClaimed) {}

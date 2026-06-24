@@ -4,6 +4,7 @@ import io.github.opencivilizationplatform.config.seed.CivilizationScale;
 import io.github.opencivilizationplatform.modules.civilization.application.CivilizationService;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
+import io.github.opencivilizationplatform.modules.participation.application.GovernanceBootstrapService;
 import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
 import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
 import org.junit.jupiter.api.Test;
@@ -35,6 +36,7 @@ class CivilizationControllerTest {
     private ResourceRegionService resourceRegionService;
     private VoxtexMeshService voxtexMeshService;
     private JwtService jwtService;
+    private GovernanceBootstrapService governanceBootstrapService;
 
     @BeforeEach
     void setUp() {
@@ -42,7 +44,8 @@ class CivilizationControllerTest {
         resourceRegionService = mock(ResourceRegionService.class);
         voxtexMeshService = mock(VoxtexMeshService.class);
         jwtService = mock(JwtService.class);
-        mockMvc = standaloneSetup(new CivilizationController(civilizationService, resourceRegionService, voxtexMeshService, jwtService))
+        governanceBootstrapService = mock(GovernanceBootstrapService.class);
+        mockMvc = standaloneSetup(new CivilizationController(civilizationService, resourceRegionService, voxtexMeshService, jwtService, governanceBootstrapService))
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }

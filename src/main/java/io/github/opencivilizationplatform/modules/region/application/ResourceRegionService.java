@@ -43,4 +43,14 @@ public class ResourceRegionService {
         region.setClaimedByCivilizationId(civilizationId);
         return repository.save(region);
     }
+
+    @Transactional(readOnly = true)
+    public long countAvailable() {
+        return repository.countByClaimed(false);
+    }
+
+    @Transactional(readOnly = true)
+    public long countTotal() {
+        return repository.count();
+    }
 }

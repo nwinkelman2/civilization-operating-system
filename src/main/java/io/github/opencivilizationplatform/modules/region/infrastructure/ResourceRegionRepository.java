@@ -9,4 +9,5 @@ import java.util.List;
 public interface ResourceRegionRepository extends JpaRepository<ResourceRegion, Long> {
     List<ResourceRegion> findByScale(CivilizationScale scale);
     List<ResourceRegion> findByClaimedFalse();
+    long countByClaimed(boolean claimed);
 }
