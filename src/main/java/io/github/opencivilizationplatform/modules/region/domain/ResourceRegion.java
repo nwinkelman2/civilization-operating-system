@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.locationtech.jts.geom.Point;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "resource_regions")
@@ -27,6 +29,7 @@ public class ResourceRegion {
     private CivilizationScale scale;
 
     @Column(columnDefinition = "geometry(Point, 4326)")
+    @JsonIgnore
     private Point location;
 
     // Resource availability 0-100
@@ -67,6 +70,13 @@ public class ResourceRegion {
     public void setScale(CivilizationScale scale) { this.scale = scale; }
     public Point getLocation() { return location; }
     public void setLocation(Point location) { this.location = location; }
+
+    @Transient
+    @JsonProperty("location")
+    public java.util.Map<String, Double> getLocationCoordinates() {
+        if (location == null) return null;
+        return java.util.Map.of("x", location.getX(), "y", location.getY());
+    }
     public Double getFoodAvailability() { return foodAvailability; }
     public void setFoodAvailability(Double foodAvailability) { this.foodAvailability = foodAvailability; }
     public Double getWaterAvailability() { return waterAvailability; }

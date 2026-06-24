@@ -60,4 +60,16 @@ public class TradeService {
     public List<TradeAgreement> getPendingTrades(Long civId) {
         return repository.findByToCivilizationIdAndStatus(civId, TradeStatus.PROPOSED);
     }
+
+    @Transactional(readOnly = true)
+    public List<TradeAgreement> getAllTrades() {
+        return repository.findAll();
+    }
+
+    @Transactional
+    public TradeAgreement rejectTrade(Long tradeId) {
+        TradeAgreement trade = repository.findById(tradeId).orElseThrow();
+        trade.setStatus(TradeStatus.REJECTED);
+        return repository.save(trade);
+    }
 }

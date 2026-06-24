@@ -59,6 +59,18 @@ public class TradeController {
     public void cancel(@PathVariable Long tradeId) {
         service.cancelTrade(tradeId);
     }
+
+    @GetMapping
+    @Operation(summary = "List all trade agreements")
+    public List<TradeAgreement> getAll() {
+        return service.getAllTrades();
+    }
+
+    @PostMapping("/{tradeId}/reject")
+    @Operation(summary = "Reject a trade proposal")
+    public TradeAgreement reject(@PathVariable Long tradeId) {
+        return service.rejectTrade(tradeId);
+    }
 }
 
 record TradeRequest(@NotNull Long fromCivId, @NotNull Long toCivId, String resourceType, @NotNull Double quantity) {}

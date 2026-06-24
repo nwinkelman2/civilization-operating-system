@@ -49,7 +49,7 @@
             zoom: 2,
             minZoom: 2,
             maxZoom: 6,
-            maxBounds: [[-85, -180], [85, 180]],
+            maxBounds: [ [-85, -180], [85, 180] ],
             maxBoundsViscosity: 1.0,
             zoomControl: true,
             attributionControl: false
@@ -94,11 +94,15 @@
 
             // Marker with resource icon
             const icon = L.divIcon({
-                html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px ${color};"></div>`,
+                html: `<div style="background:${color};width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 10px ${color};cursor:pointer;"></div>`,
                 className: '',
                 iconSize: [12, 12]
             });
-            L.marker([lat, lng], { icon }).addTo(map);
+            const marker = L.marker([lat, lng], { icon }).addTo(map);
+            marker.bindTooltip(r.name, { direction: 'top', className: 'region-tooltip' });
+            marker.on('click', function() {
+                showRegionDetails(r);
+            });
         });
 
         function showRegionDetails(r) {
