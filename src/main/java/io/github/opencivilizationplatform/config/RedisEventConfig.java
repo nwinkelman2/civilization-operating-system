@@ -2,6 +2,8 @@ package io.github.opencivilizationplatform.config;
 
 import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexMessage;
+import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNode;
+import io.github.opencivilizationplatform.modules.voxtex.dto.VoxtexMessageSyncDTO;
 import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
 import io.github.opencivilizationplatform.web.handler.VoxtexWebSocketHandler;
 import org.slf4j.Logger;
@@ -55,8 +57,32 @@ public class RedisEventConfig {
 
         public void receiveMessage(String message) {
             try {
-                VoxtexMessage msg = objectMapper.readValue(message, VoxtexMessage.class);
-                log.info("Received event from Redis Pub/Sub: {} -> {}", msg.getSourceNode().getName(), msg.getTargetNode().getName());
+                VoxtexMessageSyncDTO dto = objectMapper.readValue(message, VoxtexMessageSyncDTO.class);
+                
+                // Map back to lightweight shell VoxtexMessage
+                VoxtexMessage msg = new VoxtexMessage();
+                msg.setId(dto.getId());
+                msg.setMessageType(dto.getMessageType());
+                msg.setContent(dto.getContent());
+                msg.setHopCount(dto.getHopCount());
+                
+                if (dto.getSourceNodeId() != null) {
+                    VoxtexNode source = new VoxtexNode();
+                    source.setId(dto.getSourceNodeId());
+                    source.setName(dto.getSourceNodeName());
+                    msg.setSourceNode(source);
+                }
+                
+                if (dto.getTargetNodeId() != null) {
+                    VoxtexNode target = new VoxtexNode();
+                    target.setId(dto.getTargetNodeId());
+                    target.setName(dto.getTargetNodeName());
+                    msg.setTargetNode(target);
+                }
+                
+                log.info("Received event from Redis Pub/Sub: {} -> {}", 
+                    msg.getSourceNode() != null ? msg.getSourceNode().getName() : "null", 
+                    msg.getTargetNode() != null ? msg.getTargetNode().getName() : "null");
                 
                 // 1. Trigger local SSE
                 meshService.notifyListenersLocally(msg);

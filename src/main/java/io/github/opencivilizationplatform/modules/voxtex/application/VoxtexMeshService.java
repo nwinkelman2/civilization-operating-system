@@ -1,6 +1,7 @@
 package io.github.opencivilizationplatform.modules.voxtex.application;
 
 import io.github.opencivilizationplatform.modules.voxtex.domain.*;
+import io.github.opencivilizationplatform.modules.voxtex.dto.VoxtexMessageSyncDTO;
 import io.github.opencivilizationplatform.modules.voxtex.infrastructure.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -256,7 +257,22 @@ public class VoxtexMeshService {
 
     private void sendEventToRedis(VoxtexMessage msg) {
         try {
-            String json = objectMapper.writeValueAsString(msg);
+            Long sourceNodeId = msg.getSourceNode() != null ? msg.getSourceNode().getId() : null;
+            String sourceNodeName = msg.getSourceNode() != null ? msg.getSourceNode().getName() : null;
+            Long targetNodeId = msg.getTargetNode() != null ? msg.getTargetNode().getId() : null;
+            String targetNodeName = msg.getTargetNode() != null ? msg.getTargetNode().getName() : null;
+
+            VoxtexMessageSyncDTO dto = new VoxtexMessageSyncDTO(
+                msg.getId(),
+                sourceNodeId,
+                sourceNodeName,
+                targetNodeId,
+                targetNodeName,
+                msg.getMessageType(),
+                msg.getContent(),
+                msg.getHopCount()
+            );
+            String json = objectMapper.writeValueAsString(dto);
             redisTemplate.convertAndSend("voxtex-mesh-events", json);
         } catch (Exception e) {
             log.error("Failed to publish message event to Redis", e);

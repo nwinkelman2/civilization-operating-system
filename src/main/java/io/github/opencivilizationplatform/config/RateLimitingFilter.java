@@ -29,13 +29,24 @@ public class RateLimitingFilter implements Filter {
         String path = httpRequest.getRequestURI();
 
         if (path.startsWith("/api/v1/")) {
-            String clientIp = httpRequest.getRemoteAddr();
+            String clientIp = httpRequest.getHeader("X-Forwarded-For");
+            if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+                clientIp = httpRequest.getRemoteAddr();
+            } else {
+                clientIp = clientIp.split(",")[0].trim();
+            }
             String redisKey = "rate:limit:" + clientIp;
 
             Long currentCount = redisTemplate.opsForValue().increment(redisKey);
-
-            if (currentCount != null && currentCount == 1L) {
-                redisTemplate.expire(redisKey, Duration.ofMinutes(1));
+            if (currentCount != null) {
+                if (currentCount == 1L) {
+                    redisTemplate.expire(redisKey, Duration.ofMinutes(1));
+                } else {
+                    Long ttl = redisTemplate.getExpire(redisKey);
+                    if (ttl != null && ttl == -1L) {
+                        redisTemplate.expire(redisKey, Duration.ofMinutes(1));
+                    }
+                }
             }
 
             if (currentCount != null && currentCount > MAX_REQUESTS_PER_MINUTE) {
