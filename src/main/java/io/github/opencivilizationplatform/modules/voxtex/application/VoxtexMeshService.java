@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -144,6 +145,7 @@ public class VoxtexMeshService {
 
     @Transactional
     @Scheduled(fixedRate = 15000)
+    @SchedulerLock(name = "voxtexMeshTick", lockAtMostFor = "12s", lockAtLeastFor = "5s")
     public void processMeshTick() {
         log.debug("VOXTEX MESH TICK: Processing messages and updating network");
 

@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 import java.util.List;
 import java.util.Random;
@@ -31,6 +32,7 @@ public class CortexEngineService {
 
     @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
     @Transactional
+    @SchedulerLock(name = "cortexEngineTick", lockAtMostFor = "25s", lockAtLeastFor = "10s")
     public void tick() {
         List<Civilization> civilizations = civilizationRepository.findAll();
         if (civilizations.isEmpty()) return;
