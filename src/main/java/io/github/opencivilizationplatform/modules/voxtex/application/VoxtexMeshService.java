@@ -8,6 +8,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -240,6 +242,19 @@ public class VoxtexMeshService {
     }
 
     private void publishEventToRedis(VoxtexMessage msg) {
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    sendEventToRedis(msg);
+                }
+            });
+        } else {
+            sendEventToRedis(msg);
+        }
+    }
+
+    private void sendEventToRedis(VoxtexMessage msg) {
         try {
             String json = objectMapper.writeValueAsString(msg);
             redisTemplate.convertAndSend("voxtex-mesh-events", json);

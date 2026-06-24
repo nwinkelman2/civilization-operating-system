@@ -35,7 +35,6 @@ public class RedisPubSubIntegrationTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @Transactional
     void shouldPropagateEventThroughRedisPubSub() throws InterruptedException {
         assertThat(objectMapper).isNotNull(); // Verify Jackson 3.x ObjectMapper injection
         
