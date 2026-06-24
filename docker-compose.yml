@@ -17,6 +17,13 @@ services:
       retries: 5
     restart: unless-stopped
 
+  redis:
+    image: redis:7-alpine
+    container_name: civos-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
   # Primary app instance (also serves as primary)
   app:
     build: .
@@ -34,6 +41,8 @@ services:
       CIVILIZATION_ADMIN_USER: ${CIVILIZATION_ADMIN_USER:-admin}
       CIVILIZATION_ADMIN_PASSWORD: ${CIVILIZATION_ADMIN_PASSWORD:-admin}
       LOG_PATH: ${LOG_PATH:-/var/log/civilization-os}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
       - "8080:8080"
     restart: unless-stopped
@@ -54,6 +63,8 @@ services:
       CIVILIZATION_ADMIN_USER: ${CIVILIZATION_ADMIN_USER:-admin}
       CIVILIZATION_ADMIN_PASSWORD: ${CIVILIZATION_ADMIN_PASSWORD:-admin}
       LOG_PATH: ${LOG_PATH:-/var/log/civilization-os}
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
     ports:
       - "8081:8080"
     restart: unless-stopped
