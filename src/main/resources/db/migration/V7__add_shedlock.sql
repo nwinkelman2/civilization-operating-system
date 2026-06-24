@@ -1,4 +1,4 @@
-CREATE TABLE shedlock (
+CREATE TABLE IF NOT EXISTS shedlock (
     name VARCHAR(64) PRIMARY KEY,
     lock_until TIMESTAMP WITH TIME ZONE,
     locked_at TIMESTAMP WITH TIME ZONE,

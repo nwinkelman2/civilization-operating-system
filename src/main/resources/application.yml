@@ -16,14 +16,11 @@ spring:
     password: postgres
 
   flyway:
-    enabled: false
+    enabled: true
 
   jpa:
     hibernate:
       ddl-auto: update
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     show-sql: true
     properties:
       hibernate:

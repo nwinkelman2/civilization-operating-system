@@ -1,6 +1,5 @@
 # Stage 1: Build
-FROM eclipse-temurin:25-jdk AS build
-RUN apt-get update && apt-get install -y maven
+FROM maven:3-eclipse-temurin-25 AS build
 WORKDIR /app
 COPY pom.xml .
 RUN mvn dependency:go-offline -B

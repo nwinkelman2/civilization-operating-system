@@ -133,6 +133,17 @@ CREATE TABLE citizen_interests (
     interests VARCHAR(255)
 );
 
+-- Contribution Projects
+CREATE TABLE contribution_projects (
+    id BIGSERIAL PRIMARY KEY,
+    title VARCHAR(255) NOT NULL,
+    description VARCHAR(1000) NOT NULL,
+    category VARCHAR(31) NOT NULL,
+    impact_area VARCHAR(31) NOT NULL,
+    status VARCHAR(31) NOT NULL,
+    created_at TIMESTAMP
+);
+
 -- Contributions
 CREATE TABLE contributions (
     id BIGSERIAL PRIMARY KEY,
@@ -185,17 +196,6 @@ CREATE TABLE social_cases (
 CREATE TABLE social_cases_panel_expert_ids (
     social_cases_id BIGINT NOT NULL REFERENCES social_cases(id),
     panel_expert_ids VARCHAR(255)
-);
-
--- Contribution Projects
-CREATE TABLE contribution_projects (
-    id BIGSERIAL PRIMARY KEY,
-    title VARCHAR(255) NOT NULL,
-    description VARCHAR(1000) NOT NULL,
-    category VARCHAR(31) NOT NULL,
-    impact_area VARCHAR(31) NOT NULL,
-    status VARCHAR(31) NOT NULL,
-    created_at TIMESTAMP
 );
 
 -- Project required skill names element collection

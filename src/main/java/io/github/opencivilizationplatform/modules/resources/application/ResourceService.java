@@ -16,7 +16,7 @@ public class ResourceService {
         this.resourceRepository = resourceRepository;
     }
 
-    @Cacheable(value = "resources", key = "#pageable.pageNumber + '-' + #pageable.pageSize")
+    @Cacheable(value = "resources", key = "#pageable.isPaged() ? #pageable.pageNumber + '-' + #pageable.pageSize : 'unpaged'")
     public Page<Resource> getAllResources(Pageable pageable) {
         return resourceRepository.findAll(pageable);
     }
