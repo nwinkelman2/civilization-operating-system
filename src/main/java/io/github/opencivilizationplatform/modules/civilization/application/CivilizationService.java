@@ -82,7 +82,7 @@ public class CivilizationService {
             .anyMatch(r -> r.getLogicCode().contains("LOCK_ENTRY"));
 
         if (isEntryCapActive && civ.getHousing() != null && civ.getHousing() < 15.0) {
-            throw new IllegalStateException("A admissão de novos agentes foi bloqueada temporariamente pelo Vortex devido a déficit crítico de moradia (< 15.0%).");
+            throw new IllegalStateException("A admissão de novos agentes foi bloqueada temporariamente pelo Cortex devido a déficit crítico de moradia (< 15.0%).");
         }
 
         civ.setPopulation((civ.getPopulation() == null ? 100 : civ.getPopulation()) + 1);

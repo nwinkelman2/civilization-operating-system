@@ -109,7 +109,7 @@ public class GovernanceBootstrapService {
 
             new RuleTemplate(
                 "Birth Control Policy",
-                "Se as reservas de alimento da civilização caírem abaixo de 30.0, o Vortex reduzirá a taxa de natalidade natural em 75% para conservar recursos.",
+                "Se as reservas de alimento da civilização caírem abaixo de 30.0, o Cortex reduzirá a taxa de natalidade natural em 75% para conservar recursos.",
                 "{\"type\": \"DEMOGRAPHIC_LIMIT\", \"metric\": \"FOOD\", \"threshold\": 30.0, \"action\": \"LIMIT_BIRTHS\"}"
             ),
 
@@ -121,19 +121,19 @@ public class GovernanceBootstrapService {
 
             new RuleTemplate(
                 "Emergency Agricultural Push",
-                "Se as reservas de alimento caírem abaixo de 35.0, o Vortex ativará um subsídio agrícola de emergência adicionando +5.0 de comida por tick.",
+                "Se as reservas de alimento caírem abaixo de 35.0, o Cortex ativará um subsídio agrícola de emergência adicionando +5.0 de comida por tick.",
                 "{\"type\": \"PRODUCTION_BOOST\", \"metric\": \"FOOD\", \"threshold\": 35.0, \"action\": \"BOOST_AGRI\"}"
             ),
 
             new RuleTemplate(
                 "Autonomous Robotic Labor Act",
-                "Autoriza o Vortex a fabricar e operar robôs autônomos para exploração, agropecuária e manutenção de infraestrutura, gastando 15 minerais e 10 energia por robô, e consumindo 0.15 de energia por tick.",
+                "Autoriza o Cortex a fabricar e operar robôs autônomos para exploração, agropecuária e manutenção de infraestrutura, gastando 15 minerais e 10 energia por robô, e consumindo 0.15 de energia por tick.",
                 "{\"type\": \"AUTOMATION\", \"metric\": \"ENERGY\", \"action\": \"OPERATE_ROBOTS\"}"
             ),
 
             new RuleTemplate(
-                "Inter-Civilization Vortex Barter Protocol",
-                "Habilita o Vortex a realizar negociações e escambos autônomos com outras civilizações para importar recursos críticos em falta (< 30.0) em troca de excedentes físicos ou pessoal (população/trabalhadores).",
+                "Inter-Cortex Mesh Barter Protocol",
+                "Habilita o Cortex a realizar negociações e escambos autônomos com outros nós Cortex da rede mesh para importar recursos críticos em falta (< 30.0) em troca de excedentes físicos ou pessoal (população/trabalhadores).",
                 "{\"type\": \"AUTOMATION\", \"metric\": \"RESOURCES\", \"action\": \"AUTONOMOUS_TRADE\"}"
             )
         );
