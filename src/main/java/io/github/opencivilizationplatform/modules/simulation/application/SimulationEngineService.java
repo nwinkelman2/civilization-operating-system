@@ -83,7 +83,7 @@ public class SimulationEngineService {
                         .ifPresent(b -> {
                             double percentage = b.getPercentageMet();
                             if (percentage < 100) {
-                                String decision = String.format("[%s] DECISION: %s deficiency detected (%.1f%%). Rule '%s' fired.",
+                                String decision = String.format(java.util.Locale.ROOT, "[%s] DECISION: %s deficiency detected (%.1f%%). Rule '%s' fired.",
                                     timestamp, metricCat, percentage, rule.getTitle());
                                 pushDecision(decision);
                                 log.info(decision);

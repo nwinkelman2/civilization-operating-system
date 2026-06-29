@@ -14,7 +14,7 @@ import io.github.opencivilizationplatform.modules.social.application.SocialStabi
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.civilization.application.CivilizationService;
 import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
-import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
+import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
 import io.github.opencivilizationplatform.modules.technology.application.TechnologyService;
 import static org.springframework.test.web.servlet.setup.MockMvcBuilders.*;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +49,7 @@ class PageControllerTest {
     private AutomationUnitService automationService;
     private CivilizationService civilizationService;
     private ResourceRegionService regionService;
-    private VoxtexMeshService voxtexService;
+    private NexusMeshService nexusService;
     private TechnologyService technologyService;
 
     @BeforeEach
@@ -68,9 +68,9 @@ class PageControllerTest {
         automationService = mock(AutomationUnitService.class);
         civilizationService = mock(CivilizationService.class);
         regionService = mock(ResourceRegionService.class);
-        voxtexService = mock(VoxtexMeshService.class);
+        nexusService = mock(NexusMeshService.class);
         technologyService = mock(TechnologyService.class);
-        mockMvc = standaloneSetup(new PageController(biosphereMetricService, needService, resourceService, balanceService, facilityService, shipmentService, interactionService, ruleService, contributionService, simulationEngineService, socialStabilityService, automationService, civilizationService, regionService, voxtexService, technologyService)).build();
+        mockMvc = standaloneSetup(new PageController(biosphereMetricService, needService, resourceService, balanceService, facilityService, shipmentService, interactionService, ruleService, contributionService, simulationEngineService, socialStabilityService, automationService, civilizationService, regionService, nexusService, technologyService)).build();
     }
 
 
@@ -81,6 +81,15 @@ class PageControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("layout"))
                 .andExpect(model().attribute("viewName", "dashboard"));
+    }
+
+    @Test
+    void testNexus() throws Exception {
+        when(nexusService.getAllNodes()).thenReturn(new ArrayList<>());
+        mockMvc.perform(get("/nexus"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("layout"))
+                .andExpect(model().attribute("viewName", "nexus"));
     }
 
     @Test
@@ -183,3 +192,4 @@ class PageControllerTest {
                 .andExpect(model().attribute("viewName", "simulation"));
     }
 }
+

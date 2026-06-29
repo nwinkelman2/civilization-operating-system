@@ -14,7 +14,7 @@ import io.github.opencivilizationplatform.modules.contribution.application.Contr
 import io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService;
 import io.github.opencivilizationplatform.modules.execution.application.AutomationUnitService;
 import io.github.opencivilizationplatform.modules.social.application.SocialStabilityService;
-import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
+import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
 import io.github.opencivilizationplatform.modules.technology.application.TechnologyService;
 import io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus;
 import org.springframework.data.domain.Pageable;
@@ -44,7 +44,7 @@ public class PageController {
     private final AutomationUnitService automationService;
     private final CivilizationService civilizationService;
     private final ResourceRegionService regionService;
-    private final VoxtexMeshService voxtexService;
+    private final NexusMeshService nexusService;
     private final TechnologyService technologyService;
 
     public PageController(BiosphereMetricService biosphereService,
@@ -61,7 +61,7 @@ public class PageController {
                           AutomationUnitService automationService,
                           CivilizationService civilizationService,
                           ResourceRegionService regionService,
-                          VoxtexMeshService voxtexService,
+                          NexusMeshService nexusService,
                           TechnologyService technologyService) {
         this.biosphereService = biosphereService;
         this.needService = needService;
@@ -77,7 +77,7 @@ public class PageController {
         this.automationService = automationService;
         this.civilizationService = civilizationService;
         this.regionService = regionService;
-        this.voxtexService = voxtexService;
+        this.nexusService = nexusService;
         this.technologyService = technologyService;
     }
 
@@ -216,11 +216,11 @@ public class PageController {
         var region = civ.getHomeRegion();
         model.addAttribute("region", region);
 
-        var nodes = voxtexService.getNodesForCivilization(id);
+        var nodes = nexusService.getNodesForCivilization(id);
         model.addAttribute("nodes", nodes);
 
         var messages = nodes.isEmpty() ? List.of() :
-            voxtexService.getConversation(nodes.get(0).getId(),
+            nexusService.getConversation(nodes.get(0).getId(),
                 nodes.size() > 1 ? nodes.get(1).getId() : nodes.get(0).getId());
         model.addAttribute("messages", messages);
 
@@ -250,21 +250,21 @@ public class PageController {
         return "leaderboard";
     }
 
-    @GetMapping("/voxtex")
-    public String voxtex(Model model) {
-        model.addAttribute("status", voxtexService.getNetworkStatus());
-        model.addAttribute("nodes", voxtexService.getAllNodes());
-        model.addAttribute("connections", voxtexService.getAllConnections());
+    @GetMapping("/nexus")
+    public String nexus(Model model) {
+        model.addAttribute("status", nexusService.getNetworkStatus());
+        model.addAttribute("nodes", nexusService.getAllNodes());
+        model.addAttribute("connections", nexusService.getAllConnections());
         model.addAttribute("recentMessages",
-            voxtexService.getAllNodes().isEmpty() ? List.of() :
-            voxtexService.getConversation(
-                voxtexService.getAllNodes().get(0).getId(),
-                voxtexService.getAllNodes().size() > 1 ?
-                    voxtexService.getAllNodes().get(1).getId() :
-                    voxtexService.getAllNodes().get(0).getId()
+            nexusService.getAllNodes().isEmpty() ? List.of() :
+            nexusService.getConversation(
+                nexusService.getAllNodes().get(0).getId(),
+                nexusService.getAllNodes().size() > 1 ?
+                    nexusService.getAllNodes().get(1).getId() :
+                    nexusService.getAllNodes().get(0).getId()
             )
         );
-        return render(model, "voxtex", "Voxtex Mesh", "voxtex");
+        return render(model, "nexus", "Nexus Mesh", "nexus");
     }
 
     @GetMapping("/trade")
@@ -287,3 +287,4 @@ public class PageController {
         return render(model, "civilizations", "Civilizations", "civilizations");
     }
 }
+

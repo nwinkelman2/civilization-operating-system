@@ -6,6 +6,11 @@ import io.github.opencivilizationplatform.modules.civilization.domain.Civilizati
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
 import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
 import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
+import io.github.opencivilizationplatform.modules.contribution.domain.Citizen;
+import io.github.opencivilizationplatform.modules.contribution.domain.CitizenWallet;
+import io.github.opencivilizationplatform.modules.contribution.domain.Role;
+import io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository;
+import io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenWalletRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -19,10 +24,17 @@ public class CivilizationService {
 
     private final CivilizationRepository repository;
     private final RuleRepository ruleRepository;
+    private final CitizenRepository citizenRepository;
+    private final CitizenWalletRepository citizenWalletRepository;
 
-    public CivilizationService(CivilizationRepository repository, RuleRepository ruleRepository) {
+    public CivilizationService(CivilizationRepository repository,
+                               RuleRepository ruleRepository,
+                               CitizenRepository citizenRepository,
+                               CitizenWalletRepository citizenWalletRepository) {
         this.repository = repository;
         this.ruleRepository = ruleRepository;
+        this.citizenRepository = citizenRepository;
+        this.citizenWalletRepository = citizenWalletRepository;
     }
 
     @Transactional(readOnly = true)
@@ -43,7 +55,13 @@ public class CivilizationService {
         civ.setRegion(region);
         civ.setOwnerToken(ownerToken);
         civ.setStatus(CivilizationStatus.EMERGING);
-        return repository.save(civ);
+        
+        Civilization savedCiv = repository.save(civ);
+        
+        // Auto-create/link the founder citizen record
+        joinAsAgent(savedCiv.getId(), ownerToken);
+        
+        return savedCiv;
     }
 
     @Transactional
@@ -73,7 +91,7 @@ public class CivilizationService {
     }
 
     @Transactional
-    public Civilization joinAsAgent(Long civilizationId) {
+    public Civilization joinAsAgent(Long civilizationId, String citizenId) {
         Civilization civ = repository.findById(civilizationId).orElseThrow();
 
         // Verificar se a regra "Agent Entry Cap" está ativa e moradia é crítica (< 15%)
@@ -85,7 +103,43 @@ public class CivilizationService {
             throw new IllegalStateException("A admissão de novos agentes foi bloqueada temporariamente pelo Cortex devido a déficit crítico de moradia (< 15.0%).");
         }
 
-        civ.setPopulation((civ.getPopulation() == null ? 100 : civ.getPopulation()) + 1);
+        // Find or create the citizen
+        Citizen citizen = citizenRepository.findByCitizenId(citizenId)
+            .orElseGet(() -> {
+                Citizen c = new Citizen();
+                c.setCitizenId(citizenId);
+                c.setName("Agent " + citizenId.substring(Math.max(0, citizenId.length() - 6)));
+                c.setReputationScore(50.0);
+                return citizenRepository.save(c);
+            });
+
+        // Set role (FOUNDER if they own the civ, otherwise CITIZEN if they don't have a role yet)
+        if (citizenId.equals(civ.getOwnerToken())) {
+            citizen.setRole(Role.FOUNDER);
+        } else if (citizen.getRole() == null || citizen.getRole() == Role.FOUNDER) {
+            citizen.setRole(Role.CITIZEN);
+        }
+
+        // Link citizen to this civilization
+        boolean isFirstTimeJoin = citizen.getCivilization() == null || !civilizationId.equals(citizen.getCivilization().getId());
+        citizen.setCivilization(civ);
+        citizenRepository.save(citizen);
+
+        // Initialize wallet if absent
+        if (citizen.getWallet() == null) {
+            CitizenWallet wallet = new CitizenWallet();
+            wallet.setCitizen(citizen);
+            wallet.setFood(20.0);
+            wallet.setWater(20.0);
+            wallet.setMinerals(5.0);
+            wallet.setEnergy(10.0);
+            citizenWalletRepository.save(wallet);
+            citizen.setWallet(wallet);
+        }
+
+        if (isFirstTimeJoin) {
+            civ.setPopulation((civ.getPopulation() == null ? 100 : civ.getPopulation()) + 1);
+        }
         civ.setLastActiveAt(LocalDateTime.now());
         return repository.save(civ);
     }

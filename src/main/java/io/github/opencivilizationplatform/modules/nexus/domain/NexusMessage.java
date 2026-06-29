@@ -1,13 +1,15 @@
-package io.github.opencivilizationplatform.modules.voxtex.domain;
+package io.github.opencivilizationplatform.modules.nexus.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "voxtex_messages")
-public class VoxtexMessage {
+@Table(name = "nexus_messages")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class NexusMessage {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,17 +18,17 @@ public class VoxtexMessage {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "source_node_id", nullable = false)
     @NotNull
-    private VoxtexNode sourceNode;
+    private NexusNode sourceNode;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "target_node_id", nullable = false)
     @NotNull
-    private VoxtexNode targetNode;
+    private NexusNode targetNode;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @NotNull
-    private VoxtexMessageType messageType;
+    private NexusMessageType messageType;
 
     @Column(nullable = false, length = 4000)
     @NotBlank
@@ -44,16 +46,16 @@ public class VoxtexMessage {
     @Column(name = "delivered")
     private Boolean delivered;
 
-    public VoxtexMessage() {}
+    public NexusMessage() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public VoxtexNode getSourceNode() { return sourceNode; }
-    public void setSourceNode(VoxtexNode sourceNode) { this.sourceNode = sourceNode; }
-    public VoxtexNode getTargetNode() { return targetNode; }
-    public void setTargetNode(VoxtexNode targetNode) { this.targetNode = targetNode; }
-    public VoxtexMessageType getMessageType() { return messageType; }
-    public void setMessageType(VoxtexMessageType messageType) { this.messageType = messageType; }
+    public NexusNode getSourceNode() { return sourceNode; }
+    public void setSourceNode(NexusNode sourceNode) { this.sourceNode = sourceNode; }
+    public NexusNode getTargetNode() { return targetNode; }
+    public void setTargetNode(NexusNode targetNode) { this.targetNode = targetNode; }
+    public NexusMessageType getMessageType() { return messageType; }
+    public void setMessageType(NexusMessageType messageType) { this.messageType = messageType; }
     public String getContent() { return content; }
     public void setContent(String content) { this.content = content; }
     public LocalDateTime getSentAt() { return sentAt; }
@@ -72,3 +74,4 @@ public class VoxtexMessage {
         if (delivered == null) delivered = false;
     }
 }
+

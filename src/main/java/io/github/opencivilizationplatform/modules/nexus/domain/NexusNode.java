@@ -1,5 +1,7 @@
-package io.github.opencivilizationplatform.modules.voxtex.domain;
+package io.github.opencivilizationplatform.modules.nexus.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -7,8 +9,9 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "voxtex_nodes")
-public class VoxtexNode {
+@Table(name = "nexus_nodes")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class NexusNode {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,17 +24,18 @@ public class VoxtexNode {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "civilization_id", nullable = false)
     @NotNull
+    @JsonIgnore
     private Civilization civilization;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @NotNull
-    private VoxtexNodeType type;
+    private NexusNodeType type;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @NotNull
-    private VoxtexNodeStatus status;
+    private NexusNodeStatus status;
 
     @Column(name = "region")
     private String region;
@@ -45,7 +49,7 @@ public class VoxtexNode {
     @Column(name = "message_count")
     private Integer messageCount;
 
-    public VoxtexNode() {}
+    public NexusNode() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -53,10 +57,10 @@ public class VoxtexNode {
     public void setName(String name) { this.name = name; }
     public Civilization getCivilization() { return civilization; }
     public void setCivilization(Civilization civilization) { this.civilization = civilization; }
-    public VoxtexNodeType getType() { return type; }
-    public void setType(VoxtexNodeType type) { this.type = type; }
-    public VoxtexNodeStatus getStatus() { return status; }
-    public void setStatus(VoxtexNodeStatus status) { this.status = status; }
+    public NexusNodeType getType() { return type; }
+    public void setType(NexusNodeType type) { this.type = type; }
+    public NexusNodeStatus getStatus() { return status; }
+    public void setStatus(NexusNodeStatus status) { this.status = status; }
     public String getRegion() { return region; }
     public void setRegion(String region) { this.region = region; }
     public String getKnowledgeBase() { return knowledgeBase; }
@@ -68,8 +72,9 @@ public class VoxtexNode {
 
     @PrePersist
     protected void onCreate() {
-        if (status == null) status = VoxtexNodeStatus.BOOTING;
+        if (status == null) status = NexusNodeStatus.BOOTING;
         if (messageCount == null) messageCount = 0;
         lastActiveAt = LocalDateTime.now();
     }
 }
+

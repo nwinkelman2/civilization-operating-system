@@ -20,6 +20,18 @@ public class Citizen {
     @NotBlank
     private String name;
 
+    @Enumerated(EnumType.STRING)
+    private Role role;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "civilization_id")
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private io.github.opencivilizationplatform.modules.civilization.domain.Civilization civilization;
+
+    @OneToOne(mappedBy = "citizen", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+    private CitizenWallet wallet;
+
     @ManyToMany
     @JoinTable(
         name = "citizen_skills",
@@ -44,6 +56,12 @@ public class Citizen {
     public void setCitizenId(String citizenId) { this.citizenId = citizenId; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
+    public Role getRole() { return role; }
+    public void setRole(Role role) { this.role = role; }
+    public io.github.opencivilizationplatform.modules.civilization.domain.Civilization getCivilization() { return civilization; }
+    public void setCivilization(io.github.opencivilizationplatform.modules.civilization.domain.Civilization civilization) { this.civilization = civilization; }
+    public CitizenWallet getWallet() { return wallet; }
+    public void setWallet(CitizenWallet wallet) { this.wallet = wallet; }
     public List<Skill> getSkills() { return skills; }
     public void setSkills(List<Skill> skills) { this.skills = skills; }
     public List<String> getInterests() { return interests; }

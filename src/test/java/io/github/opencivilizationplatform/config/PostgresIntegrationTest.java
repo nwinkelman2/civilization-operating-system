@@ -2,7 +2,7 @@ package io.github.opencivilizationplatform.config;
 
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
 import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
-import io.github.opencivilizationplatform.modules.voxtex.infrastructure.VoxtexNodeRepository;
+import io.github.opencivilizationplatform.modules.nexus.infrastructure.NexusNodeRepository;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -45,7 +45,7 @@ class PostgresIntegrationTest {
     private ResourceRegionRepository regionRepository;
 
     @Autowired
-    private VoxtexNodeRepository nodeRepository;
+    private NexusNodeRepository nodeRepository;
 
     @Test
     void contextLoadsAndTablesExist() {
@@ -54,3 +54,4 @@ class PostgresIntegrationTest {
         assertTrue(nodeRepository.count() == 0);
     }
 }
+

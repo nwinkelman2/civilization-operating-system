@@ -736,31 +736,31 @@ tr:hover td {
 .civ-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
 @media (max-width: 768px) { .civ-grid-2col { grid-template-columns: 1fr; } }
 
-/* === Voxtex System === */
-.voxtex-layout { display: flex; flex-direction: column; gap: 16px; }
-.voxtex-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-.voxtex-stat { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.1); border-radius: 8px; padding: 16px; text-align: center; }
+/* === nexus System === */
+.nexus-layout { display: flex; flex-direction: column; gap: 16px; }
+.nexus-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.nexus-stat { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.1); border-radius: 8px; padding: 16px; text-align: center; }
 .vs-label { display: block; font-size: 0.6rem; color: var(--text-dim); letter-spacing: 2px; margin-bottom: 4px; }
 .vs-value { display: block; font-size: 1.2rem; font-weight: 700; color: var(--accent-cyan); }
 .status-online { color: #00ff88 !important; }
 .status-offline { color: #ff4444 !important; }
-.voxtex-content { display: flex; gap: 20px; }
-.voxtex-canvas-container { flex: 1; height: 500px; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,242,255,0.1); border-radius: 8px; overflow: hidden; }
-#voxtexCanvas { width: 100%; height: 100%; }
-.voxtex-sidebar { width: 350px; flex-shrink: 0; }
-.voxtex-sidebar h3 { color: var(--accent-cyan); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 12px; }
-.voxtex-msg-log { display: flex; flex-direction: column; gap: 6px; max-height: 460px; overflow-y: auto; padding-right: 6px; }
-.voxtex-msg { padding: 8px; border-radius: 4px; font-size: 0.7rem; border-left: 2px solid rgba(0,242,255,0.3); background: rgba(255,255,255,0.02); }
-.voxtex-msg-delivered { border-left-color: #00ff88; }
-.voxtex-msg-pending { border-left-color: #ffd700; opacity: 0.7; }
-.voxtex-msg-sys { border-left-color: var(--text-dim); color: var(--text-dim); font-style: italic; }
+.nexus-content { display: flex; gap: 20px; }
+.nexus-canvas-container { flex: 1; height: 500px; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,242,255,0.1); border-radius: 8px; overflow: hidden; }
+#nexusCanvas { width: 100%; height: 100%; }
+.nexus-sidebar { width: 350px; flex-shrink: 0; }
+.nexus-sidebar h3 { color: var(--accent-cyan); font-size: 0.7rem; letter-spacing: 2px; margin-bottom: 12px; }
+.nexus-msg-log { display: flex; flex-direction: column; gap: 6px; max-height: 460px; overflow-y: auto; padding-right: 6px; }
+.nexus-msg { padding: 8px; border-radius: 4px; font-size: 0.7rem; border-left: 2px solid rgba(0,242,255,0.3); background: rgba(255,255,255,0.02); }
+.nexus-msg-delivered { border-left-color: #00ff88; }
+.nexus-msg-pending { border-left-color: #ffd700; opacity: 0.7; }
+.nexus-msg-sys { border-left-color: var(--text-dim); color: var(--text-dim); font-style: italic; }
 .msg-type { color: var(--accent-cyan); font-size: 0.6rem; display: block; }
 .msg-text { display: block; margin: 2px 0; }
 .msg-hops { font-size: 0.6rem; color: var(--text-dim); }
 @media (max-width: 900px) {
-    .voxtex-content { flex-direction: column; }
-    .voxtex-sidebar { width: 100%; }
-    .voxtex-stats { grid-template-columns: repeat(2, 1fr); }
+    .nexus-content { flex-direction: column; }
+    .nexus-sidebar { width: 100%; }
+    .nexus-stats { grid-template-columns: repeat(2, 1fr); }
 }
 
 /* === Play / Found Civilization === */
@@ -829,9 +829,9 @@ tr:hover td {
   .dashboard-card { padding: 12px; }
   .civ-stats-bar { grid-template-columns: repeat(2, 1fr); }
   .civ-grid-2col { grid-template-columns: 1fr; }
-  .voxtex-stats { grid-template-columns: repeat(2, 1fr); }
-  .voxtex-content { flex-direction: column; }
-  .voxtex-sidebar { width: 100%; }
+  .nexus-stats { grid-template-columns: repeat(2, 1fr); }
+  .nexus-content { flex-direction: column; }
+  .nexus-sidebar { width: 100%; }
   .play-layout { flex-direction: column; }
   .play-sidebar { width: 100%; }
   .play-map-container { height: 400px !important; }
@@ -841,14 +841,14 @@ tr:hover td {
   th, td { padding: 6px 8px; }
   .log-container { max-height: 200px; }
   .tech-grid { grid-template-columns: repeat(2, 1fr); }
-  .voxtex-canvas-container { height: 300px; }
+  .nexus-canvas-container { height: 300px; }
 }
 
 @media (max-width: 480px) {
   .sim-stats { grid-template-columns: 1fr; }
   .civ-stats-bar { grid-template-columns: 1fr; }
   .gauge-grid { grid-template-columns: 1fr; }
-  .voxtex-stats { grid-template-columns: 1fr; }
+  .nexus-stats { grid-template-columns: 1fr; }
   .tech-grid { grid-template-columns: 1fr; }
   .nav-links a { font-size: 0.55rem; padding: 4px 8px; }
   .page-header h1 { font-size: 1rem; }
@@ -999,3 +999,4 @@ tr:hover td {
         display: none;
     }
 }
+

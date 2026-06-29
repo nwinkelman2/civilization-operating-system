@@ -1,12 +1,14 @@
-package io.github.opencivilizationplatform.modules.voxtex.domain;
+package io.github.opencivilizationplatform.modules.nexus.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "voxtex_connections")
-public class VoxtexConnection {
+@Table(name = "nexus_connections")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
+public class NexusConnection {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -15,12 +17,12 @@ public class VoxtexConnection {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "node_a_id", nullable = false)
     @NotNull
-    private VoxtexNode nodeA;
+    private NexusNode nodeA;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "node_b_id", nullable = false)
     @NotNull
-    private VoxtexNode nodeB;
+    private NexusNode nodeB;
 
     @Column(name = "strength")
     private Double strength;
@@ -37,14 +39,14 @@ public class VoxtexConnection {
     @Column(name = "last_activity_at")
     private LocalDateTime lastActivityAt;
 
-    public VoxtexConnection() {}
+    public NexusConnection() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
-    public VoxtexNode getNodeA() { return nodeA; }
-    public void setNodeA(VoxtexNode nodeA) { this.nodeA = nodeA; }
-    public VoxtexNode getNodeB() { return nodeB; }
-    public void setNodeB(VoxtexNode nodeB) { this.nodeB = nodeB; }
+    public NexusNode getNodeA() { return nodeA; }
+    public void setNodeA(NexusNode nodeA) { this.nodeA = nodeA; }
+    public NexusNode getNodeB() { return nodeB; }
+    public void setNodeB(NexusNode nodeB) { this.nodeB = nodeB; }
     public Double getStrength() { return strength; }
     public void setStrength(Double strength) { this.strength = strength; }
     public Long getLatencyMs() { return latencyMs; }
@@ -65,3 +67,4 @@ public class VoxtexConnection {
         lastActivityAt = LocalDateTime.now();
     }
 }
+

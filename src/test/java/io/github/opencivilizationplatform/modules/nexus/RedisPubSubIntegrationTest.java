@@ -1,13 +1,13 @@
-package io.github.opencivilizationplatform.modules.voxtex;
+package io.github.opencivilizationplatform.modules.nexus;
 
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
-import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexMessage;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexMessageType;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNode;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeType;
+import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusMessage;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusMessageType;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusNode;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusNodeType;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,7 +38,7 @@ public class RedisPubSubIntegrationTest {
     }
 
     @Autowired
-    private VoxtexMeshService meshService;
+    private NexusMeshService meshService;
 
     @Autowired
     private CivilizationRepository civilizationRepository;
@@ -59,16 +59,16 @@ public class RedisPubSubIntegrationTest {
         civ.setStatus(CivilizationStatus.EMERGING);
         civ = civilizationRepository.save(civ);
 
-        // 2. Register two VoxtexNodes via meshService
-        VoxtexNode node1 = meshService.registerNode(
-            "Node 1", VoxtexNodeType.PRIMARY, "Region A", civ.getId(), "Knowledge A"
+        // 2. Register two NexusNodes via meshService
+        NexusNode node1 = meshService.registerNode(
+            "Node 1", NexusNodeType.PRIMARY, "Region A", civ.getId(), "Knowledge A"
         );
-        VoxtexNode node2 = meshService.registerNode(
-            "Node 2", VoxtexNodeType.CITY, "Region B", civ.getId(), "Knowledge B"
+        NexusNode node2 = meshService.registerNode(
+            "Node 2", NexusNodeType.CITY, "Region B", civ.getId(), "Knowledge B"
         );
 
         CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<VoxtexMessage> receivedMessage = new AtomicReference<>();
+        AtomicReference<NexusMessage> receivedMessage = new AtomicReference<>();
 
         meshService.addMessageListener(msg -> {
             receivedMessage.set(msg);
@@ -76,7 +76,7 @@ public class RedisPubSubIntegrationTest {
         });
 
         // 3. Send a message using the newly created node IDs (which will publish to Redis)
-        meshService.sendMessage(node1.getId(), node2.getId(), VoxtexMessageType.NEURAL_SYNC, "Test Cluster Broadcast");
+        meshService.sendMessage(node1.getId(), node2.getId(), NexusMessageType.NEURAL_SYNC, "Test Cluster Broadcast");
 
         boolean received = latch.await(5, TimeUnit.SECONDS);
 
@@ -85,3 +85,4 @@ public class RedisPubSubIntegrationTest {
         assertThat(receivedMessage.get().getContent()).isEqualTo("Test Cluster Broadcast");
     }
 }
+

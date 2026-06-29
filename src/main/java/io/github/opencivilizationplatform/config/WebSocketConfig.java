@@ -1,6 +1,6 @@
 package io.github.opencivilizationplatform.config;
 
-import io.github.opencivilizationplatform.web.handler.VoxtexWebSocketHandler;
+import io.github.opencivilizationplatform.web.handler.NexusWebSocketHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
@@ -11,15 +11,16 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    private final VoxtexWebSocketHandler voxtexHandler;
+    private final NexusWebSocketHandler NexusHandler;
 
-    public WebSocketConfig(VoxtexWebSocketHandler voxtexHandler) {
-        this.voxtexHandler = voxtexHandler;
+    public WebSocketConfig(NexusWebSocketHandler NexusHandler) {
+        this.NexusHandler = NexusHandler;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(voxtexHandler, "/ws/voxtex")
+        registry.addHandler(NexusHandler, "/ws/nexus")
             .setAllowedOrigins("*");
     }
 }
+

@@ -2,7 +2,7 @@ package io.github.opencivilizationplatform.config;
 
 import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
-import io.github.opencivilizationplatform.modules.voxtex.infrastructure.VoxtexNodeRepository;
+import io.github.opencivilizationplatform.modules.nexus.infrastructure.NexusNodeRepository;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;
@@ -12,11 +12,11 @@ public class CustomHealthIndicator implements HealthIndicator {
 
     private final CivilizationRepository civilizationRepository;
     private final ResourceRegionRepository regionRepository;
-    private final VoxtexNodeRepository nodeRepository;
+    private final NexusNodeRepository nodeRepository;
 
     public CustomHealthIndicator(CivilizationRepository civilizationRepository,
                                   ResourceRegionRepository regionRepository,
-                                  VoxtexNodeRepository nodeRepository) {
+                                  NexusNodeRepository nodeRepository) {
         this.civilizationRepository = civilizationRepository;
         this.regionRepository = regionRepository;
         this.nodeRepository = nodeRepository;
@@ -32,7 +32,7 @@ public class CustomHealthIndicator implements HealthIndicator {
             return Health.up()
                 .withDetail("civilizations", civCount)
                 .withDetail("resourceRegions", regionCount)
-                .withDetail("voxtexNodes", nodeCount)
+                .withDetail("NexusNodes", nodeCount)
                 .withDetail("meshOnline", nodeCount > 0)
                 .build();
         } catch (Exception e) {
@@ -42,3 +42,4 @@ public class CustomHealthIndicator implements HealthIndicator {
         }
     }
 }
+

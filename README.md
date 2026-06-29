@@ -6,7 +6,7 @@ A resource-based economy platform where players found, manage, and grow civiliza
 
 - **Interactive World Map** — Choose regions based on resource availability (food, water, minerals, energy, housing)
 - **Multi-Civilization** — Each client can found and manage their own civilization
-- **Voxtex Neural Mesh** — Autonomous AI agents (voxtex nodes) form a mesh network between civilizations
+- **nexus Neural Mesh** — Autonomous AI agents (nexus nodes) form a mesh network between civilizations
 - **Tech Tree** — Research technologies to unlock bonuses and advance your civilization
 - **Trade System** — Propose and manage trade agreements with other civilizations
 - **Game Events** — Random events (discoveries, disasters, breakthroughs) affect gameplay
@@ -90,8 +90,8 @@ With the app running, visit:
 | GET | `/api/v1/regions` | List resource regions |
 | POST | `/api/v1/civilizations/found` | Found a civilization |
 | GET | `/api/v1/civilizations/{id}` | Get civilization details |
-| GET | `/api/v1/voxtex/nodes` | List voxtex nodes |
-| GET | `/api/v1/voxtex/stream` | SSE stream for mesh messages |
+| GET | `/api/v1/nexus/nodes` | List nexus nodes |
+| GET | `/api/v1/nexus/stream` | SSE stream for mesh messages |
 | GET | `/api/v1/tech-tree/{civId}` | Get tech tree |
 | POST | `/api/v1/trade` | Propose trade |
 | GET | `/api/v1/events/{civId}` | Get game events |
@@ -112,7 +112,7 @@ With the app running, visit:
 ┌──────────────▼──────────────────────────────┐
 │         Spring Boot Application(s)           │
 │  ┌──────┬──────┬──────┬──────┬──────┬──────┐ │
-│  │Civ   │Voxtex│Trade │Events│Tech  │Cortex│ │
+│  │Civ   │nexus│Trade │Events│Tech  │Cortex│ │
 │  │Module│Module│Module│Module│Tree  │Engine│ │
 │  └──────┴──────┴──────┴──────┴──────┴──────┘ │
 └──────────────┬──────────────────────────────┘
@@ -125,3 +125,4 @@ With the app running, visit:
 ## License
 
 MIT
+

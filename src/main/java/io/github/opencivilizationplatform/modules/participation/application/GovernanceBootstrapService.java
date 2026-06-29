@@ -11,12 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Bootstraps a new civilization with the standard Voxtex constitutional ruleset.
+ * Bootstraps a new civilization with the standard Nexus constitutional ruleset.
  * These rules are automatically seeded when a civilization is founded, giving it
  * a working governance framework from day one.
  *
  * All 7 rules are ACTIVE and SCIENTIFICALLY_VALIDATED — they represent the universal
- * baseline of civilizational cooperation encoded into the Voxtex mesh.
+ * baseline of civilizational cooperation encoded into the Nexus mesh.
  */
 @Service
 public class GovernanceBootstrapService {
@@ -28,7 +28,7 @@ public class GovernanceBootstrapService {
     }
 
     /**
-     * Seeds the 7 foundational Voxtex governance rules for a newly founded civilization.
+     * Seeds the 7 foundational Nexus governance rules for a newly founded civilization.
      * Called automatically when a civilization claims a city region.
      */
     @Transactional
@@ -41,7 +41,7 @@ public class GovernanceBootstrapService {
             rule.setLogicCode(t.logicCode());
             rule.setStatus(RuleStatus.ACTIVE);
             rule.setValidationStatus(ValidationStatus.SCIENTIFICALLY_VALIDATED);
-            rule.setValidatedBy("VOXTEX-GENESIS-NODE");
+            rule.setValidatedBy("Nexus-GENESIS-NODE");
             rule.setVotesCount(0);
             rule.setCivilization(civilization);
             return ruleRepository.save(rule);
@@ -58,7 +58,7 @@ public class GovernanceBootstrapService {
         return ruleRepository.findByCivilizationId(civilizationId);
     }
 
-    // ── DEFAULT VOXTEX CONSTITUTIONAL RULES ──────────────────────────────────
+    // ── DEFAULT Nexus CONSTITUTIONAL RULES ──────────────────────────────────
 
     private record RuleTemplate(String title, String description, String logicCode) {}
 
@@ -73,7 +73,7 @@ public class GovernanceBootstrapService {
 
             new RuleTemplate(
                 "Resource Transparency Mandate",
-                "All resource flows (food, water, energy, minerals, housing) must be logged and publicly auditable within the civilization's Voxtex mesh. No hidden extraction is permitted.",
+                "All resource flows (food, water, energy, minerals, housing) must be logged and publicly auditable within the civilization's Nexus mesh. No hidden extraction is permitted.",
                 "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"RESOURCE_FLOW\", \"action\": \"AUDIT\"}"
             ),
 
@@ -85,7 +85,7 @@ public class GovernanceBootstrapService {
 
             new RuleTemplate(
                 "Agent Right to Voice",
-                "Every agent (citizen) of the civilization has the inalienable right to propose, vote on, and contest any constitutional rule through the Voxtex participation channel.",
+                "Every agent (citizen) of the civilization has the inalienable right to propose, vote on, and contest any constitutional rule through the Nexus participation channel.",
                 "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"PARTICIPATION\", \"action\": \"GRANT_ACCESS\"}"
             ),
 
@@ -97,13 +97,13 @@ public class GovernanceBootstrapService {
 
             new RuleTemplate(
                 "Knowledge Commons Act",
-                "All scientific discoveries, technologies, and strategic insights produced with civilization resources must be catalogued in the Voxtex knowledge base within 7 days.",
+                "All scientific discoveries, technologies, and strategic insights produced with civilization resources must be catalogued in the Nexus knowledge base within 7 days.",
                 "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"KNOWLEDGE\", \"action\": \"SHARE\"}"
             ),
 
             new RuleTemplate(
-                "Conflict Resolution via Voxtex Consensus",
-                "Internal disputes between agents must be resolved through the Voxtex consensus mechanism before any unilateral action is taken. Force is a last resort.",
+                "Conflict Resolution via Nexus Consensus",
+                "Internal disputes between agents must be resolved through the Nexus consensus mechanism before any unilateral action is taken. Force is a last resort.",
                 "{\"type\": \"THRESHOLD_TRIGGER\", \"metric\": \"SOCIAL_STABILITY\", \"action\": \"MEDIATE\"}"
             ),
 
@@ -139,3 +139,4 @@ public class GovernanceBootstrapService {
         );
     }
 }
+

@@ -1,8 +1,8 @@
-package io.github.opencivilizationplatform.modules.voxtex.application;
+package io.github.opencivilizationplatform.modules.nexus.application;
 
-import io.github.opencivilizationplatform.modules.voxtex.domain.*;
-import io.github.opencivilizationplatform.modules.voxtex.dto.VoxtexMessageSyncDTO;
-import io.github.opencivilizationplatform.modules.voxtex.infrastructure.*;
+import io.github.opencivilizationplatform.modules.nexus.domain.*;
+import io.github.opencivilizationplatform.modules.nexus.dto.NexusMessageSyncDTO;
+import io.github.opencivilizationplatform.modules.nexus.infrastructure.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -20,22 +20,22 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import tools.jackson.databind.ObjectMapper;
 
 @Service
-public class VoxtexMeshService {
+public class NexusMeshService {
 
-    private static final Logger log = LoggerFactory.getLogger(VoxtexMeshService.class);
+    private static final Logger log = LoggerFactory.getLogger(NexusMeshService.class);
 
-    private final VoxtexNodeRepository nodeRepository;
-    private final VoxtexMessageRepository messageRepository;
-    private final VoxtexConnectionRepository connectionRepository;
+    private final NexusNodeRepository nodeRepository;
+    private final NexusMessageRepository messageRepository;
+    private final NexusConnectionRepository connectionRepository;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
     // SSE emitters for real-time streaming
-    private final List<Consumer<VoxtexMessage>> messageListeners = new CopyOnWriteArrayList<>();
+    private final List<Consumer<NexusMessage>> messageListeners = new CopyOnWriteArrayList<>();
 
-    public VoxtexMeshService(VoxtexNodeRepository nodeRepository,
-                              VoxtexMessageRepository messageRepository,
-                              VoxtexConnectionRepository connectionRepository,
+    public NexusMeshService(NexusNodeRepository nodeRepository,
+                              NexusMessageRepository messageRepository,
+                              NexusConnectionRepository connectionRepository,
                               StringRedisTemplate redisTemplate,
                               ObjectMapper objectMapper) {
         this.nodeRepository = nodeRepository;
@@ -48,13 +48,13 @@ public class VoxtexMeshService {
     // --- Node Management ---
 
     @Transactional
-    public VoxtexNode registerNode(String name, VoxtexNodeType type, String region,
+    public NexusNode registerNode(String name, NexusNodeType type, String region,
                                     Long civilizationId, String knowledgeBase) {
-        VoxtexNode node = new VoxtexNode();
+        NexusNode node = new NexusNode();
         node.setName(name);
         node.setType(type);
         node.setRegion(region);
-        node.setStatus(VoxtexNodeStatus.BOOTING);
+        node.setStatus(NexusNodeStatus.BOOTING);
         node.setKnowledgeBase(knowledgeBase);
 
         var civ = new io.github.opencivilizationplatform.modules.civilization.domain.Civilization();
@@ -70,32 +70,32 @@ public class VoxtexMeshService {
     }
 
     @Transactional
-    public VoxtexNode updateNodeStatus(Long nodeId, VoxtexNodeStatus status) {
-        VoxtexNode node = nodeRepository.findById(nodeId).orElseThrow();
+    public NexusNode updateNodeStatus(Long nodeId, NexusNodeStatus status) {
+        NexusNode node = nodeRepository.findById(nodeId).orElseThrow();
         node.setStatus(status);
         node.setLastActiveAt(LocalDateTime.now());
         return nodeRepository.save(node);
     }
 
     @Transactional(readOnly = true)
-    public List<VoxtexNode> getNodesForCivilization(Long civilizationId) {
+    public List<NexusNode> getNodesForCivilization(Long civilizationId) {
         return nodeRepository.findByCivilizationId(civilizationId);
     }
 
     @Transactional(readOnly = true)
-    public List<VoxtexNode> getAllNodes() {
+    public List<NexusNode> getAllNodes() {
         return nodeRepository.findAll();
     }
 
     // --- Message Passing ---
 
     @Transactional
-    public VoxtexMessage sendMessage(Long sourceNodeId, Long targetNodeId,
-                                      VoxtexMessageType messageType, String content) {
-        VoxtexNode source = nodeRepository.findById(sourceNodeId).orElseThrow();
-        VoxtexNode target = nodeRepository.findById(targetNodeId).orElseThrow();
+    public NexusMessage sendMessage(Long sourceNodeId, Long targetNodeId,
+                                      NexusMessageType messageType, String content) {
+        NexusNode source = nodeRepository.findById(sourceNodeId).orElseThrow();
+        NexusNode target = nodeRepository.findById(targetNodeId).orElseThrow();
 
-        VoxtexMessage msg = new VoxtexMessage();
+        NexusMessage msg = new NexusMessage();
         msg.setSourceNode(source);
         msg.setTargetNode(target);
         msg.setMessageType(messageType);
@@ -105,17 +105,17 @@ public class VoxtexMeshService {
         // Publish to Redis instead of notifying local listeners directly
         publishEventToRedis(msg);
 
-        log.info("VOXTEX MESH: {} -> {} [{}]", source.getName(), target.getName(), messageType);
+        log.info("Nexus MESH: {} -> {} [{}]", source.getName(), target.getName(), messageType);
         return msg;
     }
 
     @Transactional(readOnly = true)
-    public List<VoxtexMessage> getConversation(Long nodeAId, Long nodeBId) {
+    public List<NexusMessage> getConversation(Long nodeAId, Long nodeBId) {
         return messageRepository.findBySourceNodeIdOrTargetNodeIdOrderBySentAtDesc(nodeAId, nodeBId);
     }
 
     @Transactional(readOnly = true)
-    public List<VoxtexMessage> getPendingMessages(Long nodeId) {
+    public List<NexusMessage> getPendingMessages(Long nodeId) {
         return messageRepository.findByTargetNodeIdAndDeliveredFalse(nodeId);
     }
 
@@ -127,13 +127,13 @@ public class VoxtexMeshService {
     // --- Connection Management ---
 
     @Transactional(readOnly = true)
-    public List<VoxtexConnection> getConnectionsForNode(Long nodeId) {
-        VoxtexNode node = nodeRepository.findById(nodeId).orElseThrow();
+    public List<NexusConnection> getConnectionsForNode(Long nodeId) {
+        NexusNode node = nodeRepository.findById(nodeId).orElseThrow();
         return connectionRepository.findByNodeAOrNodeB(node, node);
     }
 
     @Transactional(readOnly = true)
-    public List<VoxtexConnection> getAllConnections() {
+    public List<NexusConnection> getAllConnections() {
         return connectionRepository.findAll();
     }
 
@@ -141,8 +141,8 @@ public class VoxtexMeshService {
     public java.util.Map<String, Object> getNetworkStatus() {
         var nodes = getAllNodes();
         var conns = getAllConnections();
-        long activeNodes = nodes.stream().filter(n -> n.getStatus() == VoxtexNodeStatus.ACTIVE).count();
-        double avgStrength = conns.stream().mapToDouble(VoxtexConnection::getStrength).average().orElse(0);
+        long activeNodes = nodes.stream().filter(n -> n.getStatus() == NexusNodeStatus.ACTIVE).count();
+        double avgStrength = conns.stream().mapToDouble(NexusConnection::getStrength).average().orElse(0);
         return java.util.Map.of(
             "totalNodes", nodes.size(),
             "activeNodes", activeNodes,
@@ -156,13 +156,13 @@ public class VoxtexMeshService {
 
     @Transactional
     @Scheduled(fixedRate = 15000)
-    @SchedulerLock(name = "voxtexMeshTick", lockAtMostFor = "12s", lockAtLeastFor = "5s")
+    @SchedulerLock(name = "NexusMeshTick", lockAtMostFor = "12s", lockAtLeastFor = "5s")
     public void processMeshTick() {
-        log.debug("VOXTEX MESH TICK: Processing messages and updating network");
+        log.debug("Nexus MESH TICK: Processing messages and updating network");
 
         // 1. Deliver pending messages (update hop count, mark delivered)
-        List<VoxtexMessage> pending = messageRepository.findByDeliveredFalseOrderBySentAtAsc();
-        for (VoxtexMessage msg : pending) {
+        List<NexusMessage> pending = messageRepository.findByDeliveredFalseOrderBySentAtAsc();
+        for (NexusMessage msg : pending) {
             if (msg.getHopCount() >= 5) {
                 // Max hops reached - mark as delivered anyway
                 msg.setDelivered(true);
@@ -176,7 +176,7 @@ public class VoxtexMeshService {
                 msg.getSourceNode(), msg.getSourceNode());
 
             for (var conn : sourceConns) {
-                VoxtexNode nextHop = conn.getNodeA().equals(msg.getSourceNode())
+                NexusNode nextHop = conn.getNodeA().equals(msg.getSourceNode())
                     ? conn.getNodeB() : conn.getNodeA();
 
                 if (nextHop.equals(msg.getTargetNode())) {
@@ -190,14 +190,14 @@ public class VoxtexMeshService {
                     connectionRepository.save(conn);
                     messageRepository.save(msg);
                     publishEventToRedis(msg);
-                    log.debug("VOXTEX: Message {} delivered ({} hops)", msg.getId(), msg.getHopCount());
+                    log.debug("Nexus: Message {} delivered ({} hops)", msg.getId(), msg.getHopCount());
                     break;
                 }
             }
         }
 
         // 2. Strengthen connections used recently, decay unused ones
-        List<VoxtexConnection> allConns = connectionRepository.findAll();
+        List<NexusConnection> allConns = connectionRepository.findAll();
         for (var conn : allConns) {
             if (conn.getLastActivityAt().isAfter(LocalDateTime.now().minusMinutes(5))) {
                 conn.setStrength(Math.min(1.0, conn.getStrength() + 0.02));
@@ -210,7 +210,7 @@ public class VoxtexMeshService {
         // 3. Randomly generate messages for organic network feel
         if (!allConns.isEmpty() && Math.random() < 0.3) {
             var conn = allConns.get((int)(Math.random() * allConns.size()));
-            VoxtexMessageType[] types = VoxtexMessageType.values();
+            NexusMessageType[] types = NexusMessageType.values();
             String[] sampleMessages = {
                 "Neural sync pulse: network stable",
                 "Knowledge base updated with new patterns",
@@ -219,7 +219,7 @@ public class VoxtexMeshService {
                 "Mesh integrity check: all routes operational"
             };
             String msg = sampleMessages[(int)(Math.random() * sampleMessages.length)];
-            VoxtexMessage autoMsg = new VoxtexMessage();
+            NexusMessage autoMsg = new NexusMessage();
             autoMsg.setSourceNode(conn.getNodeA());
             autoMsg.setTargetNode(conn.getNodeB());
             autoMsg.setMessageType(types[(int)(Math.random() * types.length)]);
@@ -228,21 +228,21 @@ public class VoxtexMeshService {
             autoMsg.setDeliveredAt(LocalDateTime.now());
             messageRepository.save(autoMsg);
             publishEventToRedis(autoMsg);
-            log.debug("VOXTEX: Auto-message generated: {}", msg);
+            log.debug("Nexus: Auto-message generated: {}", msg);
         }
     }
 
     // --- SSE Support ---
 
-    public void addMessageListener(Consumer<VoxtexMessage> listener) {
+    public void addMessageListener(Consumer<NexusMessage> listener) {
         messageListeners.add(listener);
     }
 
-    public void removeMessageListener(Consumer<VoxtexMessage> listener) {
+    public void removeMessageListener(Consumer<NexusMessage> listener) {
         messageListeners.remove(listener);
     }
 
-    private void publishEventToRedis(VoxtexMessage msg) {
+    private void publishEventToRedis(NexusMessage msg) {
         if (TransactionSynchronizationManager.isActualTransactionActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
@@ -255,14 +255,14 @@ public class VoxtexMeshService {
         }
     }
 
-    private void sendEventToRedis(VoxtexMessage msg) {
+    private void sendEventToRedis(NexusMessage msg) {
         try {
             Long sourceNodeId = msg.getSourceNode() != null ? msg.getSourceNode().getId() : null;
             String sourceNodeName = msg.getSourceNode() != null ? msg.getSourceNode().getName() : null;
             Long targetNodeId = msg.getTargetNode() != null ? msg.getTargetNode().getId() : null;
             String targetNodeName = msg.getTargetNode() != null ? msg.getTargetNode().getName() : null;
 
-            VoxtexMessageSyncDTO dto = new VoxtexMessageSyncDTO(
+            NexusMessageSyncDTO dto = new NexusMessageSyncDTO(
                 msg.getId(),
                 sourceNodeId,
                 sourceNodeName,
@@ -273,13 +273,13 @@ public class VoxtexMeshService {
                 msg.getHopCount()
             );
             String json = objectMapper.writeValueAsString(dto);
-            redisTemplate.convertAndSend("voxtex-mesh-events", json);
+            redisTemplate.convertAndSend("Nexus-mesh-events", json);
         } catch (Exception e) {
             log.error("Failed to publish message event to Redis", e);
         }
     }
 
-    public void notifyListenersLocally(VoxtexMessage msg) {
+    public void notifyListenersLocally(NexusMessage msg) {
         for (var listener : messageListeners) {
             try {
                 listener.accept(msg);
@@ -291,13 +291,13 @@ public class VoxtexMeshService {
 
     // --- Internal ---
 
-    private void connectToNeighbors(VoxtexNode node) {
+    private void connectToNeighbors(NexusNode node) {
         // Connect to other nodes from the same civilization
         var sameCiv = nodeRepository.findByCivilizationId(
             node.getCivilization().getId());
         for (var neighbor : sameCiv) {
             if (!neighbor.getId().equals(node.getId())) {
-                VoxtexConnection conn = new VoxtexConnection();
+                NexusConnection conn = new NexusConnection();
                 conn.setNodeA(node);
                 conn.setNodeB(neighbor);
                 connectionRepository.save(conn);
@@ -311,7 +311,7 @@ public class VoxtexMeshService {
             var target = allNodes.get((int)(Math.random() * allNodes.size()));
             if (!target.getId().equals(node.getId()) &&
                 !target.getCivilization().getId().equals(node.getCivilization().getId())) {
-                VoxtexConnection conn = new VoxtexConnection();
+                NexusConnection conn = new NexusConnection();
                 conn.setNodeA(node);
                 conn.setNodeB(target);
                 conn.setStrength(0.2);
@@ -320,3 +320,4 @@ public class VoxtexMeshService {
         }
     }
 }
+

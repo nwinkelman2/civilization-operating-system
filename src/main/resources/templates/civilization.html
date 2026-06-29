@@ -30,7 +30,7 @@
             <div class="civ-stat-card">
                 <span class="civ-stat-icon">🧠</span>
                 <div>
-                    <span class="civ-stat-label">VOXTEX NODES</span>
+                    <span class="civ-stat-label">nexus NODES</span>
                     <span class="civ-stat-value" th:text="${#lists.size(nodes)}">0</span>
                 </div>
             </div>
@@ -39,6 +39,72 @@
                 <div>
                     <span class="civ-stat-label">TECH RESEARCHED</span>
                     <span class="civ-stat-value" th:text="${techCount}">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PERSONAL INVENTORY & SECTOR ELECTIONS GRID -->
+        <div class="civ-grid-2col" style="margin-bottom: 20px;">
+            <!-- Personal Wallet Panel -->
+            <div class="civ-panel" id="personalWalletPanel" style="background: rgba(0, 242, 255, 0.02); border-color: rgba(0, 242, 255, 0.15);">
+                <h2 class="panel-title" style="color: #00f2ff; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🎒 MEU INVENTÁRIO PESSOAL</span>
+                    <span style="font-size: 0.65rem; opacity: 0.7; color: #00f2ff; border: 1px solid rgba(0,242,255,0.3); padding: 1px 6px; border-radius: 3px;" id="personalWalletRole">CIDADÃO</span>
+                </h2>
+                <div class="civ-resources" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
+                    <div class="resource-bar-item" style="--bar-color: #00f2ff; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; width: 100%;">
+                            <span class="rb-label" style="width:auto;">🌾 FOOD</span>
+                            <span class="rb-value" id="walletFood" style="width:auto;">0.0</span>
+                        </div>
+                        <button class="btn-small" style="width: 100%; font-size: 0.65rem; padding: 2px 4px; margin-top: auto;" onclick="donateResource('FOOD', 5)">DOAR 5</button>
+                    </div>
+                    <div class="resource-bar-item" style="--bar-color: #006aff; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; width: 100%;">
+                            <span class="rb-label" style="width:auto;">💧 WATER</span>
+                            <span class="rb-value" id="walletWater" style="width:auto;">0.0</span>
+                        </div>
+                        <button class="btn-small" style="width: 100%; font-size: 0.65rem; padding: 2px 4px; margin-top: auto;" onclick="donateResource('WATER', 5)">DOAR 5</button>
+                    </div>
+                    <div class="resource-bar-item" style="--bar-color: #ff6b35; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; width: 100%;">
+                            <span class="rb-label" style="width:auto;">⛏️ MINERALS</span>
+                            <span class="rb-value" id="walletMinerals" style="width:auto;">0.0</span>
+                        </div>
+                        <button class="btn-small" style="width: 100%; font-size: 0.65rem; padding: 2px 4px; margin-top: auto;" onclick="donateResource('MINERALS', 5)">DOAR 5</button>
+                    </div>
+                    <div class="resource-bar-item" style="--bar-color: #ffd700; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; width: 100%;">
+                            <span class="rb-label" style="width:auto;">⚡ ENERGY</span>
+                            <span class="rb-value" id="walletEnergy" style="width:auto;">0.0</span>
+                        </div>
+                        <button class="btn-small" style="width: 100%; font-size: 0.65rem; padding: 2px 4px; margin-top: auto;" onclick="donateResource('ENERGY', 5)">DOAR 5</button>
+                    </div>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    Doar recursos para os silos comunitários aumenta a sua <strong>Reputação</strong> no CIVOS.
+                </div>
+            </div>
+
+            <!-- Sectoral Elections Panel -->
+            <div class="civ-panel" id="sectorElectionsPanel" style="background: rgba(0, 255, 136, 0.02); border-color: rgba(0, 255, 136, 0.15);">
+                <h2 class="panel-title" style="color: #00ff88;">🗳️ ELEIÇÕES DE DELEGADOS</h2>
+                
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <select id="electionSector" class="btn-small" style="flex: 1; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(0,255,136,0.3); font-size: 0.7rem;" onchange="loadCandidates()">
+                        <option value="FOOD">Setor Alimentação (FOOD)</option>
+                        <option value="ENERGY">Setor Energia (ENERGY)</option>
+                        <option value="TECH">Setor Tecnologia (TECH)</option>
+                        <option value="LOGISTICS">Setor Logística (LOGISTICS)</option>
+                    </select>
+                </div>
+
+                <div id="candidatesList" style="display: flex; flex-direction: column; gap: 8px; max-height: 120px; overflow-y: auto; margin-bottom: 10px;">
+                    <div style="color:var(--text-dim); text-align:center; font-size:0.75rem; padding:10px;">Buscando candidatos qualificados...</div>
+                </div>
+
+                <div style="font-size: 0.7rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    Candidatos pré-qualificados pelo Cortex (Reputação &ge; 40). O Cortex apura os votos periodicamente.
                 </div>
             </div>
         </div>
@@ -63,7 +129,7 @@
         <div class="civ-panel animate-panel" style="margin-bottom:20px; background:rgba(0,5,10,0.3); border-color:rgba(0,242,255,0.15); padding:16px;">
             <h2 class="panel-title" style="color:#00f2ff; font-size:0.75rem; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
                 <span>📊 DEMOGRAPHIC & RESOURCE ECOSYSTEM</span>
-                <span id="chart-tick-indicator" style="font-size:0.65rem; color:var(--text-dim); font-weight:normal; letter-spacing:1px;">VORTEX STATUS: SYSTEM DEPLOYED</span>
+                <span id="chart-tick-indicator" style="font-size:0.65rem; color:var(--text-dim); font-weight:normal; letter-spacing:1px;">CORTEX STATUS: SYSTEM DEPLOYED</span>
             </h2>
             <div style="position:relative; height:180px; width:100%;">
                 <canvas id="ecosystemChart"></canvas>
@@ -71,18 +137,18 @@
         </div>
 
         <div class="civ-grid-2col">
-            <!-- Voxtex Nodes -->
+            <!-- nexus Nodes -->
             <div class="civ-panel">
-                <h2 class="panel-title">VOXTEX NODES</h2>
+                <h2 class="panel-title">nexus NODES</h2>
                 <div th:if="${#lists.isEmpty(nodes)}" style="color:var(--text-dim);padding:20px;text-align:center;font-size:0.8rem;">
-                    No voxtex nodes. Start your simulation to deploy nodes.
+                    No nexus nodes. Start your simulation to deploy nodes.
                 </div>
-                <div class="voxtex-nodes" th:unless="${#lists.isEmpty(nodes)}">
-                    <div class="voxtex-node-item" th:each="n : ${nodes}">
-                        <span class="voxtex-node-icon" th:classappend="${n.status == 'ACTIVE'} ? 'voxtex-active' : 'voxtex-idle'">●</span>
-                        <span class="voxtex-node-name" th:text="${n.name}">Node</span>
-                        <span class="voxtex-node-type" th:text="${n.type}">PRIMARY</span>
-                        <span class="voxtex-node-status" th:text="${n.status}">ACTIVE</span>
+                <div class="nexus-nodes" th:unless="${#lists.isEmpty(nodes)}">
+                    <div class="nexus-node-item" th:each="n : ${nodes}">
+                        <span class="nexus-node-icon" th:classappend="${n.status == 'ACTIVE'} ? 'nexus-active' : 'nexus-idle'">●</span>
+                        <span class="nexus-node-name" th:text="${n.name}">Node</span>
+                        <span class="nexus-node-type" th:text="${n.type}">PRIMARY</span>
+                        <span class="nexus-node-status" th:text="${n.status}">ACTIVE</span>
                     </div>
                 </div>
                 <button class="btn-small" onclick="showAddNodeModal(${civ.id})" style="margin-top:12px;width:100%;">
@@ -90,7 +156,7 @@
                 </button>
             </div>
 
-            <!-- Diplomacy / Voxtex Messages -->
+            <!-- Diplomacy / nexus Messages -->
             <div class="civ-panel">
                 <h2 class="panel-title">MESH DIPLOMACY</h2>
                 <div th:if="${#lists.isEmpty(messages)}" style="color:var(--text-dim);padding:20px;text-align:center;font-size:0.8rem;">
@@ -130,14 +196,14 @@
             
             <!-- Tab Buttons -->
             <div class="coop-tabs" style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px; margin-bottom:20px;">
-                <button class="coop-tab-btn active" onclick="switchCoopTab('rules')" id="tab-btn-rules">Voxtex Constitution</button>
+                <button class="coop-tab-btn active" onclick="switchCoopTab('rules')" id="tab-btn-rules">nexus Constitution</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('projects')" id="tab-btn-projects">Engineering Projects</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('incidents')" id="tab-btn-incidents">Stability Board</button>
-                <button class="coop-tab-btn" onclick="switchCoopTab('automation')" id="tab-btn-automation">Vortex Autonomous Core</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('automation')" id="tab-btn-automation">Cortex Autonomous Core</button>
             </div>
 
             <!-- Tab Contents -->
-            <!-- 1. Voxtex Tab -->
+            <!-- 1. nexus Tab -->
             <div class="coop-tab-content active" id="coop-content-rules">
                 <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
                     <div>
@@ -158,12 +224,34 @@
                                 <textarea id="rule-desc-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff; min-height:60px;" placeholder="Describe how this rule supports resource efficiency or biosphere health..."></textarea>
                             </div>
                             <div class="form-group" style="margin-bottom:12px;">
-                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Logic Code (Threshold Trigger)</label>
-                                <select id="rule-logic-input" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
-                                    <option value='{"type": "RESERVE_CHECK", "metric": "ENERGY", "min_buffer_months": 3}'>Energy Reserve Check (>= 3 months)</option>
-                                    <option value='{"type": "RESERVE_CHECK", "metric": "FOOD", "min_buffer_months": 4}'>Food Reserve Check (>= 4 months)</option>
-                                    <option value='{"type": "THRESHOLD_TRIGGER", "metric": "BIOSPHERE_HEALTH", "action": "SUSPEND_PRODUCTION"}'>Biosphere Stability Clause</option>
-                                </select>
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Rule Input Mode</label>
+                                <div style="display:flex; gap:10px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+                                    <span onclick="switchRuleInputMode('visual')" id="rule-mode-vis" style="font-size:0.65rem; color:#00f2ff; cursor:pointer; font-weight:600;">[ MODO VISUAL ]</span>
+                                    <span onclick="switchRuleInputMode('advanced')" id="rule-mode-adv" style="font-size:0.65rem; color:var(--text-dim); cursor:pointer;">[ AVANÇADO ]</span>
+                                </div>
+                                
+                                <!-- Visual Mode Controls -->
+                                <div id="rule-input-vis-container" style="display:block;">
+                                    <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Se recurso estiver crítico:</label>
+                                    <select id="rule-logic-vis-metric" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff; margin-bottom:6px;">
+                                        <option value="ENERGY">ENERGY (Energia)</option>
+                                        <option value="FOOD">FOOD (Alimentos)</option>
+                                        <option value="WATER">WATER (Água)</option>
+                                        <option value="HOUSING">HOUSING (Moradia)</option>
+                                    </select>
+                                    <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Ação Cortex:</label>
+                                    <select id="rule-logic-vis-action" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                        <option value="LOCK_ENTRY">LOCK_ENTRY (Bloquear novos entrantes/imigrantes)</option>
+                                        <option value="RESTRICT_CONSUMPTION">RESTRICT_CONSUMPTION (Racionamento emergencial)</option>
+                                        <option value="BOOST_PRODUCTION">BOOST_PRODUCTION (Priorizar produção agro/energia)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Advanced Mode Controls -->
+                                <div id="rule-input-adv-container" style="display:none;">
+                                    <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Logic Code (JSON Logic)</label>
+                                    <textarea id="rule-logic-adv-code" class="form-input" style="width:100%; font-size:0.7rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff; min-height:80px; font-family:monospace;" placeholder='{"type": "RESERVE_CHECK", "metric": "ENERGY", "min_buffer_months": 3}'></textarea>
+                                </div>
                             </div>
                             <button type="submit" class="btn-small" style="width:100%; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">PROPOSE RULE</button>
                         </form>
@@ -222,7 +310,7 @@
                 </div>
             </div>
 
-            <!-- 4. Vortex Automation Tab -->
+            <!-- 4. Cortex Automation Tab -->
             <div class="coop-tab-content" id="coop-content-automation">
                 <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap: 20px;">
                     <!-- Left column: Robots Status -->
@@ -262,9 +350,9 @@
                     <!-- Right column: Automation Logs -->
                     <div class="glass-subpanel" style="background:rgba(0,10,20,0.2); border:1px solid rgba(0,242,255,0.1); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between;">
                         <div>
-                            <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:15px; letter-spacing:1px;"><span style="color:#ffd700;">📡</span> VORTEX AUTOMATED OPERATIONS LOGS</h3>
+                            <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:15px; letter-spacing:1px;"><span style="color:#ffd700;">📡</span> CORTEX AUTOMATED OPERATIONS LOGS</h3>
                             <div id="automation-logs-container" class="scroll-list" style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; padding-right:5px; font-family:'Courier New', monospace; font-size:0.7rem; color:#8599a8;">
-                                <div style="color:var(--text-dim); text-align:center; padding-top:40px;">Buscando logs de automação do Vortex...</div>
+                                <div style="color:var(--text-dim); text-align:center; padding-top:40px;">Buscando logs de automação do Cortex...</div>
                             </div>
                         </div>
                     </div>
@@ -294,8 +382,10 @@
             if (currentCivId) {
                 initEcosystemChart();
                 loadCoopData();
+                loadWalletAndCandidates();
                 // Auto refresh every 8 seconds to keep data synchronized
                 setInterval(loadCoopData, 8000);
+                setInterval(loadWalletAndCandidates, 8000);
             }
         });
 
@@ -481,7 +571,7 @@
                 });
 
                 if (allLogs.length === 0) {
-                    logsContainer.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding-top:40px;">Nenhuma operação autônoma registrada pelo Vortex ainda...</div>`;
+                    logsContainer.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding-top:40px;">Nenhuma operação autônoma registrada pelo Cortex ainda...</div>`;
                 } else {
                     logsContainer.innerHTML = allLogs.reverse().map(logLine => {
                         let color = '#8599a8';
@@ -500,13 +590,13 @@
                 const currentFood = civ.food || 100;
                 const currentWater = civ.water || 100;
                 if (currentFood <= 5 || currentWater <= 5) {
-                    indicator.innerText = 'VORTEX STATUS: RISCO DE COLAPSO DEMOGRÁFICO';
+                    indicator.innerText = 'CORTEX STATUS: RISCO DE COLAPSO DEMOGRÁFICO';
                     indicator.style.color = '#ff3b30';
                 } else if (currentFood < 35 || currentWater < 35) {
-                    indicator.innerText = 'VORTEX STATUS: REMEDIAÇÃO CRÍTICA EM ANDAMENTO';
+                    indicator.innerText = 'CORTEX STATUS: REMEDIAÇÃO CRÍTICA EM ANDAMENTO';
                     indicator.style.color = '#ff9500';
                 } else {
-                    indicator.innerText = 'VORTEX STATUS: MESH DEMOGRÁFICO EQUILIBRADO';
+                    indicator.innerText = 'CORTEX STATUS: MESH DEMOGRÁFICO EQUILIBRADO';
                     indicator.style.color = '#00ff88';
                 }
             }
@@ -604,11 +694,44 @@
             }).join('');
         }
 
+        let ruleInputMode = 'visual';
+
+        function switchRuleInputMode(mode) {
+            ruleInputMode = mode;
+            if (mode === 'visual') {
+                document.getElementById('rule-input-vis-container').style.display = 'block';
+                document.getElementById('rule-input-adv-container').style.display = 'none';
+                document.getElementById('rule-mode-vis').style.color = '#00f2ff';
+                document.getElementById('rule-mode-vis').style.fontWeight = '600';
+                document.getElementById('rule-mode-adv').style.color = 'var(--text-dim)';
+                document.getElementById('rule-mode-adv').style.fontWeight = 'normal';
+            } else {
+                document.getElementById('rule-input-vis-container').style.display = 'none';
+                document.getElementById('rule-input-adv-container').style.display = 'block';
+                document.getElementById('rule-mode-vis').style.color = 'var(--text-dim)';
+                document.getElementById('rule-mode-vis').style.fontWeight = 'normal';
+                document.getElementById('rule-mode-adv').style.color = '#00f2ff';
+                document.getElementById('rule-mode-adv').style.fontWeight = '600';
+            }
+        }
+
         async function handleProposeRule(e) {
             e.preventDefault();
             const title = document.getElementById('rule-title-input').value;
             const description = document.getElementById('rule-desc-input').value;
-            const logicCode = document.getElementById('rule-logic-input').value;
+            
+            let logicCode = '';
+            if (ruleInputMode === 'visual') {
+                const metric = document.getElementById('rule-logic-vis-metric').value;
+                const action = document.getElementById('rule-logic-vis-action').value;
+                logicCode = JSON.stringify({ type: 'THRESHOLD_TRIGGER', metric: metric, action: action });
+            } else {
+                logicCode = document.getElementById('rule-logic-adv-code').value;
+                if (!logicCode.trim()) {
+                    alert('Please provide JSON Logic code.');
+                    return;
+                }
+            }
 
             try {
                 const res = await fetch(`/api/v1/civilizations/${currentCivId}/rules/propose`, {
@@ -619,6 +742,7 @@
                 if (res.ok) {
                     document.getElementById('rule-title-input').value = '';
                     document.getElementById('rule-desc-input').value = '';
+                    document.getElementById('rule-logic-adv-code').value = '';
                     loadCoopData();
                 } else {
                     alert('Failed to propose rule');
@@ -719,7 +843,7 @@
             modal.className = 'modal-overlay';
             modal.innerHTML = `
                 <div class="modal-content glass-morphism">
-                    <h2>DEPLOY VOXTEX NODE</h2>
+                    <h2>DEPLOY nexus NODE</h2>
                     <form id="nodeForm">
                         <div class="form-group">
                             <label>Node Name</label>
@@ -751,7 +875,7 @@
             document.getElementById('nodeForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const form = e.target;
-                const res = await fetch('/api/v1/voxtex/nodes', {
+                const res = await fetch('/api/v1/nexus/nodes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -768,6 +892,118 @@
                     alert('Failed to deploy node');
                 }
             });
+        }
+
+        async function loadWalletAndCandidates() {
+            let token = localStorage.getItem('civos_token');
+            if (!token) return;
+
+            try {
+                // Load wallet & role
+                const meResp = await fetch('/api/v1/civilizations/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (meResp.ok) {
+                    const citizen = await meResp.json();
+                    document.getElementById('personalWalletRole').innerText = citizen.role ? citizen.role : 'VISITOR';
+                    if (citizen.wallet) {
+                        document.getElementById('walletFood').innerText = citizen.wallet.food.toFixed(1);
+                        document.getElementById('walletWater').innerText = citizen.wallet.water.toFixed(1);
+                        document.getElementById('walletMinerals').innerText = citizen.wallet.minerals.toFixed(1);
+                        document.getElementById('walletEnergy').innerText = citizen.wallet.energy.toFixed(1);
+                    }
+                }
+
+                // Load candidates
+                const candResp = await fetch(`/api/v1/civilizations/${currentCivId}/delegates/candidates`);
+                if (candResp.ok) {
+                    const candidates = await candResp.json();
+                    const sector = document.getElementById('electionSector').value;
+                    renderCandidates(candidates, sector);
+                }
+            } catch (err) {
+                console.error('Failed to load wallet or candidates:', err);
+            }
+        }
+
+        function renderCandidates(candidates, sector) {
+            const container = document.getElementById('candidatesList');
+            if (!container) return;
+            
+            // Filter candidates who are NOT the founder
+            const filtered = candidates.filter(c => c.role !== 'FOUNDER');
+
+            if (!filtered || filtered.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim); text-align:center; font-size:0.75rem; padding:10px;">No candidates eligible. Gain reputation to qualify!</div>`;
+                return;
+            }
+            container.innerHTML = filtered.map(c => {
+                const badgeStyle = 'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88; font-size:0.55rem; padding:1px 4px; border-radius:3px;';
+                const roleText = c.role ? c.role : 'CITIZEN';
+                return `
+                    <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight:600; font-size:0.75rem; color:#fff;">${c.name}</span>
+                            <span style="${badgeStyle}">${roleText}</span>
+                            <span style="color:#ffd700; font-size:0.65rem; margin-left:6px;">★ ${c.reputationScore.toFixed(0)}</span>
+                        </div>
+                        <button class="btn-small" onclick="voteDelegate('${c.citizenId}')" style="border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05); padding:2px 6px; font-size:0.6rem; font-weight:600;">VOTAR</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function donateResource(type, amount) {
+            let token = localStorage.getItem('civos_token');
+            if (!token) return;
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/donate`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ resourceType: type, amount: amount })
+                });
+                if (res.ok) {
+                    loadWalletAndCandidates();
+                    loadCoopData();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const errText = await res.text();
+                    alert(errText || 'Insufficient resources in wallet or donation failed.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function voteDelegate(candidateId) {
+            let token = localStorage.getItem('civos_token');
+            if (!token) return;
+            const sector = document.getElementById('electionSector').value;
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/delegates/vote`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ candidateCitizenId: candidateId, sector: sector })
+                });
+                if (res.ok) {
+                    alert('Vote registered successfully!');
+                    loadWalletAndCandidates();
+                } else {
+                    alert('Failed to register vote. Ensure you are a member of this civilization.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        
+        function loadCandidates() {
+            loadWalletAndCandidates();
         }
     </script>
 
@@ -791,15 +1027,15 @@
         .civ-res-fill { height: 100%; border-radius: 5px; transition: width 0.5s; }
         .civ-res-pct { width: 35px; font-size: 0.7rem; text-align: right; }
         .civ-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .voxtex-nodes { display: flex; flex-direction: column; gap: 8px; }
-        .voxtex-node-item { display: flex; align-items: center; gap: 10px; padding: 8px;
+        .nexus-nodes { display: flex; flex-direction: column; gap: 8px; }
+        .nexus-node-item { display: flex; align-items: center; gap: 10px; padding: 8px;
             background: rgba(255,255,255,0.02); border-radius: 6px; font-size: 0.8rem; }
-        .voxtex-node-icon { font-size: 0.6rem; }
-        .voxtex-active { color: #00ff88; }
-        .voxtex-idle { color: var(--text-dim); }
-        .voxtex-node-name { flex: 1; }
-        .voxtex-node-type { color: var(--text-dim); font-size: 0.7rem; width: 70px; }
-        .voxtex-node-status { font-size: 0.7rem; width: 60px; text-align: right; }
+        .nexus-node-icon { font-size: 0.6rem; }
+        .nexus-active { color: #00ff88; }
+        .nexus-idle { color: var(--text-dim); }
+        .nexus-node-name { flex: 1; }
+        .nexus-node-type { color: var(--text-dim); font-size: 0.7rem; width: 70px; }
+        .nexus-node-status { font-size: 0.7rem; width: 60px; text-align: right; }
         .diplo-list { display: flex; flex-direction: column; gap: 6px; }
         .diplo-item { display: flex; align-items: center; gap: 8px; padding: 8px;
             background: rgba(255,255,255,0.02); border-radius: 4px; font-size: 0.75rem; }
@@ -849,3 +1085,4 @@
         .scroll-list::-webkit-scrollbar-thumb:hover { background: rgba(0,242,255,0.4); }
     </style>
 </div>
+

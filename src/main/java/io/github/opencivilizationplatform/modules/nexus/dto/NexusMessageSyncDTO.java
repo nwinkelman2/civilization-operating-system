@@ -1,9 +1,9 @@
-package io.github.opencivilizationplatform.modules.voxtex.dto;
+package io.github.opencivilizationplatform.modules.nexus.dto;
 
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexMessageType;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusMessageType;
 import java.io.Serializable;
 
-public class VoxtexMessageSyncDTO implements Serializable {
+public class NexusMessageSyncDTO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -12,15 +12,15 @@ public class VoxtexMessageSyncDTO implements Serializable {
     private String sourceNodeName;
     private Long targetNodeId;
     private String targetNodeName;
-    private VoxtexMessageType messageType;
+    private NexusMessageType messageType;
     private String content;
     private Integer hopCount;
 
-    public VoxtexMessageSyncDTO() {}
+    public NexusMessageSyncDTO() {}
 
-    public VoxtexMessageSyncDTO(Long id, Long sourceNodeId, String sourceNodeName,
+    public NexusMessageSyncDTO(Long id, Long sourceNodeId, String sourceNodeName,
                                 Long targetNodeId, String targetNodeName,
-                                VoxtexMessageType messageType, String content,
+                                NexusMessageType messageType, String content,
                                 Integer hopCount) {
         this.id = id;
         this.sourceNodeId = sourceNodeId;
@@ -72,11 +72,11 @@ public class VoxtexMessageSyncDTO implements Serializable {
         this.targetNodeName = targetNodeName;
     }
 
-    public VoxtexMessageType getMessageType() {
+    public NexusMessageType getMessageType() {
         return messageType;
     }
 
-    public void setMessageType(VoxtexMessageType messageType) {
+    public void setMessageType(NexusMessageType messageType) {
         this.messageType = messageType;
     }
 
@@ -96,3 +96,4 @@ public class VoxtexMessageSyncDTO implements Serializable {
         this.hopCount = hopCount;
     }
 }
+

@@ -1,10 +1,10 @@
-package io.github.opencivilizationplatform.modules.voxtex.api;
+package io.github.opencivilizationplatform.modules.nexus.api;
 
-import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexConnection;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNode;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeStatus;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeType;
+import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusConnection;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusNode;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusNodeStatus;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusNodeType;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
@@ -18,40 +18,40 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class VoxtexControllerTest {
+class NexusControllerTest {
 
     private MockMvc mockMvc;
-    private VoxtexMeshService voxtexMeshService;
+    private NexusMeshService NexusMeshService;
 
     @BeforeEach
     void setUp() {
-        voxtexMeshService = mock(VoxtexMeshService.class);
-        mockMvc = standaloneSetup(new VoxtexController(voxtexMeshService)).build();
+        NexusMeshService = mock(NexusMeshService.class);
+        mockMvc = standaloneSetup(new NexusController(NexusMeshService)).build();
     }
 
     @Test
     void testGetAllNodes() throws Exception {
-        VoxtexNode node = new VoxtexNode();
+        NexusNode node = new NexusNode();
         node.setId(1L);
         node.setName("Primary Node");
-        node.setType(VoxtexNodeType.PRIMARY);
-        node.setStatus(VoxtexNodeStatus.ACTIVE);
+        node.setType(NexusNodeType.PRIMARY);
+        node.setStatus(NexusNodeStatus.ACTIVE);
         node.setRegion("Test Region");
-        when(voxtexMeshService.getAllNodes()).thenReturn(List.of(node));
-        mockMvc.perform(get("/api/v1/voxtex/nodes"))
+        when(NexusMeshService.getAllNodes()).thenReturn(List.of(node));
+        mockMvc.perform(get("/api/v1/nexus/nodes"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("Primary Node"))
                 .andExpect(jsonPath("$[0].type").value("PRIMARY"));
     }
     @Test
     void testGetAllConnections() throws Exception {
-        VoxtexConnection connection = new VoxtexConnection();
+        NexusConnection connection = new NexusConnection();
         connection.setId(1L);
         connection.setStrength(0.8);
         connection.setLatencyMs(50L);
         connection.setMessagesExchanged(100);
-        when(voxtexMeshService.getAllConnections()).thenReturn(List.of(connection));
-        mockMvc.perform(get("/api/v1/voxtex/connections"))
+        when(NexusMeshService.getAllConnections()).thenReturn(List.of(connection));
+        mockMvc.perform(get("/api/v1/nexus/connections"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].strength").value(0.8))
                 .andExpect(jsonPath("$[0].latencyMs").value(50));

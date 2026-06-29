@@ -7,8 +7,8 @@ import io.github.opencivilizationplatform.modules.civilization.domain.Civilizati
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
 import io.github.opencivilizationplatform.modules.participation.application.GovernanceBootstrapService;
 import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
-import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeType;
+import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusNodeType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,29 +24,35 @@ public class CivilizationController {
 
     private final CivilizationService service;
     private final ResourceRegionService regionService;
-    private final VoxtexMeshService voxtexService;
+    private final NexusMeshService NexusService;
     private final JwtService jwtService;
     private final GovernanceBootstrapService governanceBootstrap;
     private final io.github.opencivilizationplatform.modules.participation.application.RuleService ruleService;
     private final io.github.opencivilizationplatform.modules.contribution.application.ContributionService contributionService;
     private final io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService;
+    private final io.github.opencivilizationplatform.modules.contribution.application.DelegateElectionService electionService;
+    private final io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository citizenRepository;
 
     public CivilizationController(CivilizationService service,
                                    ResourceRegionService regionService,
-                                   VoxtexMeshService voxtexService,
+                                   NexusMeshService NexusService,
                                    JwtService jwtService,
                                    GovernanceBootstrapService governanceBootstrap,
                                    io.github.opencivilizationplatform.modules.participation.application.RuleService ruleService,
                                    io.github.opencivilizationplatform.modules.contribution.application.ContributionService contributionService,
-                                   io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService) {
+                                   io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService,
+                                   io.github.opencivilizationplatform.modules.contribution.application.DelegateElectionService electionService,
+                                   io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository citizenRepository) {
         this.service = service;
         this.regionService = regionService;
-        this.voxtexService = voxtexService;
+        this.NexusService = NexusService;
         this.jwtService = jwtService;
         this.governanceBootstrap = governanceBootstrap;
         this.ruleService = ruleService;
         this.contributionService = contributionService;
         this.socialService = socialService;
+        this.electionService = electionService;
+        this.citizenRepository = citizenRepository;
     }
 
     @GetMapping
@@ -88,7 +94,7 @@ public class CivilizationController {
     }
 
     @PostMapping("/found")
-    @Operation(summary = "Found a civilization on a region", description = "Creates a civilization on a resource region and deploys a primary voxtex node")
+    @Operation(summary = "Found a civilization on a region", description = "Creates a civilization on a resource region and deploys a primary Nexus node")
     @ResponseStatus(HttpStatus.CREATED)
     public Civilization found(@RequestBody FoundCivilizationRequest request, HttpServletRequest http) {
         String token = resolveToken(http);
@@ -105,16 +111,16 @@ public class CivilizationController {
         // Update region link
         civ = service.getCivilization(civ.getId());
         var region = regionService.getRegion(request.regionId());
-        // Deploy primary voxtex node
-        voxtexService.registerNode(
+        // Deploy primary Nexus node
+        NexusService.registerNode(
             civ.getName() + "-Primary",
-            VoxtexNodeType.PRIMARY,
+            NexusNodeType.PRIMARY,
             region.getName(),
             civ.getId(),
             "Primary neural node for " + civ.getName()
         );
 
-        // Bootstrap default Voxtex governance rules
+        // Bootstrap default Nexus governance rules
         governanceBootstrap.bootstrapGovernance(civ);
 
         return civ;
@@ -131,8 +137,9 @@ public class CivilizationController {
 
     @PostMapping("/{id}/join")
     @Operation(summary = "Join a civilization as an agent")
-    public Civilization joinAsAgent(@PathVariable Long id) {
-        return service.joinAsAgent(id);
+    public Civilization joinAsAgent(@PathVariable Long id, HttpServletRequest request) {
+        String token = resolveToken(request);
+        return service.joinAsAgent(id, token);
     }
 
     @GetMapping("/{id}/rules")
@@ -230,6 +237,41 @@ public class CivilizationController {
         }
         return token;
     }
+
+    @GetMapping("/me")
+    @Operation(summary = "Get current citizen details")
+    public io.github.opencivilizationplatform.modules.contribution.domain.Citizen getMe(HttpServletRequest http) {
+        String token = resolveToken(http);
+        return citizenRepository.findByCitizenId(token)
+            .orElseGet(() -> {
+                io.github.opencivilizationplatform.modules.contribution.domain.Citizen c = new io.github.opencivilizationplatform.modules.contribution.domain.Citizen();
+                c.setCitizenId(token);
+                c.setName("Visitor " + token.substring(Math.max(0, token.length() - 6)));
+                c.setReputationScore(0.0);
+                return c;
+            });
+    }
+
+    @PostMapping("/{id}/donate")
+    @Operation(summary = "Donate resources from personal wallet to community silos")
+    public void donateResources(@PathVariable Long id, @RequestBody DonateRequest request, HttpServletRequest http) {
+        String token = resolveToken(http);
+        contributionService.donateToCommunitySilos(token, request.resourceType(), request.amount());
+    }
+
+    @GetMapping("/{id}/delegates/candidates")
+    @Operation(summary = "Get list of eligible delegate candidates")
+    public java.util.List<io.github.opencivilizationplatform.modules.contribution.domain.Citizen> getCandidates(@PathVariable Long id) {
+        return electionService.getEligibleCandidates(id);
+    }
+
+    @PostMapping("/{id}/delegates/vote")
+    @Operation(summary = "Vote for a sectoral delegate")
+    public io.github.opencivilizationplatform.modules.contribution.domain.DelegateVote voteForDelegate(
+            @PathVariable Long id, @RequestBody VoteDelegateRequest request, HttpServletRequest http) {
+        String token = resolveToken(http);
+        return electionService.voteForDelegate(token, request.candidateCitizenId(), request.sector(), id);
+    }
 }
 
 record CreateCivilizationRequest(String name, CivilizationScale scale, String region) {}
@@ -241,3 +283,7 @@ record ProposeRuleRequest(String title, String description, String logicCode) {}
 record ProposeProjectRequest(String title, String description, io.github.opencivilizationplatform.modules.contribution.domain.ProjectCategory category, io.github.opencivilizationplatform.modules.contribution.domain.ImpactArea impactArea) {}
 record ContributeProjectRequest(String citizenId, String role) {}
 record ProposeIncidentRequest(io.github.opencivilizationplatform.modules.social.domain.IncidentType type, String description, io.github.opencivilizationplatform.modules.social.domain.RiskLevel riskLevel) {}
+
+record DonateRequest(String resourceType, Double amount) {}
+record VoteDelegateRequest(String candidateCitizenId, String sector) {}
+

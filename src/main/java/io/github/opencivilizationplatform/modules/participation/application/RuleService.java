@@ -38,7 +38,7 @@ public class RuleService {
         if (RuleStatus.PROPOSED.equals(rule.getStatus()) && rule.getVotesCount() >= 3) {
             rule.setStatus(RuleStatus.ACTIVE);
             rule.setValidationStatus(ValidationStatus.SCIENTIFICALLY_VALIDATED);
-            rule.setValidatedBy("Voxtex Consensus");
+            rule.setValidatedBy("Nexus Consensus");
         }
         return ruleRepository.save(rule);
     }
@@ -57,3 +57,4 @@ public class RuleService {
         return ruleRepository.save(rule);
     }
 }
+

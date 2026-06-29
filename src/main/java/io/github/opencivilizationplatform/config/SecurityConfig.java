@@ -51,7 +51,7 @@ public class SecurityConfig {
                 .requestMatchers(HttpMethod.POST, "/api/v1/civilizations/*/incidents/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/leaderboard").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/regions/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/voxtex/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/nexus/**").permitAll()
                 .requestMatchers("/api/v1/trade/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/**").authenticated()
@@ -89,3 +89,4 @@ public class SecurityConfig {
         return source;
     }
 }
+

@@ -30,8 +30,14 @@
             <a th:href="@{/trade}" th:classappend="${#strings.equals(currentPage, 'trade')} ? 'active' : ''">Trade</a>
             <a th:href="@{/tech-tree}" th:classappend="${#strings.equals(currentPage, 'tech-tree')} ? 'active' : ''">Tech</a>
             <a th:href="@{/events}" th:classappend="${#strings.equals(currentPage, 'events')} ? 'active' : ''">Events</a>
-            <a th:href="@{/voxtex}" th:classappend="${#strings.equals(currentPage, 'voxtex')} ? 'active' : ''">Voxtex</a>
+            <a th:href="@{/nexus}" th:classappend="${#strings.equals(currentPage, 'nexus')} ? 'active' : ''">nexus</a>
             <a th:href="@{/simulation}" th:classappend="${#strings.equals(currentPage, 'simulation')} ? 'active' : ''">Cortex</a>
+        </div>
+        <div class="nav-user-status" id="navUserStatus" style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
+            <div id="citizenBadge" class="badge badge-unassigned" style="font-size: 0.8rem; letter-spacing: 1px; font-weight: bold; border: 1px solid rgba(0,242,255,0.3); background: rgba(0,242,255,0.05); color: #00f2ff; padding: 4px 10px; border-radius: 4px; display: none;">
+                <span class="pulse-indicator" style="display:inline-block; width:6px; height:6px; border-radius:50%; background:#00f2ff; margin-right:6px; box-shadow:0 0 6px #00f2ff; animation: pulse 2s infinite;"></span>
+                <span id="citizenName">Loading...</span>&nbsp;<span id="citizenRole" style="opacity:0.7; font-size:0.75rem;"></span>
+            </div>
         </div>
     </nav>
 
@@ -46,6 +52,57 @@
         lucide.createIcons();
     </script>
     <script>
+        async function updateNavUserStatus() {
+            let token = localStorage.getItem('civos_token');
+            if (!token) {
+                try {
+                    let resp = await fetch('/api/v1/auth/connect', { method: 'POST' });
+                    let data = await resp.json();
+                    token = data.token;
+                    localStorage.setItem('civos_token', token);
+                    localStorage.setItem('civos_clientId', data.clientId);
+                } catch(e) {
+                    console.warn('Authentication unavailable');
+                    return;
+                }
+            }
+
+            try {
+                let resp = await fetch('/api/v1/civilizations/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (resp.ok) {
+                    let data = await resp.json();
+                    document.getElementById('citizenName').textContent = data.name;
+                    document.getElementById('citizenRole').textContent = data.role ? `[${data.role}]` : '[VISITOR]';
+                    const badge = document.getElementById('citizenBadge');
+                    badge.style.display = 'inline-flex';
+                    badge.style.alignItems = 'center';
+                    
+                    if (data.role === 'FOUNDER') {
+                        badge.style.borderColor = 'rgba(255, 215, 0, 0.4)';
+                        badge.style.color = '#ffd700';
+                        badge.querySelector('.pulse-indicator').style.background = '#ffd700';
+                        badge.querySelector('.pulse-indicator').style.boxShadow = '0 0 6px #ffd700';
+                    } else if (data.role === 'SECTOR_DELEGATE') {
+                        badge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
+                        badge.style.color = '#00ff88';
+                        badge.querySelector('.pulse-indicator').style.background = '#00ff88';
+                        badge.querySelector('.pulse-indicator').style.boxShadow = '0 0 6px #00ff88';
+                    } else if (data.role === 'NEXUS_COORDINATOR') {
+                        badge.style.borderColor = 'rgba(170, 102, 255, 0.4)';
+                        badge.style.color = '#aa66ff';
+                        badge.querySelector('.pulse-indicator').style.background = '#aa66ff';
+                        badge.querySelector('.pulse-indicator').style.boxShadow = '0 0 6px #aa66ff';
+                    }
+                }
+            } catch (e) {
+                console.warn('Failed to load citizen details', e);
+            }
+        }
+        updateNavUserStatus();
+    </script>
+    <script>
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('/service-worker.js')
                 .then(() => console.log('SW registered'))
@@ -57,3 +114,4 @@
     </script>
 </body>
 </html>
+

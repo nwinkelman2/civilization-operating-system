@@ -1,7 +1,7 @@
-package io.github.opencivilizationplatform.modules.voxtex.application;
+package io.github.opencivilizationplatform.modules.nexus.application;
 
-import io.github.opencivilizationplatform.modules.voxtex.domain.*;
-import io.github.opencivilizationplatform.modules.voxtex.infrastructure.*;
+import io.github.opencivilizationplatform.modules.nexus.domain.*;
+import io.github.opencivilizationplatform.modules.nexus.infrastructure.*;
 import io.github.opencivilizationplatform.modules.trade.application.TradeService;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
 import org.slf4j.Logger;
@@ -15,20 +15,20 @@ import java.util.List;
 import java.util.Random;
 
 @Service
-public class VoxtexAIService {
+public class NexusAIService {
 
-    private static final Logger log = LoggerFactory.getLogger(VoxtexAIService.class);
+    private static final Logger log = LoggerFactory.getLogger(NexusAIService.class);
 
-    private final VoxtexNodeRepository nodeRepository;
-    private final VoxtexConnectionRepository connectionRepository;
-    private final VoxtexMessageRepository messageRepository;
+    private final NexusNodeRepository nodeRepository;
+    private final NexusConnectionRepository connectionRepository;
+    private final NexusMessageRepository messageRepository;
     private final CivilizationRepository civRepository;
     private final TradeService tradeService;
     private final Random random = new Random();
 
-    public VoxtexAIService(VoxtexNodeRepository nodeRepository,
-                           VoxtexConnectionRepository connectionRepository,
-                           VoxtexMessageRepository messageRepository,
+    public NexusAIService(NexusNodeRepository nodeRepository,
+                           NexusConnectionRepository connectionRepository,
+                           NexusMessageRepository messageRepository,
                            CivilizationRepository civRepository,
                            TradeService tradeService) {
         this.nodeRepository = nodeRepository;
@@ -41,10 +41,10 @@ public class VoxtexAIService {
     @Transactional
     @Scheduled(fixedRate = 20000)
     public void aiTick() {
-        var activeNodes = nodeRepository.findByStatus(VoxtexNodeStatus.ACTIVE);
+        var activeNodes = nodeRepository.findByStatus(NexusNodeStatus.ACTIVE);
         if (activeNodes.size() < 2) return;
 
-        log.debug("VOXTEX AI: Processing {} active nodes", activeNodes.size());
+        log.debug("Nexus AI: Processing {} active nodes", activeNodes.size());
 
         for (var node : activeNodes) {
             // 40% chance of AI action per node per tick
@@ -62,10 +62,10 @@ public class VoxtexAIService {
             if (decision < 0.3) {
                 // Share knowledge
                 String knowledge = generateKnowledge(node);
-                VoxtexMessage msg = new VoxtexMessage();
+                NexusMessage msg = new NexusMessage();
                 msg.setSourceNode(node);
                 msg.setTargetNode(targetNode);
-                msg.setMessageType(VoxtexMessageType.KNOWLEDGE_TRANSFER);
+                msg.setMessageType(NexusMessageType.KNOWLEDGE_TRANSFER);
                 msg.setContent("AI: " + knowledge);
                 msg.setDelivered(true);
                 msg.setDeliveredAt(LocalDateTime.now());
@@ -78,7 +78,7 @@ public class VoxtexAIService {
                 node.setKnowledgeBase(newKb);
                 nodeRepository.save(node);
 
-                log.debug("VOXTEX AI: {} shared knowledge with {}", node.getName(), targetNode.getName());
+                log.debug("Nexus AI: {} shared knowledge with {}", node.getName(), targetNode.getName());
             } else if (decision < 0.55) {
                 // Propose trade between civilizations
                 Long fromCiv = node.getCivilization().getId();
@@ -89,9 +89,9 @@ public class VoxtexAIService {
                     double qty = 10 + random.nextDouble() * 100;
                     try {
                         tradeService.proposeTrade(fromCiv, toCiv, resource, Math.round(qty * 10.0) / 10.0);
-                        log.debug("VOXTEX AI: {} proposed trade to {}", node.getName(), targetNode.getName());
+                        log.debug("Nexus AI: {} proposed trade to {}", node.getName(), targetNode.getName());
                     } catch (Exception e) {
-                        log.debug("VOXTEX AI: Trade proposal failed: {}", e.getMessage());
+                        log.debug("Nexus AI: Trade proposal failed: {}", e.getMessage());
                     }
                 }
             } else if (decision < 0.75) {
@@ -104,36 +104,36 @@ public class VoxtexAIService {
                     "Proposal: joint research initiative for mutual benefit."
                 };
                 String msg = diploMessages[random.nextInt(diploMessages.length)];
-                VoxtexMessage vMsg = new VoxtexMessage();
+                NexusMessage vMsg = new NexusMessage();
                 vMsg.setSourceNode(node);
                 vMsg.setTargetNode(targetNode);
-                vMsg.setMessageType(VoxtexMessageType.DIPLOMATIC_MESSAGE);
+                vMsg.setMessageType(NexusMessageType.DIPLOMATIC_MESSAGE);
                 vMsg.setContent("AI: " + msg);
                 vMsg.setDelivered(true);
                 vMsg.setDeliveredAt(LocalDateTime.now());
                 messageRepository.save(vMsg);
-                log.debug("VOXTEX AI: {} sent diplomatic message to {}", node.getName(), targetNode.getName());
+                log.debug("Nexus AI: {} sent diplomatic message to {}", node.getName(), targetNode.getName());
             } else {
                 // Neural sync - strengthen connection
                 conn.setStrength(Math.min(1.0, conn.getStrength() + 0.1));
                 conn.setLastActivityAt(LocalDateTime.now());
                 connectionRepository.save(conn);
 
-                VoxtexMessage vMsg = new VoxtexMessage();
+                NexusMessage vMsg = new NexusMessage();
                 vMsg.setSourceNode(node);
                 vMsg.setTargetNode(targetNode);
-                vMsg.setMessageType(VoxtexMessageType.NEURAL_SYNC);
+                vMsg.setMessageType(NexusMessageType.NEURAL_SYNC);
                 vMsg.setContent("AI: Neural synchronization complete. Connection strength: " +
                     String.format("%.0f%%", conn.getStrength() * 100));
                 vMsg.setDelivered(true);
                 vMsg.setDeliveredAt(LocalDateTime.now());
                 messageRepository.save(vMsg);
-                log.debug("VOXTEX AI: {} synced with {} (strength: {})", node.getName(), targetNode.getName(), conn.getStrength());
+                log.debug("Nexus AI: {} synced with {} (strength: {})", node.getName(), targetNode.getName(), conn.getStrength());
             }
         }
     }
 
-    private String generateKnowledge(VoxtexNode node) {
+    private String generateKnowledge(NexusNode node) {
         String[] templates = {
             "Analyzed resource patterns in %s region. Efficiency gains possible.",
             "Detected anomaly in energy consumption. Recommending optimization.",
@@ -145,3 +145,4 @@ public class VoxtexAIService {
         return String.format(templates[random.nextInt(templates.length)], region);
     }
 }
+
