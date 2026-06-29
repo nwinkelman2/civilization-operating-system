@@ -3,6 +3,8 @@ package io.github.opencivilizationplatform.modules.cortex.cortex;
 import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
+import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
+import io.github.opencivilizationplatform.modules.monitoring.infrastructure.BiosphereMetricRepository;
 import io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
@@ -10,11 +12,12 @@ import io.github.opencivilizationplatform.modules.participation.infrastructure.R
 import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,6 +33,10 @@ class CortexEngineServiceTest {
     private RuleRepository ruleRepository;
     @Mock
     private MeshTradeRepository meshTradeRepository;
+    @Mock
+    private BiosphereMetricRepository biosphereMetricRepository;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -38,9 +45,11 @@ class CortexEngineServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        // InjectObjectMapper manually since Mockito @InjectMocks might not resolve constructor correctly with custom fields
+        // Stub biosphere metric lookup to return empty list (no ecological drift in unit tests)
+        when(biosphereMetricRepository.findAll()).thenReturn(List.of());
         cortexEngineService = new CortexEngineService(
-            civilizationRepository, resourceRegionRepository, ruleRepository, objectMapper, meshTradeRepository
+            civilizationRepository, resourceRegionRepository, ruleRepository,
+            objectMapper, meshTradeRepository, biosphereMetricRepository, eventPublisher
         );
     }
 

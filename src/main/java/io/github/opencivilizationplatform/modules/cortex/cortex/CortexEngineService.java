@@ -1,8 +1,12 @@
 package io.github.opencivilizationplatform.modules.cortex.cortex;
 
+import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
 import io.github.opencivilizationplatform.modules.cortex.domain.ResourceTick;
+import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
+import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetricStatus;
+import io.github.opencivilizationplatform.modules.monitoring.infrastructure.BiosphereMetricRepository;
 import io.github.opencivilizationplatform.modules.region.domain.ResourceRegion;
 import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
@@ -14,6 +18,7 @@ import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.ObjectNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,18 +38,24 @@ public class CortexEngineService {
     private final RuleRepository ruleRepository;
     private final ObjectMapper objectMapper;
     private final io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository;
+    private final BiosphereMetricRepository biosphereMetricRepository;
+    private final ApplicationEventPublisher eventPublisher;
     private final Random random = new Random();
 
     public CortexEngineService(CivilizationRepository civilizationRepository,
                                ResourceRegionRepository resourceRegionRepository,
                                RuleRepository ruleRepository,
                                ObjectMapper objectMapper,
-                               io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository) {
+                               io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository,
+                               BiosphereMetricRepository biosphereMetricRepository,
+                               ApplicationEventPublisher eventPublisher) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
         this.ruleRepository = ruleRepository;
         this.objectMapper = objectMapper;
         this.meshTradeRepository = meshTradeRepository;
+        this.biosphereMetricRepository = biosphereMetricRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
@@ -199,6 +210,30 @@ public class CortexEngineService {
                     robotMineralBonus = exploreBots * 0.5;
                     robotHousingBonus = utilityBots * 0.4;
                     cortexLogs.add("[Automação] Sistemas Robóticos ONLINE: " + totalRobots + " drones operando (Consumo: " + String.format("%.2f", energyRequired) + " energia).");
+
+                    // --- IMPACTO ECOLÓGICO: Drift de qualidade do ar por atividade robótica ---
+                    double industrialDrift = (exploreBots + utilityBots) * 0.02;
+                    if (industrialDrift > 0) {
+                        List<BiosphereMetric> metrics = biosphereMetricRepository.findAll();
+                        for (BiosphereMetric metric : metrics) {
+                            if (metric.getName() != null && metric.getName().contains("Qualidade do Ar")) {
+                                double newValue = Math.max(0, metric.getValue() - industrialDrift);
+                                metric.setValue(newValue);
+                                if (newValue < metric.getSafetyLimit()) {
+                                    metric.setStatus(BiosphereMetricStatus.CRITICAL);
+                                    biosphereMetricRepository.save(metric);
+                                    eventPublisher.publishEvent(new BiosphereCriticalEvent(this, metric));
+                                    reputationDelta -= 3.0;
+                                    cortexLogs.add("[⚠ Alerta Ecológico] Qualidade do Ar CRÍTICA (" + String.format("%.1f", newValue) + "%) — Atividade industrial robótica causou degradação ambiental. Reputação -3.");
+                                } else {
+                                    metric.setStatus(BiosphereMetricStatus.NORMAL);
+                                    biosphereMetricRepository.save(metric);
+                                    cortexLogs.add("[Biosfera] Qualidade do Ar: " + String.format("%.1f", newValue) + "% (Drift Industrial: -" + String.format("%.3f", industrialDrift) + ")");
+                                }
+                                break;
+                            }
+                        }
+                    }
                 } else {
                     cortexLogs.add("[Alerta Automação] Sistemas Robóticos OFFLINE: Reserva de energia insuficiente.");
                 }
