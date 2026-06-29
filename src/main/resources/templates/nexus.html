@@ -49,12 +49,62 @@
                 </div>
             </div>
         </div>
+
+        <!-- LEDGERS ROW -->
+        <div class="nexus-ledgers-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+            <!-- Trade Ledger -->
+            <div class="civ-panel" style="background: rgba(0, 242, 255, 0.02); border-color: rgba(0, 242, 255, 0.15); border-radius:8px; border:1px solid rgba(0,242,255,0.1); padding:16px;">
+                <h3 style="color: #00f2ff; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 12px; font-family: 'Outfit', sans-serif;">🛡️ LIVRO DE NEGOCIAÇÕES AUTÔNOMAS</h3>
+                <div style="max-height: 250px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--text-dim);">
+                                <th style="padding: 6px;">Origem (Vendedor)</th>
+                                <th style="padding: 6px;">Destino (Comprador)</th>
+                                <th style="padding: 6px;">Recurso Recebido</th>
+                                <th style="padding: 6px;">Recurso Oferecido</th>
+                                <th style="padding: 6px;">Tipo</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tradeLedgerBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 12px;">Aguardando negociações na rede...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Migration Transit Ledger -->
+            <div class="civ-panel" style="background: rgba(255, 107, 53, 0.02); border-color: rgba(255, 107, 53, 0.15); border-radius:8px; border:1px solid rgba(255,107,53,0.1); padding:16px;">
+                <h3 style="color: #ff6b35; font-size: 0.75rem; letter-spacing: 2px; margin-bottom: 12px; font-family: 'Outfit', sans-serif;">🌍 LIVRO DE TRÂNSITO DE PESSOAL</h3>
+                <div style="max-height: 250px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.7rem; text-align: left;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.08); color: var(--text-dim);">
+                                <th style="padding: 6px;">Cidadão</th>
+                                <th style="padding: 6px;">De (Origem)</th>
+                                <th style="padding: 6px;">Para (Destino)</th>
+                                <th style="padding: 6px;">Motivo</th>
+                                <th style="padding: 6px;">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="migrationLedgerBody">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-dim); padding: 12px;">Aguardando trânsito de pessoal...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script th:inline="javascript">
         // Canvas graph visualization using force-directed layout
         const canvas = document.getElementById('nexusCanvas');
         const ctx = canvas.getContext('2d');
+        const activePackets = [];
 
         function resizeCanvas() {
             const container = canvas.parentElement;
@@ -150,6 +200,36 @@
                 ctx.fillText(n.name, pos.x, pos.y - radius - 8);
             });
 
+            // Draw active trade packets
+            for (let i = activePackets.length - 1; i >= 0; i--) {
+                const p = activePackets[i];
+                const a = nodePositions[p.sourceId];
+                const b = nodePositions[p.targetId];
+                if (!a || !b) {
+                    activePackets.splice(i, 1);
+                    continue;
+                }
+
+                p.progress += 0.015;
+                if (p.progress >= 1.0) {
+                    ctx.beginPath();
+                    ctx.arc(b.x, b.y, 15, 0, Math.PI*2);
+                    ctx.strokeStyle = p.color + '40';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    activePackets.splice(i, 1);
+                    continue;
+                }
+
+                p.x = a.x + (b.x - a.x) * p.progress;
+                p.y = a.y + (b.y - a.y) * p.progress;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+            }
+
             // Simple force-directed tick
             nodes.forEach(n => {
                 const pos = nodePositions[n.id];
@@ -231,6 +311,90 @@
             console.log('WebSocket disconnected, reconnecting in 3s...');
             setTimeout(() => { ws = new WebSocket(wsUrl); }, 3000);
         };
+
+        // --- Polling and rendering Trade & Migration Ledger ---
+        let knownTradeIds = new Set();
+
+        function spawnTradePacket(senderName, receiverName, type) {
+            const sourceNode = nodes.find(n => n.name.toLowerCase() === senderName.toLowerCase());
+            const targetNode = nodes.find(n => n.name.toLowerCase() === receiverName.toLowerCase());
+            if (!sourceNode || !targetNode) return;
+
+            const colorMap = {
+                'FOOD': '#00f2ff',
+                'WATER': '#006aff',
+                'MINERALS': '#ff6b35',
+                'ENERGY': '#ffd700',
+                'PERSONNEL': '#ff00c8'
+            };
+
+            activePackets.push({
+                x: nodePositions[sourceNode.id].x,
+                y: nodePositions[sourceNode.id].y,
+                sourceId: sourceNode.id,
+                targetId: targetNode.id,
+                progress: 0,
+                color: colorMap[type] || '#ffffff'
+            });
+        }
+
+        async function loadLedgerData() {
+            try {
+                // Fetch trades
+                const tradesResp = await fetch('/api/v1/nexus/trades');
+                if (tradesResp.ok) {
+                    const trades = await tradesResp.json();
+                    const tbody = document.getElementById('tradeLedgerBody');
+                    if (trades && trades.length > 0) {
+                        tbody.innerHTML = trades.map(t => {
+                            if (!knownTradeIds.has(t.id)) {
+                                knownTradeIds.add(t.id);
+                                spawnTradePacket(t.sender.name, t.receiver.name, t.requestedResource);
+                            }
+                            return `
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                    <td style="padding: 6px; color:#fff;">${t.sender.name}</td>
+                                    <td style="padding: 6px; color:#fff;">${t.receiver.name}</td>
+                                    <td style="padding: 6px; color:#00ff88;">+${t.requestedAmount.toFixed(0)} ${t.requestedResource}</td>
+                                    <td style="padding: 6px; color:#ff4444;">-${t.offeredAmount.toFixed(0)} ${t.offeredResource}</td>
+                                    <td style="padding: 6px; color:var(--text-dim);">${t.tradeType}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 12px;">Aguardando negociações na rede...</td></tr>`;
+                    }
+                }
+
+                // Fetch migrations
+                const migsResp = await fetch('/api/v1/nexus/migrations');
+                if (migsResp.ok) {
+                    const migs = await migsResp.json();
+                    const tbody = document.getElementById('migrationLedgerBody');
+                    if (migs && migs.length > 0) {
+                        tbody.innerHTML = migs.map(m => {
+                            const badgeColor = m.status === 'APPROVED' ? '#00ff88' : (m.status === 'REJECTED' ? '#ff4444' : '#ffd700');
+                            return `
+                                <tr style="border-bottom: 1px solid rgba(255,255,255,0.03);">
+                                    <td style="padding: 6px; color:#fff; font-weight:600;">${m.citizenName}</td>
+                                    <td style="padding: 6px; color:var(--text-dim);">${m.fromCivilization.name}</td>
+                                    <td style="padding: 6px; color:var(--text-dim);">${m.toCivilization.name}</td>
+                                    <td style="padding: 6px; color:#fff; font-style:italic;">${m.reason || 'N/A'}</td>
+                                    <td style="padding: 6px; color:${badgeColor}; font-weight:600;">${m.status}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-dim); padding: 12px;">Aguardando trânsito de pessoal...</td></tr>`;
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        loadLedgerData();
+        setInterval(loadLedgerData, 4000);
     </script>
 
     <style>

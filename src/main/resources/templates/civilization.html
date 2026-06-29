@@ -109,6 +109,77 @@
             </div>
         </div>
 
+        <!-- ROBOT FLEET CONTROL & CITIZEN MIGRATION GRID -->
+        <div class="civ-grid-2col" style="margin-bottom: 20px;">
+            <!-- Robot Fleet Control Panel -->
+            <div class="civ-panel" id="robotFleetPanel" style="background: rgba(255, 215, 0, 0.02); border-color: rgba(255, 215, 0, 0.15); padding: 16px;">
+                <h2 class="panel-title" style="color: #ffd700; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🤖 CONTROLE DE FROTAS DE ROBÔS</span>
+                    <span id="robotSaveIndicator" style="font-size: 0.65rem; color: #ffd700; opacity: 0.8; border: 1px solid rgba(255,215,0,0.3); padding: 1px 6px; border-radius: 3px;">Salvo</span>
+                </h2>
+                
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:8px;">
+                        Distribuição das frotas de robôs por prioridade de tarefa:
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🌾 Agri-Bots (Agropecuária): <strong id="val-agri">25</strong>%</span>
+                        </div>
+                        <input type="range" id="range-agri" min="0" max="100" th:value="${civ.agriBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>💧 Aqua-Bots (Hídrico): <strong id="val-aqua">25</strong>%</span>
+                        </div>
+                        <input type="range" id="range-aqua" min="0" max="100" th:value="${civ.aquaBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>⛏️ Explorer-Bots (Exploração): <strong id="val-explore">25</strong>%</span>
+                        </div>
+                        <input type="range" id="range-explore" min="0" max="100" th:value="${civ.exploreBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🛠️ Utility-Bots (Infraestrutura): <strong id="val-utility">25</strong>%</span>
+                        </div>
+                        <input type="range" id="range-utility" min="0" max="100" th:value="${civ.utilityBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.65rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    O total das prioridades é normalizado pelo Cortex. Somente Sector Delegates podem ajustar frotas.
+                </div>
+            </div>
+
+            <!-- Citizen Migration Panel -->
+            <div class="civ-panel" id="migrationTransitPanel" style="background: rgba(255, 107, 53, 0.02); border-color: rgba(255, 107, 53, 0.15); padding: 16px;">
+                <h2 class="panel-title" style="color: #ff6b35;">🚪 TRÂNSITO DE CIDADÃOS / IMIGRAÇÃO</h2>
+                
+                <!-- Apply for Migration (Common Citizens) -->
+                <div id="migrationApplyForm" style="margin-bottom: 12px;">
+                    <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:6px;">Solicitar transferência de cidade de moradia:</div>
+                    <div style="display:flex; gap:6px; margin-bottom:6px;">
+                        <select id="migTargetCiv" class="btn-small" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255, 107, 53, 0.3); font-size:0.7rem; color:#fff;">
+                            <option value="">Selecione o Cortex Destino...</option>
+                            <option th:each="c : ${allCivilizations}" th:if="${c.id != civ.id}" th:value="${c.id}" th:text="${c.name}">Alexandria</option>
+                        </select>
+                        <button class="btn-small" style="background:#ff6b35; color:#fff; border-color:#ff6b35; font-size:0.7rem;" onclick="submitMigrationRequest()">SOLICITAR</button>
+                    </div>
+                    <input type="text" id="migReason" class="btn-small" placeholder="Motivo do trânsito..." style="width:100%; font-size:0.7rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,107,53,0.3); text-align:left; color:#fff;"/>
+                </div>
+
+                <!-- Review Migration Requests -->
+                <div id="migrationReviewSection" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    <h3 style="font-size:0.7rem; color:#ff6b35; margin-bottom:6px;">Solicitações de Entrada Pendentes</h3>
+                    <div id="pendingMigrationsList" style="display:flex; flex-direction:column; gap:6px; max-height:110px; overflow-y:auto;">
+                        <div style="color:var(--text-dim); text-align:center; font-size:0.65rem; padding:8px;">Nenhuma solicitação de imigração.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Region Resources -->
         <div class="civ-panel" th:if="${region != null}">
             <h2 class="panel-title">HOME REGION RESOURCES</h2>
@@ -1005,6 +1076,158 @@
         function loadCandidates() {
             loadWalletAndCandidates();
         }
+
+        // --- Robot fleet controls ---
+        function updatePriorityLabels() {
+            const agri = document.getElementById('range-agri').value;
+            const aqua = document.getElementById('range-aqua').value;
+            const explore = document.getElementById('range-explore').value;
+            const utility = document.getElementById('range-utility').value;
+
+            document.getElementById('val-agri').innerText = agri;
+            document.getElementById('val-aqua').innerText = aqua;
+            document.getElementById('val-explore').innerText = explore;
+            document.getElementById('val-utility').innerText = utility;
+        }
+
+        async function saveRobotPriorities() {
+            const indicator = document.getElementById('robotSaveIndicator');
+            indicator.innerText = 'Salvando...';
+            indicator.style.borderColor = 'rgba(255,215,0,0.5)';
+
+            const agri = parseInt(document.getElementById('range-agri').value);
+            const aqua = parseInt(document.getElementById('range-aqua').value);
+            const explore = parseInt(document.getElementById('range-explore').value);
+            const utility = parseInt(document.getElementById('range-utility').value);
+
+            try {
+                const res = await fetch(`/api/v1/nexus/civilizations/${currentCivId}/robot-priorities`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agri, aqua, explore, utility })
+                });
+                if (res.ok) {
+                    indicator.innerText = 'Salvo';
+                    indicator.style.borderColor = 'rgba(0,255,136,0.3)';
+                    indicator.style.color = '#00ff88';
+                    setTimeout(() => {
+                        indicator.style.borderColor = 'rgba(255,215,0,0.3)';
+                        indicator.style.color = '#ffd700';
+                    }, 1000);
+                } else {
+                    const txt = await res.text();
+                    indicator.innerText = 'Erro';
+                    indicator.style.borderColor = 'rgba(255,0,0,0.5)';
+                    alert('Erro ao salvar: ' + txt);
+                }
+            } catch (err) {
+                console.error(err);
+                indicator.innerText = 'Erro';
+                indicator.style.borderColor = 'rgba(255,0,0,0.5)';
+            }
+        }
+
+        // --- Migration flow controls ---
+        async function submitMigrationRequest() {
+            const targetCivId = document.getElementById('migTargetCiv').value;
+            const reason = document.getElementById('migReason').value;
+            let token = localStorage.getItem('civos_token');
+
+            if (!targetCivId) {
+                alert('Por favor, selecione um Cortex de destino.');
+                return;
+            }
+
+            try {
+                const meResp = await fetch('/api/v1/civilizations/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!meResp.ok) {
+                    alert('Faça login ou registre-se como agente para solicitar trânsito.');
+                    return;
+                }
+                const citizen = await meResp.json();
+
+                const res = await fetch('/api/v1/migrations/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        citizenName: citizen.name,
+                        fromCivilizationId: currentCivId,
+                        toCivilizationId: parseInt(targetCivId),
+                        reason: reason
+                    })
+                });
+
+                if (res.ok) {
+                    alert('Solicitação de migração enviada e aguardando aprovação dos delegados!');
+                    document.getElementById('migReason').value = '';
+                    document.getElementById('migTargetCiv').value = '';
+                } else {
+                    const txt = await res.text();
+                    alert('Erro ao solicitar trânsito: ' + txt);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadPendingMigrations() {
+            const listContainer = document.getElementById('pendingMigrationsList');
+            if (!listContainer) return;
+
+            try {
+                const res = await fetch(`/api/v1/migrations/pending/${currentCivId}`);
+                if (res.ok) {
+                    const requests = await res.json();
+                    if (!requests || requests.length === 0) {
+                        listContainer.innerHTML = `<div style="color:var(--text-dim); text-align:center; font-size:0.65rem; padding:8px;">Nenhuma solicitação de imigração.</div>`;
+                        return;
+                    }
+                    listContainer.innerHTML = requests.map(r => `
+                        <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:6px; border-radius:4px; font-size:0.7rem; display:flex; flex-direction:column; gap:4px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="color:#ff6b35;">${r.citizenName}</strong>
+                                <span style="font-size:0.6rem; color:var(--text-dim);">Origem: ${r.fromCivilization.name}</span>
+                            </div>
+                            <div style="font-size:0.65rem; color:#fff; font-style:italic;">Motivo: ${r.reason || 'Não informado'}</div>
+                            <div style="display:flex; gap:6px; margin-top:4px;">
+                                <button class="btn-small" onclick="processMigration(${r.id}, 'approve')" style="flex:1; padding:2px 4px; font-size:0.6rem; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">Aceitar</button>
+                                <button class="btn-small" onclick="processMigration(${r.id}, 'reject')" style="flex:1; padding:2px 4px; font-size:0.6rem; border-color:#ff4444; color:#ff4444; background:rgba(255,68,68,0.05);">Rejeitar</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function processMigration(id, action) {
+            try {
+                const res = await fetch(`/api/v1/migrations/${id}/${action}`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    alert(action === 'approve' ? 'Migração aceita com sucesso!' : 'Migração rejeitada.');
+                    loadPendingMigrations();
+                    loadWalletAndCandidates();
+                    loadCoopData();
+                } else {
+                    const txt = await res.text();
+                    alert('Erro ao processar: ' + txt);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // Initialize additions
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePriorityLabels();
+            loadPendingMigrations();
+            setInterval(loadPendingMigrations, 10000);
+        });
     </script>
 
     <style>

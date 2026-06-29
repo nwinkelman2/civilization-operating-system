@@ -32,16 +32,19 @@ public class CortexEngineService {
     private final ResourceRegionRepository resourceRegionRepository;
     private final RuleRepository ruleRepository;
     private final ObjectMapper objectMapper;
+    private final io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository;
     private final Random random = new Random();
 
     public CortexEngineService(CivilizationRepository civilizationRepository,
                                ResourceRegionRepository resourceRegionRepository,
                                RuleRepository ruleRepository,
-                               ObjectMapper objectMapper) {
+                               ObjectMapper objectMapper,
+                               io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
         this.ruleRepository = ruleRepository;
         this.objectMapper = objectMapper;
+        this.meshTradeRepository = meshTradeRepository;
     }
 
     @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
@@ -131,23 +134,56 @@ public class CortexEngineService {
                 currentMinerals -= 15.0;
                 currentEnergy -= 10.0;
 
-                double food = civ.getFood() != null ? civ.getFood() : 100;
-                double water = civ.getWater() != null ? civ.getWater() : 100;
-                double housing = civ.getHousing() != null ? civ.getHousing() : 50;
+                int sum = (civ.getAgriBotsPriority() != null ? civ.getAgriBotsPriority() : 25)
+                        + (civ.getAquaBotsPriority() != null ? civ.getAquaBotsPriority() : 25)
+                        + (civ.getExploreBotsPriority() != null ? civ.getExploreBotsPriority() : 25)
+                        + (civ.getUtilityBotsPriority() != null ? civ.getUtilityBotsPriority() : 25);
+                if (sum == 0) sum = 100;
+
+                double targetAgri = (double) (civ.getAgriBotsPriority() != null ? civ.getAgriBotsPriority() : 25) / sum;
+                double targetAqua = (double) (civ.getAquaBotsPriority() != null ? civ.getAquaBotsPriority() : 25) / sum;
+                double targetExplore = (double) (civ.getExploreBotsPriority() != null ? civ.getExploreBotsPriority() : 25) / sum;
+                double targetUtility = (double) (civ.getUtilityBotsPriority() != null ? civ.getUtilityBotsPriority() : 25) / sum;
 
                 String botType;
-                if (food < 40.0) {
-                    agriBots++;
-                    botType = "Agri-Bot (Agropecuária)";
-                } else if (water < 40.0) {
-                    aquaBots++;
-                    botType = "Aqua-Bot (Recursos Hídricos)";
-                } else if (housing < 25.0) {
-                    utilityBots++;
-                    botType = "Utility-Bot (Infraestrutura/Moradia)";
+                if (totalRobots == 0) {
+                    if (targetAgri >= targetAqua && targetAgri >= targetExplore && targetAgri >= targetUtility) {
+                        agriBots++;
+                        botType = "Agri-Bot (Agropecuária)";
+                    } else if (targetAqua >= targetExplore && targetAqua >= targetUtility) {
+                        aquaBots++;
+                        botType = "Aqua-Bot (Recursos Hídricos)";
+                    } else if (targetExplore >= targetUtility) {
+                        exploreBots++;
+                        botType = "Explorer-Bot (Exploração Mineral)";
+                    } else {
+                        utilityBots++;
+                        botType = "Utility-Bot (Infraestrutura/Moradia)";
+                    }
                 } else {
-                    exploreBots++;
-                    botType = "Explorer-Bot (Exploração Mineral)";
+                    double currentAgriRatio = (double) agriBots / totalRobots;
+                    double currentAquaRatio = (double) aquaBots / totalRobots;
+                    double currentExploreRatio = (double) exploreBots / totalRobots;
+                    double currentUtilityRatio = (double) utilityBots / totalRobots;
+
+                    double diffAgri = targetAgri - currentAgriRatio;
+                    double diffAqua = targetAqua - currentAquaRatio;
+                    double diffExplore = targetExplore - currentExploreRatio;
+                    double diffUtility = targetUtility - currentUtilityRatio;
+
+                    if (diffAgri >= diffAqua && diffAgri >= diffExplore && diffAgri >= diffUtility) {
+                        agriBots++;
+                        botType = "Agri-Bot (Agropecuária)";
+                    } else if (diffAqua >= diffExplore && diffAqua >= diffUtility) {
+                        aquaBots++;
+                        botType = "Aqua-Bot (Recursos Hídricos)";
+                    } else if (diffExplore >= diffUtility) {
+                        exploreBots++;
+                        botType = "Explorer-Bot (Exploração Mineral)";
+                    } else {
+                        utilityBots++;
+                        botType = "Utility-Bot (Infraestrutura/Moradia)";
+                    }
                 }
                 totalRobots++;
                 cortexLogs.add("[Automação] Cortex fabricou 1 " + botType + " (Custo: 15 minerais, 10 energia).");
@@ -288,6 +324,17 @@ public class CortexEngineService {
                     addLogToPartnerHistory(partner, "[Comércio Autônomo] Cortex exportou 30.0 de " + (criticalResource.equals("FOOD") ? "Alimento" : "Água") + 
                         " para '" + civ.getName() + "' em troca de 30.0 de " + (offeredResource.equals("MINERALS") ? "Minerais" : "Energia") + ".");
                     
+                    // Save to mesh_trades ledger
+                    io.github.opencivilizationplatform.modules.nexus.domain.MeshTrade trade = new io.github.opencivilizationplatform.modules.nexus.domain.MeshTrade();
+                    trade.setSender(partner);
+                    trade.setReceiver(civ);
+                    trade.setRequestedResource(criticalResource);
+                    trade.setRequestedAmount(30.0);
+                    trade.setOfferedResource(offeredResource);
+                    trade.setOfferedAmount(30.0);
+                    trade.setTradeType("RESOURCE_BARTER");
+                    meshTradeRepository.save(trade);
+
                     civilizationRepository.save(partner);
                 } else if (population >= 40) {
                     int partnerPop = partner.getPopulation() != null ? partner.getPopulation() : 0;
@@ -309,6 +356,17 @@ public class CortexEngineService {
 
                         addLogToPartnerHistory(partner, "[Comércio Autônomo] Cortex recebeu 5 trabalhadores de '" + civ.getName() + 
                             "' em troca de 35.0 de " + (criticalResource.equals("FOOD") ? "Alimento" : "Água") + ".");
+
+                        // Save to mesh_trades ledger
+                        io.github.opencivilizationplatform.modules.nexus.domain.MeshTrade trade = new io.github.opencivilizationplatform.modules.nexus.domain.MeshTrade();
+                        trade.setSender(partner);
+                        trade.setReceiver(civ);
+                        trade.setRequestedResource(criticalResource);
+                        trade.setRequestedAmount(35.0);
+                        trade.setOfferedResource("PERSONNEL");
+                        trade.setOfferedAmount(5.0);
+                        trade.setTradeType("PERSONNEL_EXCHANGE");
+                        meshTradeRepository.save(trade);
 
                         civilizationRepository.save(partner);
                     }

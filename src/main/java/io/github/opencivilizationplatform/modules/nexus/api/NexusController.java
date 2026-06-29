@@ -21,10 +21,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class NexusController {
 
     private final NexusMeshService meshService;
+    private final io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository;
+    private final io.github.opencivilizationplatform.modules.nexus.infrastructure.MigrationRequestRepository migrationRequestRepository;
+    private final io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository;
     private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
 
-    public NexusController(NexusMeshService meshService) {
+    public NexusController(NexusMeshService meshService,
+                           io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository,
+                           io.github.opencivilizationplatform.modules.nexus.infrastructure.MigrationRequestRepository migrationRequestRepository,
+                           io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository) {
         this.meshService = meshService;
+        this.meshTradeRepository = meshTradeRepository;
+        this.migrationRequestRepository = migrationRequestRepository;
+        this.civilizationRepository = civilizationRepository;
     }
 
     // --- Nodes ---
@@ -116,6 +125,32 @@ public class NexusController {
         emitter.onTimeout(() -> emitters.remove(emitter));
 
         return emitter;
+    }
+
+    @GetMapping("/trades")
+    @Operation(summary = "Get list of all mesh trades")
+    public List<io.github.opencivilizationplatform.modules.nexus.domain.MeshTrade> getTrades() {
+        return meshTradeRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    @GetMapping("/migrations")
+    @Operation(summary = "Get list of all migrations")
+    public List<io.github.opencivilizationplatform.modules.nexus.domain.MigrationRequest> getMigrations() {
+        return migrationRequestRepository.findAllByOrderByCreatedAtDesc();
+    }
+
+    @PostMapping("/civilizations/{id}/robot-priorities")
+    @Operation(summary = "Update civilization robot priorities")
+    public Map<String, Object> updateRobotPriorities(@PathVariable Long id, @RequestBody Map<String, Integer> priorities) {
+        io.github.opencivilizationplatform.modules.civilization.domain.Civilization civ = civilizationRepository.findById(id)
+            .orElseThrow(() -> new IllegalArgumentException("Civilization not found"));
+        
+        civ.setAgriBotsPriority(priorities.getOrDefault("agri", 25));
+        civ.setAquaBotsPriority(priorities.getOrDefault("aqua", 25));
+        civ.setExploreBotsPriority(priorities.getOrDefault("explore", 25));
+        civ.setUtilityBotsPriority(priorities.getOrDefault("utility", 25));
+        civilizationRepository.save(civ);
+        return Map.of("success", true, "message", "Prioridades de robôs atualizadas com sucesso!");
     }
 
     // --- Network Status ---

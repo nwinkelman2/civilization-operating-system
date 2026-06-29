@@ -26,7 +26,10 @@ class NexusControllerTest {
     @BeforeEach
     void setUp() {
         NexusMeshService = mock(NexusMeshService.class);
-        mockMvc = standaloneSetup(new NexusController(NexusMeshService)).build();
+        var meshTradeRepository = mock(io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository.class);
+        var migrationRequestRepository = mock(io.github.opencivilizationplatform.modules.nexus.infrastructure.MigrationRequestRepository.class);
+        var civilizationRepository = mock(io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository.class);
+        mockMvc = standaloneSetup(new NexusController(NexusMeshService, meshTradeRepository, migrationRequestRepository, civilizationRepository)).build();
     }
 
     @Test

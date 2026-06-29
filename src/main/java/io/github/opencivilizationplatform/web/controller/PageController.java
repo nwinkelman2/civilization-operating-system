@@ -212,6 +212,7 @@ public class PageController {
             return "redirect:/play";
         }
         model.addAttribute("civ", civ);
+        model.addAttribute("allCivilizations", civilizationService.getAllCivilizationsList());
 
         var region = civ.getHomeRegion();
         model.addAttribute("region", region);

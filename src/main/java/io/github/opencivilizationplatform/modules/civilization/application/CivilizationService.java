@@ -43,6 +43,11 @@ public class CivilizationService {
     }
 
     @Transactional(readOnly = true)
+    public List<Civilization> getAllCivilizationsList() {
+        return repository.findAll();
+    }
+
+    @Transactional(readOnly = true)
     public List<Civilization> getCivilizationsByOwner(String ownerToken) {
         return repository.findByOwnerToken(ownerToken);
     }

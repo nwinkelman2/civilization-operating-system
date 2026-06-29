@@ -73,8 +73,29 @@ public class Civilization {
     @Column(name = "resource_history", columnDefinition = "TEXT")
     private String resourceHistory = "[]";
 
+    @Column(name = "agri_bots_priority", nullable = false)
+    private Integer agriBotsPriority = 25;
+
+    @Column(name = "aqua_bots_priority", nullable = false)
+    private Integer aquaBotsPriority = 25;
+
+    @Column(name = "explore_bots_priority", nullable = false)
+    private Integer exploreBotsPriority = 25;
+
+    @Column(name = "utility_bots_priority", nullable = false)
+    private Integer utilityBotsPriority = 25;
+
     public String getResourceHistory() { return resourceHistory; }
     public void setResourceHistory(String resourceHistory) { this.resourceHistory = resourceHistory; }
+
+    public Integer getAgriBotsPriority() { return agriBotsPriority; }
+    public void setAgriBotsPriority(Integer agriBotsPriority) { this.agriBotsPriority = agriBotsPriority; }
+    public Integer getAquaBotsPriority() { return aquaBotsPriority; }
+    public void setAquaBotsPriority(Integer aquaBotsPriority) { this.aquaBotsPriority = aquaBotsPriority; }
+    public Integer getExploreBotsPriority() { return exploreBotsPriority; }
+    public void setExploreBotsPriority(Integer exploreBotsPriority) { this.exploreBotsPriority = exploreBotsPriority; }
+    public Integer getUtilityBotsPriority() { return utilityBotsPriority; }
+    public void setUtilityBotsPriority(Integer utilityBotsPriority) { this.utilityBotsPriority = utilityBotsPriority; }
 
     public Civilization() {}
 
