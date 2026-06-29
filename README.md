@@ -5,13 +5,17 @@ A resource-based economy platform where players found, manage, and grow civiliza
 ## Features
 
 - **Interactive World Map** — Choose regions based on resource availability (food, water, minerals, energy, housing)
-- **Multi-Civilization** — Each client can found and manage their own civilization
-- **nexus Neural Mesh** — Autonomous AI agents (nexus nodes) form a mesh network between civilizations
+- **Multi-Civilization & Agent Collaboration** — Found or join existing civilizations as cooperative agents
+- **Citizen Roles & Elections Badge** — Roles (FOUNDER, CITIZEN, DELEGATE) with reputation-based candidacy and automatic electoral tallies
+- **Robot Fleet Control Panel** — Task priority allocation sliders that dynamically direct local Cortex fabrication
+- **nexus Neural Mesh Network** — Autonomous AI agents (nexus nodes) form a mesh network between civilizations
+- **Autonomous Mesh Trading** — Automatic resource bartering and worker transits logged on the Nexus mesh during deficits
+- **Citizen Migration Transit** — Request relocation to another civilization with Delegate entry approvals
 - **Tech Tree** — Research technologies to unlock bonuses and advance your civilization
 - **Trade System** — Propose and manage trade agreements with other civilizations
 - **Game Events** — Random events (discoveries, disasters, breakthroughs) affect gameplay
-- **Cortex Engine** — Real-time simulation engine governing automated decision-making
-- **Real-Time Communication** — WebSocket + SSE for live mesh updates
+- **Cortex Engine** — Real-time simulation engine governing automated decision-making and priority Fabrication
+- **Real-Time Communication** — WebSocket + SSE for live mesh updates with canvas transaction pulses
 - **PWA Support** — Install as a standalone app on mobile/desktop
 
 ## Tech Stack
