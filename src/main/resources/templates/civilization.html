@@ -146,6 +146,24 @@
                         </div>
                         <input type="range" id="range-utility" min="0" max="100" th:value="${civ.utilityBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
                     </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🌱 Eco-Bots (Ecológico/Biosfera): <strong id="val-eco">0</strong>%</span>
+                        </div>
+                        <input type="range" id="range-eco" min="0" max="100" th:value="${civ.ecoBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🔬 Science-Bots (Pesquisa/Tecnologia): <strong id="val-science">0</strong>%</span>
+                        </div>
+                        <input type="range" id="range-science" min="0" max="100" th:value="${civ.scienceBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🛡️ Security-Bots (Estabilidade Social): <strong id="val-security">0</strong>%</span>
+                        </div>
+                        <input type="range" id="range-security" min="0" max="100" th:value="${civ.securityBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
                 </div>
 
                 <div style="font-size: 0.65rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
@@ -1083,11 +1101,17 @@
             const aqua = document.getElementById('range-aqua').value;
             const explore = document.getElementById('range-explore').value;
             const utility = document.getElementById('range-utility').value;
+            const eco = document.getElementById('range-eco').value;
+            const science = document.getElementById('range-science').value;
+            const security = document.getElementById('range-security').value;
 
             document.getElementById('val-agri').innerText = agri;
             document.getElementById('val-aqua').innerText = aqua;
             document.getElementById('val-explore').innerText = explore;
             document.getElementById('val-utility').innerText = utility;
+            document.getElementById('val-eco').innerText = eco;
+            document.getElementById('val-science').innerText = science;
+            document.getElementById('val-security').innerText = security;
         }
 
         async function saveRobotPriorities() {
@@ -1099,12 +1123,15 @@
             const aqua = parseInt(document.getElementById('range-aqua').value);
             const explore = parseInt(document.getElementById('range-explore').value);
             const utility = parseInt(document.getElementById('range-utility').value);
+            const eco = parseInt(document.getElementById('range-eco').value);
+            const science = parseInt(document.getElementById('range-science').value);
+            const security = parseInt(document.getElementById('range-security').value);
 
             try {
                 const res = await fetch(`/api/v1/nexus/civilizations/${currentCivId}/robot-priorities`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agri, aqua, explore, utility })
+                    body: JSON.stringify({ agri, aqua, explore, utility, eco, science, security })
                 });
                 if (res.ok) {
                     indicator.innerText = 'Salvo';

@@ -85,6 +85,15 @@ public class Civilization {
     @Column(name = "utility_bots_priority", nullable = false)
     private Integer utilityBotsPriority = 25;
 
+    @Column(name = "eco_bots_priority", nullable = false)
+    private Integer ecoBotsPriority = 0;
+
+    @Column(name = "science_bots_priority", nullable = false)
+    private Integer scienceBotsPriority = 0;
+
+    @Column(name = "security_bots_priority", nullable = false)
+    private Integer securityBotsPriority = 0;
+
     public String getResourceHistory() { return resourceHistory; }
     public void setResourceHistory(String resourceHistory) { this.resourceHistory = resourceHistory; }
 
@@ -96,6 +105,12 @@ public class Civilization {
     public void setExploreBotsPriority(Integer exploreBotsPriority) { this.exploreBotsPriority = exploreBotsPriority; }
     public Integer getUtilityBotsPriority() { return utilityBotsPriority; }
     public void setUtilityBotsPriority(Integer utilityBotsPriority) { this.utilityBotsPriority = utilityBotsPriority; }
+    public Integer getEcoBotsPriority() { return ecoBotsPriority; }
+    public void setEcoBotsPriority(Integer ecoBotsPriority) { this.ecoBotsPriority = ecoBotsPriority; }
+    public Integer getScienceBotsPriority() { return scienceBotsPriority; }
+    public void setScienceBotsPriority(Integer scienceBotsPriority) { this.scienceBotsPriority = scienceBotsPriority; }
+    public Integer getSecurityBotsPriority() { return securityBotsPriority; }
+    public void setSecurityBotsPriority(Integer securityBotsPriority) { this.securityBotsPriority = securityBotsPriority; }
 
     public Civilization() {}
 

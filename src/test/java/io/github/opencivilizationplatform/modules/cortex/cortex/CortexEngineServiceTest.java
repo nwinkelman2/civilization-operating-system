@@ -37,6 +37,8 @@ class CortexEngineServiceTest {
     private BiosphereMetricRepository biosphereMetricRepository;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -49,7 +51,8 @@ class CortexEngineServiceTest {
         when(biosphereMetricRepository.findAll()).thenReturn(List.of());
         cortexEngineService = new CortexEngineService(
             civilizationRepository, resourceRegionRepository, ruleRepository,
-            objectMapper, meshTradeRepository, biosphereMetricRepository, eventPublisher
+            objectMapper, meshTradeRepository, biosphereMetricRepository, eventPublisher,
+            technologyRepository
         );
     }
 
@@ -113,5 +116,35 @@ class CortexEngineServiceTest {
         // Check that history contains 1 Agri-bot and 1 Aqua-bot after tick
         assertTrue(civ.getResourceHistory().contains("\"agriBots\":1"));
         assertTrue(civ.getResourceHistory().contains("\"aquaBots\":1"));
+    }
+
+    @Test
+    void testNewRobotsFabricationAndOperation() {
+        Civilization civ = new Civilization();
+        civ.setId(1L);
+        civ.setName("Test Civ 2");
+        civ.setMinerals(100.0);
+        civ.setEnergy(100.0);
+        
+        civ.setAgriBotsPriority(0);
+        civ.setAquaBotsPriority(0);
+        civ.setExploreBotsPriority(0);
+        civ.setUtilityBotsPriority(0);
+        civ.setEcoBotsPriority(100);
+        civ.setScienceBotsPriority(0);
+        civ.setSecurityBotsPriority(0);
+        civ.setResourceHistory("[]");
+
+        Rule operateBotsRule = new Rule();
+        operateBotsRule.setStatus(RuleStatus.ACTIVE);
+        operateBotsRule.setLogicCode("{\"type\": \"OPERATE_ROBOTS\"}");
+
+        when(civilizationRepository.findById(1L)).thenReturn(Optional.of(civ));
+        when(ruleRepository.findByCivilizationId(1L)).thenReturn(Collections.singletonList(operateBotsRule));
+
+        cortexEngineService.tickForCivilization(1L);
+        
+        // Eco-Bots count should be 1
+        assertTrue(civ.getResourceHistory().contains("\"ecoBots\":1"));
     }
 }

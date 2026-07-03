@@ -17,6 +17,7 @@ import io.github.opencivilizationplatform.modules.social.application.SocialStabi
 import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
 import io.github.opencivilizationplatform.modules.technology.application.TechnologyService;
 import io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus;
+import io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -46,6 +47,7 @@ public class PageController {
     private final ResourceRegionService regionService;
     private final NexusMeshService nexusService;
     private final TechnologyService technologyService;
+    private final MeshTradeRepository meshTradeRepository;
 
     public PageController(BiosphereMetricService biosphereService,
                           NeedService needService,
@@ -62,7 +64,8 @@ public class PageController {
                           CivilizationService civilizationService,
                           ResourceRegionService regionService,
                           NexusMeshService nexusService,
-                          TechnologyService technologyService) {
+                          TechnologyService technologyService,
+                          MeshTradeRepository meshTradeRepository) {
         this.biosphereService = biosphereService;
         this.needService = needService;
         this.resourceService = resourceService;
@@ -79,6 +82,7 @@ public class PageController {
         this.regionService = regionService;
         this.nexusService = nexusService;
         this.technologyService = technologyService;
+        this.meshTradeRepository = meshTradeRepository;
     }
 
     private String render(Model model, String viewName, String pageTitle, String currentPage) {
@@ -164,6 +168,8 @@ public class PageController {
         model.addAttribute("status", simulationEngineService.getStatus());
         model.addAttribute("balance", balanceService.getBalanceReport());
         model.addAttribute("automations", automationService.getAllUnits(Pageable.unpaged()).getContent());
+        model.addAttribute("civilizations", civilizationService.getAllCivilizationsList());
+        model.addAttribute("meshTrades", meshTradeRepository.findAllByOrderByCreatedAtDesc());
         return render(model, "simulation", "Cortex Engine", "simulation");
     }
 
@@ -172,6 +178,8 @@ public class PageController {
         model.addAttribute("status", simulationEngineService.getStatus());
         model.addAttribute("balance", balanceService.getBalanceReport());
         model.addAttribute("automations", automationService.getAllUnits(Pageable.unpaged()).getContent());
+        model.addAttribute("civilizations", civilizationService.getAllCivilizationsList());
+        model.addAttribute("meshTrades", meshTradeRepository.findAllByOrderByCreatedAtDesc());
         return "simulation :: cortex-telemetry";
     }
 
