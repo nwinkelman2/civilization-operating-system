@@ -45,7 +45,11 @@ public class CortexEngineService {
     private final ApplicationEventPublisher eventPublisher;
     private final io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository;
     private final IncidentRepository incidentRepository;
+    private final io.github.opencivilizationplatform.modules.events.application.GlobalEventService globalEventService;
+    private final io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService;
+    private final io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService;
     private final Random random = new Random();
+    private int tickCount = 0;
 
     public CortexEngineService(CivilizationRepository civilizationRepository,
                                ResourceRegionRepository resourceRegionRepository,
@@ -55,7 +59,10 @@ public class CortexEngineService {
                                BiosphereMetricRepository biosphereMetricRepository,
                                ApplicationEventPublisher eventPublisher,
                                io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository,
-                               IncidentRepository incidentRepository) {
+                               IncidentRepository incidentRepository,
+                               io.github.opencivilizationplatform.modules.events.application.GlobalEventService globalEventService,
+                               io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService,
+                               io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
         this.ruleRepository = ruleRepository;
@@ -65,14 +72,35 @@ public class CortexEngineService {
         this.eventPublisher = eventPublisher;
         this.technologyRepository = technologyRepository;
         this.incidentRepository = incidentRepository;
+        this.globalEventService = globalEventService;
+        this.treatyService = treatyService;
+        this.electionService = electionService;
     }
 
     @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
     @Transactional
     @SchedulerLock(name = "cortexEngineTick", lockAtMostFor = "25s", lockAtLeastFor = "10s")
     public void tick() {
+        tickCount++;
         List<Civilization> civilizations = civilizationRepository.findAll();
         if (civilizations.isEmpty()) return;
+
+        // Every 20 ticks: maybe spawn a new global event
+        if (tickCount % 20 == 0) {
+            List<Long> civIds = civilizations.stream().map(Civilization::getId).toList();
+            globalEventService.maybeGenerateEvent(civIds);
+        }
+        // Tick down active global events
+        globalEventService.tickEvents();
+
+        // Every 50 ticks: open elections in all civs that don't have one open
+        if (tickCount % 50 == 0) {
+            for (Civilization civ : civilizations) {
+                electionService.openElection(civ.getId());
+            }
+        }
+        // Tick down open elections
+        electionService.tickElections();
 
         for (Civilization civ : civilizations) {
             ResourceTick tick = computeTick(civ);
@@ -108,6 +136,34 @@ public class CortexEngineService {
         boolean isAutonomousTradeActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("AUTONOMOUS_TRADE"));
         boolean isRestrictConsumptionActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("RESTRICT_CONSUMPTION"));
         boolean isBoostProductionActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("BOOST_PRODUCTION"));
+
+        // 1.a Treaty modifiers: [scienceBonus, tradeMult, repDelta, scienceBotMult]
+        double[] treatyMods = treatyService.computeTreatyModifiers(civ.getId());
+        double treatyScienceBonus = treatyMods[0];
+        double treatyTradeMult = treatyMods[1];
+        double treatyRepDelta = treatyMods[2];
+        double treatyScienceBotMult = treatyMods[3];
+        if (treatyRepDelta > 0) {
+            reputationDelta += treatyRepDelta;
+            cortexLogs.add("[Tratado] Bônus de reputação de tratados ativos: +" + String.format("%.1f", treatyRepDelta) + ".");
+        }
+
+        // 1.b Global event modifiers: [foodMult, waterMult, popGrowthPenalty, tradeMult, repDelta, scienceBonus]
+        double[] eventMods = new double[]{0, 0, 0, 0, 0, 0}; // additive deltas
+        boolean robotsOffline = false;
+        List<io.github.opencivilizationplatform.modules.events.domain.GlobalEvent> activeEvents = globalEventService.getActiveEvents();
+        for (io.github.opencivilizationplatform.modules.events.domain.GlobalEvent evt : activeEvents) {
+            if (globalEventService.isAffected(evt, civ.getId())) {
+                globalEventService.applyEventEffects(evt, civ, resourceDelta, eventMods);
+                cortexLogs.add("[🌍 Evento Global] " + evt.getType() + " ativo: " + evt.getDescription());
+                if (evt.getType() == io.github.opencivilizationplatform.modules.events.domain.GlobalEventType.SOLAR_STORM) {
+                    robotsOffline = true;
+                }
+            }
+        }
+        reputationDelta += eventMods[4];
+        double globalTradeMult = 1.0 + eventMods[3];
+
 
         // 1.1 Carregar incidentes ativos e mitigar via robôs designados
         List<Incident> activeIncidents = incidentRepository.findByCivilizationId(civ.getId()).stream()
@@ -190,7 +246,7 @@ public class CortexEngineService {
         double robotMineralBonus = 0;
         double robotHousingBonus = 0;
 
-        if (isRobotsActive) {
+        if (isRobotsActive && !robotsOffline) {
             int totalRobots = agriBots + aquaBots + exploreBots + utilityBots + ecoBots + scienceBots + securityBots;
             int pop = civ.getPopulation() != null ? civ.getPopulation() : 100;
             int maxRobots = 1 + (pop / 50);
@@ -371,9 +427,9 @@ public class CortexEngineService {
                             technologyRepository.findByCivilizationIdAndStatus(civ.getId(), io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.RESEARCHING);
                         if (!researching.isEmpty()) {
                             for (io.github.opencivilizationplatform.modules.technology.domain.Technology tech : researching) {
-                                int progressToAdd = scienceBots * 2;
+                                int progressToAdd = (int)(scienceBots * 2 * treatyScienceBotMult);
                                 tech.setResearchProgress(tech.getResearchProgress() + progressToAdd);
-                                cortexLogs.add("[Pesquisa] Science-Bots injetaram +" + progressToAdd + " de progresso na tecnologia '" + tech.getName() + "'.");
+                                cortexLogs.add("[Pesquisa] Science-Bots injetaram +" + progressToAdd + " de progresso na tecnologia '" + tech.getName() + "'" + (treatyScienceBotMult > 1.0 ? " (Aliança de Pesquisa ×" + String.format("%.0f", treatyScienceBotMult) + ")" : "") + ".");
                                 if (tech.getResearchProgress() >= tech.getResearchCost()) {
                                     tech.setStatus(io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.COMPLETED);
                                     tech.setResearchProgress(tech.getResearchCost());

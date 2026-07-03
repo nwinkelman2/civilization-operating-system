@@ -32,6 +32,9 @@ public class CivilizationController {
     private final io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService;
     private final io.github.opencivilizationplatform.modules.contribution.application.DelegateElectionService electionService;
     private final io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository citizenRepository;
+    private final io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService;
+    private final io.github.opencivilizationplatform.modules.nexus.application.ElectionService nexusElectionService;
+    private final io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository;
 
     public CivilizationController(CivilizationService service,
                                    ResourceRegionService regionService,
@@ -42,7 +45,10 @@ public class CivilizationController {
                                    io.github.opencivilizationplatform.modules.contribution.application.ContributionService contributionService,
                                    io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService,
                                    io.github.opencivilizationplatform.modules.contribution.application.DelegateElectionService electionService,
-                                   io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository citizenRepository) {
+                                   io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository citizenRepository,
+                                   io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService,
+                                   io.github.opencivilizationplatform.modules.nexus.application.ElectionService nexusElectionService,
+                                   io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository) {
         this.service = service;
         this.regionService = regionService;
         this.NexusService = NexusService;
@@ -53,6 +59,9 @@ public class CivilizationController {
         this.socialService = socialService;
         this.electionService = electionService;
         this.citizenRepository = citizenRepository;
+        this.treatyService = treatyService;
+        this.nexusElectionService = nexusElectionService;
+        this.civilizationRepository = civilizationRepository;
     }
 
     @GetMapping
