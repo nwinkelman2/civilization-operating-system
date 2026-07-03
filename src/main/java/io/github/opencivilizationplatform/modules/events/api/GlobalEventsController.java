@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.events.api;
+package io.github.opencivilizationplatform.modules.events.api;
 
 import io.github.opencivilizationplatform.modules.events.application.GlobalEventService;
 import io.github.opencivilizationplatform.modules.events.domain.GlobalEvent;

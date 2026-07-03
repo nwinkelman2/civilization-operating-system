@@ -45,6 +45,7 @@ public class Rule {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "civilization_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
     private Civilization civilization;
 
     @Column(nullable = false)

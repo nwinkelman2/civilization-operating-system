@@ -35,6 +35,9 @@ public class CivilizationController {
     private final io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService;
     private final io.github.opencivilizationplatform.modules.nexus.application.ElectionService nexusElectionService;
     private final io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository;
+    private final io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository ruleRepository;
+    private final io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository incidentRepository;
+    private final io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository;
 
     public CivilizationController(CivilizationService service,
                                    ResourceRegionService regionService,
@@ -48,7 +51,10 @@ public class CivilizationController {
                                    io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository citizenRepository,
                                    io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService,
                                    io.github.opencivilizationplatform.modules.nexus.application.ElectionService nexusElectionService,
-                                   io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository) {
+                                   io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository,
+                                   io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository ruleRepository,
+                                   io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository incidentRepository,
+                                   io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository) {
         this.service = service;
         this.regionService = regionService;
         this.NexusService = NexusService;
@@ -62,6 +68,9 @@ public class CivilizationController {
         this.treatyService = treatyService;
         this.nexusElectionService = nexusElectionService;
         this.civilizationRepository = civilizationRepository;
+        this.ruleRepository = ruleRepository;
+        this.incidentRepository = incidentRepository;
+        this.meshTradeRepository = meshTradeRepository;
     }
 
     @GetMapping
@@ -154,9 +163,7 @@ public class CivilizationController {
     @GetMapping("/{id}/rules")
     @Operation(summary = "Get constitutional rules of a civilization")
     public java.util.List<io.github.opencivilizationplatform.modules.participation.domain.Rule> getRules(@PathVariable Long id) {
-        return ruleService.getAllRules(org.springframework.data.domain.Pageable.unpaged()).getContent().stream()
-            .filter(r -> r.getCivilization() != null && id.equals(r.getCivilization().getId()))
-            .toList();
+        return ruleService.getRulesByCivilization(id);
     }
 
     @PostMapping("/{id}/rules/propose")
@@ -237,6 +244,138 @@ public class CivilizationController {
             @RequestParam(defaultValue = "0") int ecoBots,
             @RequestParam(defaultValue = "0") int securityBots) {
         return socialService.assignBotsToIncident(incidentId, ecoBots, securityBots);
+    }
+
+    // ===== TREATIES =====
+
+    @PostMapping("/{id}/treaties/propose")
+    @Operation(summary = "Propose a formal treaty between civilizations")
+    public io.github.opencivilizationplatform.modules.nexus.domain.Treaty proposeTreaty(
+            @PathVariable Long id,
+            @RequestBody java.util.Map<String, Object> body) {
+        String title = (String) body.getOrDefault("title", "Unnamed Treaty");
+        io.github.opencivilizationplatform.modules.nexus.domain.TreatyType type =
+            io.github.opencivilizationplatform.modules.nexus.domain.TreatyType.valueOf((String) body.getOrDefault("type", "FREE_TRADE"));
+        @SuppressWarnings("unchecked")
+        java.util.List<Long> invited = ((java.util.List<Number>) body.getOrDefault("invitedCivIds", java.util.List.of()))
+            .stream().map(Number::longValue).toList();
+        return treatyService.proposeTreaty(title, type, id, invited);
+    }
+
+    @PostMapping("/{id}/treaties/{treatyId}/sign")
+    @Operation(summary = "Sign a proposed treaty")
+    public io.github.opencivilizationplatform.modules.nexus.domain.Treaty signTreaty(
+            @PathVariable Long id,
+            @PathVariable Long treatyId) {
+        return treatyService.signTreaty(treatyId, id);
+    }
+
+    @GetMapping("/{id}/treaties")
+    @Operation(summary = "Get all treaties involving a civilization")
+    public java.util.List<io.github.opencivilizationplatform.modules.nexus.domain.Treaty> getTreaties(@PathVariable Long id) {
+        return treatyService.getTreatiesForCiv(id);
+    }
+
+    // ===== ELECTIONS =====
+
+    @PostMapping("/{id}/elections/open")
+    @Operation(summary = "Manually open an election in a civilization")
+    public io.github.opencivilizationplatform.modules.nexus.domain.Election openElection(@PathVariable Long id) {
+        return nexusElectionService.openElection(id);
+    }
+
+    @PostMapping("/{id}/elections/{electionId}/vote")
+    @Operation(summary = "Cast a vote in an open election")
+    public io.github.opencivilizationplatform.modules.nexus.domain.ElectionVote castVote(
+            @PathVariable Long id,
+            @PathVariable Long electionId,
+            @RequestParam String voter,
+            @RequestParam String candidate) {
+        return nexusElectionService.castVote(electionId, voter, candidate);
+    }
+
+    @GetMapping("/{id}/elections")
+    @Operation(summary = "Get all elections for a civilization")
+    public java.util.List<io.github.opencivilizationplatform.modules.nexus.domain.Election> getElections(@PathVariable Long id) {
+        return nexusElectionService.getElectionsForCiv(id);
+    }
+
+    @GetMapping("/{id}/elections/{electionId}/votes")
+    @Operation(summary = "Get all votes for a specific election")
+    public java.util.List<io.github.opencivilizationplatform.modules.nexus.domain.ElectionVote> getElectionVotes(
+            @PathVariable Long id,
+            @PathVariable Long electionId) {
+        return nexusElectionService.getVotesForElection(electionId);
+    }
+
+    // ===== NETWORK VIEWS =====
+
+    @GetMapping("/network-summary")
+    @Operation(summary = "Lightweight summary of all civilizations for network map")
+    public java.util.List<java.util.Map<String, Object>> getNetworkSummary() {
+        return civilizationRepository.findAll().stream().map(civ -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", civ.getId());
+            m.put("name", civ.getName());
+            m.put("population", civ.getPopulation());
+            m.put("reputation", civ.getReputationScore());
+            m.put("food", civ.getFood());
+            m.put("water", civ.getWater());
+            m.put("energy", civ.getEnergy());
+            m.put("minerals", civ.getMinerals());
+            m.put("status", civ.getStatus());
+            if (civ.getHomeRegion() != null && civ.getHomeRegion().getLocation() != null) {
+                m.put("latitude", civ.getHomeRegion().getLocation().getY());
+                m.put("longitude", civ.getHomeRegion().getLocation().getX());
+            } else {
+                m.put("latitude", 0.0);
+                m.put("longitude", 0.0);
+            }
+            long activeRules = ruleRepository.findByCivilizationId(civ.getId()).stream()
+                .filter(r -> io.github.opencivilizationplatform.modules.participation.domain.RuleStatus.ACTIVE.equals(r.getStatus())).count();
+            long openIncidents = incidentRepository.findByCivilizationId(civ.getId()).stream()
+                .filter(i -> !io.github.opencivilizationplatform.modules.social.domain.IncidentStatus.RESOLVED.equals(i.getStatus())).count();
+            long activeTrades = meshTradeRepository.findAll().stream()
+                .filter(t -> (t.getSender() != null && t.getSender().getId().equals(civ.getId())) || 
+                             (t.getReceiver() != null && t.getReceiver().getId().equals(civ.getId()))).count();
+            m.put("activeRulesCount", activeRules);
+            m.put("openIncidentsCount", openIncidents);
+            m.put("activeTradesCount", activeTrades);
+            return m;
+        }).toList();
+    }
+
+    @GetMapping("/global-dashboard")
+    @Operation(summary = "Aggregated global civilization stats for network dashboard")
+    public java.util.Map<String, Object> getGlobalDashboard() {
+        var civs = civilizationRepository.findAll();
+        long totalPop = civs.stream().mapToLong(c -> c.getPopulation() == null ? 0 : c.getPopulation()).sum();
+        double avgRep = civs.stream().mapToDouble(c -> c.getReputationScore() == null ? 0 : c.getReputationScore()).average().orElse(0);
+        java.util.Map<String, Object> result = new java.util.LinkedHashMap<>();
+        result.put("totalCivilizations", civs.size());
+        result.put("totalPopulation", totalPop);
+        result.put("averageReputation", avgRep);
+        result.put("civilizations", civs.stream().map(civ -> {
+            java.util.Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", civ.getId());
+            m.put("name", civ.getName());
+            m.put("population", civ.getPopulation());
+            m.put("reputation", civ.getReputationScore());
+            m.put("food", civ.getFood());
+            m.put("water", civ.getWater());
+            m.put("energy", civ.getEnergy());
+            m.put("minerals", civ.getMinerals());
+            m.put("housing", civ.getHousing());
+            m.put("status", civ.getStatus());
+            long activeRules = ruleRepository.findByCivilizationId(civ.getId()).stream()
+                .filter(r -> io.github.opencivilizationplatform.modules.participation.domain.RuleStatus.ACTIVE.equals(r.getStatus())).count();
+            long openIncidents = incidentRepository.findByCivilizationId(civ.getId()).stream()
+                .filter(i -> !io.github.opencivilizationplatform.modules.social.domain.IncidentStatus.RESOLVED.equals(i.getStatus())).count();
+            m.put("activeRulesCount", activeRules);
+            m.put("openIncidentsCount", openIncidents);
+            return m;
+        }).toList());
+        return result;
     }
 
     private String resolveToken(HttpServletRequest request) {

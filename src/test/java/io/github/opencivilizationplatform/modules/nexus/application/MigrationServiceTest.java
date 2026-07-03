@@ -22,6 +22,8 @@ class MigrationServiceTest {
     private MigrationRequestRepository migrationRequestRepository;
     @Mock
     private CivilizationRepository civilizationRepository;
+    @Mock
+    private io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository ruleRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -30,7 +32,7 @@ class MigrationServiceTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        migrationService = new MigrationService(migrationRequestRepository, civilizationRepository, objectMapper);
+        migrationService = new MigrationService(migrationRequestRepository, civilizationRepository, objectMapper, ruleRepository);
     }
 
     @Test

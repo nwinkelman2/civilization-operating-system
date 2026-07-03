@@ -28,6 +28,10 @@ public class RuleService {
         return ruleRepository.findAll(pageable);
     }
 
+    public List<Rule> getRulesByCivilization(Long civilizationId) {
+        return ruleRepository.findByCivilizationId(civilizationId);
+    }
+
     public List<Rule> getValidatedRules() {
         return ruleRepository.findAll().stream()
                 .filter(rule -> RuleStatus.ACTIVE.equals(rule.getStatus()) && ValidationStatus.SCIENTIFICALLY_VALIDATED.equals(rule.getValidationStatus()))

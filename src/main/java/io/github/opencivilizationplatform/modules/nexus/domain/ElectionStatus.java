@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.nexus.domain;
+package io.github.opencivilizationplatform.modules.nexus.domain;
 
 public enum ElectionStatus {
     OPEN, CLOSED

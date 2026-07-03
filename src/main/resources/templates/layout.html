@@ -32,6 +32,8 @@
             <a th:href="@{/events}" th:classappend="${#strings.equals(currentPage, 'events')} ? 'active' : ''">Events</a>
             <a th:href="@{/nexus}" th:classappend="${#strings.equals(currentPage, 'nexus')} ? 'active' : ''">nexus</a>
             <a th:href="@{/simulation}" th:classappend="${#strings.equals(currentPage, 'simulation')} ? 'active' : ''">Cortex</a>
+            <a th:href="@{/network-map}" th:classappend="${#strings.equals(currentPage, 'network-map')} ? 'active' : ''">Network Map</a>
+            <a th:href="@{/network}" th:classappend="${#strings.equals(currentPage, 'network')} ? 'active' : ''">Global Dashboard</a>
         </div>
         <div class="nav-user-status" id="navUserStatus" style="margin-left: auto; display: flex; align-items: center; gap: 8px;">
             <div id="citizenBadge" class="badge badge-unassigned" style="font-size: 0.8rem; letter-spacing: 1px; font-weight: bold; border: 1px solid rgba(0,242,255,0.3); background: rgba(0,242,255,0.05); color: #00f2ff; padding: 4px 10px; border-radius: 4px; display: none;">

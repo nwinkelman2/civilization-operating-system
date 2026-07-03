@@ -39,6 +39,14 @@ class CortexEngineServiceTest {
     private ApplicationEventPublisher eventPublisher;
     @Mock
     private io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository;
+    @Mock
+    private io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository incidentRepository;
+    @Mock
+    private io.github.opencivilizationplatform.modules.events.application.GlobalEventService globalEventService;
+    @Mock
+    private io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService;
+    @Mock
+    private io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -49,10 +57,14 @@ class CortexEngineServiceTest {
         MockitoAnnotations.openMocks(this);
         // Stub biosphere metric lookup to return empty list (no ecological drift in unit tests)
         when(biosphereMetricRepository.findAll()).thenReturn(List.of());
+        
+        // Stub treatyService to return default empty modifiers
+        when(treatyService.computeTreatyModifiers(anyLong())).thenReturn(new double[]{0.0, 1.0, 0.0, 1.0});
+        
         cortexEngineService = new CortexEngineService(
             civilizationRepository, resourceRegionRepository, ruleRepository,
             objectMapper, meshTradeRepository, biosphereMetricRepository, eventPublisher,
-            technologyRepository
+            technologyRepository, incidentRepository, globalEventService, treatyService, electionService
         );
     }
 

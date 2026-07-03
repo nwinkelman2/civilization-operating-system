@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.nexus.infrastructure;
+package io.github.opencivilizationplatform.modules.nexus.infrastructure;
 
 import io.github.opencivilizationplatform.modules.nexus.domain.ElectionVote;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.nexus.domain;
+package io.github.opencivilizationplatform.modules.nexus.domain;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;

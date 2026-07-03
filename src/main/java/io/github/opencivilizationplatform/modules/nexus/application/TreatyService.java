@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.nexus.application;
+package io.github.opencivilizationplatform.modules.nexus.application;
 
 import io.github.opencivilizationplatform.modules.nexus.domain.Treaty;
 import io.github.opencivilizationplatform.modules.nexus.domain.TreatyStatus;
@@ -30,7 +30,7 @@ public class TreatyService {
         treaty.setProposerCivId(proposerCivId);
         String invitedJson = "[" + invitedCivIds.stream().map(String::valueOf).collect(Collectors.joining(",")) + "]";
         treaty.setInvitedCivIds(invitedJson);
-        treaty.setSignatoryCivIds("[" + proposerCivId + "]"); // proposer auto-signs
+        treaty.setSignatoryCivIds("[" + proposerCivId + "]");
         treaty.setStatus(TreatyStatus.PROPOSED);
         treaty.setExpiresAt(LocalDateTime.now().plusDays(7));
         return treatyRepository.save(treaty);
@@ -45,7 +45,6 @@ public class TreatyService {
             throw new IllegalStateException("Treaty is not open for signatures.");
         }
 
-        // Add this civ to signatories
         String current = treaty.getSignatoryCivIds();
         if (current == null || current.equals("[]")) {
             treaty.setSignatoryCivIds("[" + civId + "]");
@@ -54,7 +53,6 @@ public class TreatyService {
             treaty.setSignatoryCivIds(updated);
         }
 
-        // Check if all invited civs have signed
         List<Long> invited = parseIds(treaty.getInvitedCivIds());
         List<Long> signatories = parseIds(treaty.getSignatoryCivIds());
         if (signatories.containsAll(invited) && signatories.contains(treaty.getProposerCivId())) {
@@ -77,10 +75,6 @@ public class TreatyService {
         return parseIds(treaty.getSignatoryCivIds()).contains(civId);
     }
 
-    /**
-     * Apply passive treaty effects per simulation tick.
-     * Returns a double[] of modifiers: [scienceBonus, tradeMult, repDelta, scienceBotMult]
-     */
     public double[] computeTreatyModifiers(Long civId) {
         double scienceBonus = 0;
         double tradeMult = 1.0;

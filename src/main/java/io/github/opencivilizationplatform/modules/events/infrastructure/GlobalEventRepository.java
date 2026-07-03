@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.events.infrastructure;
+package io.github.opencivilizationplatform.modules.events.infrastructure;
 
 import io.github.opencivilizationplatform.modules.events.domain.GlobalEvent;
 import org.springframework.data.jpa.repository.JpaRepository;

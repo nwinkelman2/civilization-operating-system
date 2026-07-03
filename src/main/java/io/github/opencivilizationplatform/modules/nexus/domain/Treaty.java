@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.nexus.domain;
+package io.github.opencivilizationplatform.modules.nexus.domain;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
@@ -22,10 +22,10 @@ public class Treaty {
     private Long proposerCivId;
 
     @Column(name = "invited_civ_ids", columnDefinition = "TEXT")
-    private String invitedCivIds; // JSON array
+    private String invitedCivIds;
 
     @Column(name = "signatory_civ_ids", columnDefinition = "TEXT")
-    private String signatoryCivIds; // JSON array - those who signed
+    private String signatoryCivIds;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.events.domain;
+package io.github.opencivilizationplatform.modules.events.domain;
 
 public enum GlobalEventType {
     DROUGHT,

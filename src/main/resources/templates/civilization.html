@@ -309,7 +309,7 @@
                         <span class="nexus-node-status" th:text="${n.status}">ACTIVE</span>
                     </div>
                 </div>
-                <button class="btn-small" onclick="showAddNodeModal(${civ.id})" style="margin-top:12px;width:100%;">
+                <button class="btn-small" th:onclick="|showAddNodeModal(${civ.id})|" style="margin-top:12px;width:100%;">
                     + DEPLOY NODE
                 </button>
             </div>
@@ -358,6 +358,8 @@
                 <button class="coop-tab-btn" onclick="switchCoopTab('projects')" id="tab-btn-projects">Engineering Projects</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('incidents')" id="tab-btn-incidents">Stability Board</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('automation')" id="tab-btn-automation">Cortex Autonomous Core</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('elections')" id="tab-btn-elections">🗳️ Elections</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('treaties')" id="tab-btn-treaties">📜 Treaties</button>
             </div>
 
             <!-- Tab Contents -->
@@ -521,6 +523,68 @@
                     </div>
                 </div>
             </div>
+
+            <!-- 5. Elections Tab -->
+            <div class="coop-tab-content" id="coop-content-elections">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Cortex Consensus & Elections History</h3>
+                        <div id="elections-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <!-- Dynamic Elections -->
+                            <div style="color:var(--text-dim); text-align:center; padding-top:40px;">No elections held yet. Elections open automatically.</div>
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Cast Consensus Vote</h3>
+                        <form id="voteElectionForm" onsubmit="handleCastVote(event)">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Election ID</label>
+                                <input type="number" id="vote-election-id" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., 1">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Candidate Name</label>
+                                <input type="text" id="vote-candidate-name" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., Alice">
+                            </div>
+                            <button type="submit" class="btn-small" style="width:100%; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">SUBMIT CONSENSUS VOTE</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Treaties Tab -->
+            <div class="coop-tab-content" id="coop-content-treaties">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Active & Proposed Treaties</h3>
+                        <div id="treaties-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <!-- Dynamic Treaties -->
+                            <div style="color:var(--text-dim); text-align:center; padding-top:40px;">No treaties proposed yet. Propose a treaty to cooperate.</div>
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Propose Global Treaty</h3>
+                        <form id="proposeTreatyForm" onsubmit="handleProposeTreaty(event)">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Treaty Title</label>
+                                <input type="text" id="treaty-title-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., Free Resource Accord">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Treaty Type</label>
+                                <select id="treaty-type-input" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                    <option value="FREE_TRADE">FREE_TRADE (Free exchange & +15% trade quantities)</option>
+                                    <option value="NON_AGGRESSION">NON_AGGRESSION (Stability & +2 reputation/tick)</option>
+                                    <option value="RESEARCH_ALLIANCE">RESEARCH_ALLIANCE (Science-Bot efficiency ×2)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Invited Civilization IDs (comma separated)</label>
+                                <input type="text" id="treaty-invited-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., 2, 3">
+                            </div>
+                            <button type="submit" class="btn-small" style="width:100%; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">PROPOSE TREATY</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Quick Links -->
@@ -652,11 +716,13 @@
         async function loadCoopData() {
             if (!currentCivId) return;
             try {
-                const [rulesRes, projectsRes, incidentsRes, civRes] = await Promise.all([
+                const [rulesRes, projectsRes, incidentsRes, civRes, electionsRes, treatiesRes] = await Promise.all([
                     fetch(`/api/v1/civilizations/${currentCivId}/rules`),
                     fetch(`/api/v1/civilizations/${currentCivId}/projects`),
                     fetch(`/api/v1/civilizations/${currentCivId}/incidents`),
-                    fetch(`/api/v1/civilizations/${currentCivId}`)
+                    fetch(`/api/v1/civilizations/${currentCivId}`),
+                    fetch(`/api/v1/civilizations/${currentCivId}/elections`),
+                    fetch(`/api/v1/civilizations/${currentCivId}/treaties`)
                 ]);
 
                 if (rulesRes.ok) {
@@ -674,6 +740,14 @@
                 if (civRes.ok) {
                     const civData = await civRes.json();
                     updateChartAndAutomation(civData);
+                }
+                if (electionsRes.ok) {
+                    const elections = await electionsRes.json();
+                    renderElections(elections);
+                }
+                if (treatiesRes.ok) {
+                    const treaties = await treatiesRes.json();
+                    renderTreaties(treaties);
                 }
             } catch (err) {
                 console.error('Failed to load cooperative data:', err);
@@ -889,6 +963,139 @@
                 `;
             }).join('');
         }
+
+        function renderElections(elections) {
+            const container = document.getElementById('elections-list-container');
+            if (!container) return;
+            if (elections.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding-top:40px;">No elections held yet. Elections open automatically.</div>`;
+                return;
+            }
+            container.innerHTML = elections.map(e => {
+                const isOpen = e.status === 'OPEN';
+                const statusColor = isOpen ? '#00ff88' : 'var(--text-dim)';
+                return `
+                    <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <span style="font-weight:600; font-size:0.8rem; color:#fff;">Election #${e.id}</span>
+                                <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px; background:rgba(${isOpen?'0,255,136':'255,255,255'},0.05); border:1px solid ${statusColor}; color:${statusColor};">${e.status}</span>
+                            </div>
+                            <p style="font-size:0.7rem; color:var(--text-dim); margin:0;">
+                                ${isOpen ? `⏳ Ticks remaining: <strong>${e.ticksRemaining}</strong>` : `🏆 Winner: <strong style="color:#ffd700;">${e.winnerName || 'No votes cast'}</strong>`}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTreaties(treaties) {
+            const container = document.getElementById('treaties-list-container');
+            if (!container) return;
+            if (treaties.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding-top:40px;">No treaties proposed yet. Propose a treaty to cooperate.</div>`;
+                return;
+            }
+            container.innerHTML = treaties.map(t => {
+                const isActive = t.status === 'ACTIVE';
+                const statusColor = isActive ? '#00ff88' : '#ffd700';
+                
+                let invites = [];
+                let signatories = [];
+                try {
+                    invites = typeof t.invitedCivIds === 'string' ? JSON.parse(t.invitedCivIds || '[]') : (t.invitedCivIds || []);
+                    signatories = typeof t.signatoryCivIds === 'string' ? JSON.parse(t.signatoryCivIds || '[]') : (t.signatoryCivIds || []);
+                } catch(err) {
+                    console.error("Failed to parse treaty ids", err);
+                }
+                
+                const isInvited = invites.includes(currentCivId);
+                const hasSigned = signatories.includes(currentCivId) || t.proposerCivId === currentCivId;
+                
+                let actionBtn = '';
+                if (t.status === 'PROPOSED' && isInvited && !hasSigned) {
+                    actionBtn = `<button class="btn-small" onclick="handleSignTreaty(${t.id})" style="border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05); padding:2px 8px; font-size:0.65rem; font-weight:600;">SIGN</button>`;
+                }
+
+                return `
+                    <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <span style="font-weight:600; font-size:0.8rem; color:#fff;">${t.title}</span>
+                                <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px; background:rgba(${isActive?'0,255,136':'255,215,0'},0.05); border:1px solid ${statusColor}; color:${statusColor};">${t.status}</span>
+                            </div>
+                            <p style="font-size:0.7rem; color:var(--text-dim); margin:0 0 4px 0; line-height:1.3;">Type: <strong>${t.type}</strong></p>
+                            <p style="font-size:0.6rem; color:var(--text-dim); margin:0;">Signatories: <span style="color:#fff;">${signatories.join(', ')}</span> (Invited: ${invites.join(', ')})</p>
+                        </div>
+                        <div>${actionBtn}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleCastVote(e) {
+            e.preventDefault();
+            const electionId = document.getElementById('vote-election-id').value;
+            const candidate = document.getElementById('vote-candidate-name').value;
+            const voter = localStorage.getItem('civos_clientId') || 'anonymous';
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/elections/${electionId}/vote?voter=${voter}&candidate=${candidate}`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    alert('Consensus vote cast successfully!');
+                    loadCoopData();
+                } else {
+                    const err = await res.text();
+                    alert('Consensus vote failed: ' + err);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleProposeTreaty(e) {
+            e.preventDefault();
+            const title = document.getElementById('treaty-title-input').value;
+            const type = document.getElementById('treaty-type-input').value;
+            const invitedInput = document.getElementById('treaty-invited-input').value;
+            const invited = invitedInput.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+            
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/treaties/propose`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, type, invitedCivIds: invited })
+                });
+                if (res.ok) {
+                    alert('Treaty proposed successfully!');
+                    document.getElementById('proposeTreatyForm').reset();
+                    loadCoopData();
+                } else {
+                    alert('Failed to propose treaty.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleSignTreaty(treatyId) {
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/treaties/${treatyId}/sign`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    alert('Treaty signed successfully!');
+                    loadCoopData();
+                } else {
+                    alert('Failed to sign treaty.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
 
         let ruleInputMode = 'visual';
 

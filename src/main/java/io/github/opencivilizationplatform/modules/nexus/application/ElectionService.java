@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.nexus.application;
+package io.github.opencivilizationplatform.modules.nexus.application;
 
 import io.github.opencivilizationplatform.modules.nexus.domain.*;
 import io.github.opencivilizationplatform.modules.nexus.infrastructure.ElectionRepository;
@@ -68,7 +68,7 @@ public class ElectionService {
     public void tickElections() {
         List<Election> openElections = electionRepository.findAll().stream()
             .filter(e -> e.getStatus() == ElectionStatus.OPEN)
-            .toList();
+            .collect(Collectors.toList());
 
         for (Election election : openElections) {
             int remaining = election.getTicksRemaining() - 1;

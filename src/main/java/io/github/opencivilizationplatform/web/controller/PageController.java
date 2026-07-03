@@ -295,5 +295,15 @@ public class PageController {
     public String civilizations(Model model) {
         return render(model, "civilizations", "Civilizations", "civilizations");
     }
+
+    @GetMapping("/network-map")
+    public String networkMap(Model model) {
+        return render(model, "network-map", "Network Map", "network-map");
+    }
+
+    @GetMapping("/network")
+    public String globalDashboard(Model model) {
+        return render(model, "network", "Global Dashboard", "network");
+    }
 }
 

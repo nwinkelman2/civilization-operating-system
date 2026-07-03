@@ -1,4 +1,4 @@
-﻿package io.github.opencivilizationplatform.modules.events.application;
+package io.github.opencivilizationplatform.modules.events.application;
 
 import io.github.opencivilizationplatform.modules.events.domain.GlobalEvent;
 import io.github.opencivilizationplatform.modules.events.domain.GlobalEventType;
@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 @Service
 public class GlobalEventService {
 
-    private static final Logger log = LoggerFactory.getLogger(GlobalEventService.class);
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(GlobalEventService.class);
     private final GlobalEventRepository globalEventRepository;
     private final Random random = new Random();
 
@@ -44,7 +44,6 @@ public class GlobalEventService {
 
     @Transactional
     public GlobalEvent maybeGenerateEvent(List<Long> availableCivIds) {
-        // 8% chance per call to spawn a new event
         if (random.nextDouble() > 0.08 || availableCivIds.isEmpty()) return null;
 
         GlobalEventType[] types = GlobalEventType.values();
@@ -76,25 +75,23 @@ public class GlobalEventService {
     }
 
     public void applyEventEffects(GlobalEvent event, Civilization civ, double[] resourceDelta, double[] modifiers) {
-        // modifiers: [0]=foodMult, [1]=waterMult, [2]=robotOffline, [3]=tradeMult, [4]=repDelta, [5]=scienceBonus
         switch (event.getType()) {
             case DROUGHT -> {
-                modifiers[0] -= 0.30; // food -30%
-                modifiers[1] -= 0.30; // water -30%
+                modifiers[0] -= 0.30;
+                modifiers[1] -= 0.30;
             }
             case EPIDEMIC -> {
-                modifiers[4] -= 5.0; // reputation -5
-                // population growth penalty applied externally by checking this modifier
-                modifiers[2] = Math.max(modifiers[2], 0.80); // population growth -80%
+                modifiers[4] -= 5.0;
+                modifiers[2] = Math.max(modifiers[2], 0.80);
             }
             case TECH_DISCOVERY -> {
-                modifiers[5] += 50.0; // +50 science progress
+                modifiers[5] += 50.0;
             }
             case SOLAR_STORM -> {
-                modifiers[2] = -1.0; // robots offline flag
+                modifiers[2] = -1.0;
             }
             case TRADE_BOOM -> {
-                modifiers[3] += 0.20; // +20% trade quantities
+                modifiers[3] += 0.20;
             }
         }
     }

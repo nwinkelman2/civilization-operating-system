@@ -55,10 +55,18 @@ class CivilizationControllerTest {
         socialService = mock(io.github.opencivilizationplatform.modules.social.application.SocialStabilityService.class);
         delegateElectionService = mock(io.github.opencivilizationplatform.modules.contribution.application.DelegateElectionService.class);
         citizenRepository = mock(io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository.class);
+        var treatyService = mock(io.github.opencivilizationplatform.modules.nexus.application.TreatyService.class);
+        var nexusElectionService = mock(io.github.opencivilizationplatform.modules.nexus.application.ElectionService.class);
+        var civilizationRepository = mock(io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository.class);
+        var ruleRepository = mock(io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository.class);
+        var incidentRepository = mock(io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository.class);
+        var meshTradeRepository = mock(io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository.class);
+
         mockMvc = standaloneSetup(new CivilizationController(
                 civilizationService, resourceRegionService, NexusMeshService, jwtService,
                 governanceBootstrapService, ruleService, contributionService, socialService,
-                delegateElectionService, citizenRepository))
+                delegateElectionService, citizenRepository, treatyService, nexusElectionService,
+                civilizationRepository, ruleRepository, incidentRepository, meshTradeRepository))
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }

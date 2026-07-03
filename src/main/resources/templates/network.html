@@ -1,0 +1,191 @@
+<div th:fragment="content">
+    <header class="page-header" style="margin-bottom: 20px;">
+        <h1 class="glitch-text" data-text="GLOBAL MULTI-CORTEX TELEMETRY">
+            <span class="glitch-scan">⟐</span> GLOBAL MULTI-CORTEX TELEMETRY <span class="glitch-scan">⟐</span>
+        </h1>
+        <p class="subtitle">Real-time status of all active civilizations, shared community assets, and mesh trade velocity.</p>
+    </header>
+
+    <!-- Global Stats Overview -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
+        <div class="glass-subpanel" style="background: rgba(0, 10, 20, 0.2); border: 1px solid rgba(0, 242, 255, 0.15); padding: 16px; border-radius: 6px;">
+            <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Active Nodes</div>
+            <div id="globalCivCount" style="font-size: 1.6rem; font-weight: 700; color: #00f2ff; font-family: monospace;">0</div>
+        </div>
+        <div class="glass-subpanel" style="background: rgba(0, 10, 20, 0.2); border: 1px solid rgba(0, 242, 255, 0.15); padding: 16px; border-radius: 6px;">
+            <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Network Population</div>
+            <div id="globalTotalPop" style="font-size: 1.6rem; font-weight: 700; color: #00ff88; font-family: monospace;">0</div>
+        </div>
+        <div class="glass-subpanel" style="background: rgba(0, 10, 20, 0.2); border: 1px solid rgba(0, 242, 255, 0.15); padding: 16px; border-radius: 6px;">
+            <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Average Consensus</div>
+            <div id="globalAvgRep" style="font-size: 1.6rem; font-weight: 700; color: #ffd700; font-family: monospace;">0.0%</div>
+        </div>
+        <div class="glass-subpanel" style="background: rgba(0, 10, 20, 0.2); border: 1px solid rgba(0, 242, 255, 0.15); padding: 16px; border-radius: 6px;">
+            <div style="font-size: 0.65rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px;">Mesh Trade Capacity</div>
+            <div id="globalTradeCount" style="font-size: 1.6rem; font-weight: 700; color: #bf55ec; font-family: monospace;">0</div>
+        </div>
+    </div>
+
+    <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px;">
+        <!-- Civilization Cards List -->
+        <div>
+            <h3 style="font-size: 0.85rem; color: #fff; margin-bottom: 15px; text-transform: uppercase; letter-spacing: 1px;">Active Civilizations</h3>
+            <div id="civCardsContainer" style="display: grid; grid-template-columns: 1fr; gap: 15px;">
+                <div style="text-align: center; padding: 40px; color: var(--text-dim);">Loading civilization telemetry...</div>
+            </div>
+        </div>
+
+        <!-- Right Side: Mesh Trades Feed & Global Events -->
+        <div style="display: flex; flex-direction: column; gap: 20px;">
+            <!-- Global Events panel -->
+            <div class="glass-subpanel" style="background: rgba(0, 10, 20, 0.2); border: 1px solid rgba(0, 242, 255, 0.1); padding: 16px; border-radius: 6px;">
+                <h3 style="font-size: 0.75rem; color: #ff9500; margin-bottom: 12px; letter-spacing: 1px;">🌍 ACTIVE WORLD EVENTS</h3>
+                <div id="globalEventsList" style="display: flex; flex-direction: column; gap: 8px;">
+                    <div style="font-size: 0.65rem; color: var(--text-dim); text-align: center; padding: 20px;">No global threats active. Ecosystem is balanced.</div>
+                </div>
+            </div>
+
+            <!-- Recent Mesh Trades -->
+            <div class="glass-subpanel" style="background: rgba(0, 10, 20, 0.2); border: 1px solid rgba(0, 242, 255, 0.1); padding: 16px; border-radius: 6px; flex: 1;">
+                <h3 style="font-size: 0.75rem; color: #00f2ff; margin-bottom: 12px; letter-spacing: 1px;">📡 MESH TRANSACTION ROUTING</h3>
+                <div id="meshTradesTimeline" style="display: flex; flex-direction: column; gap: 8px; max-height: 400px; overflow-y: auto; padding-right: 5px;">
+                    <div style="font-size: 0.65rem; color: var(--text-dim); text-align: center; padding: 20px;">Waiting for mesh transactions...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        async function loadDashboard() {
+            try {
+                // 1. Fetch Global Stats + Civ list
+                const resp = await fetch('/api/v1/civilizations/global-dashboard');
+                if (!resp.ok) return;
+                const data = await resp.json();
+
+                document.getElementById('globalCivCount').textContent = data.totalCivilizations;
+                document.getElementById('globalTotalPop').textContent = data.totalPopulation;
+                document.getElementById('globalAvgRep').textContent = data.averageReputation.toFixed(1) + '%';
+
+                const container = document.getElementById('civCardsContainer');
+                if (data.civilizations.length === 0) {
+                    container.innerHTML = `<div style="text-align: center; padding: 40px; color: var(--text-dim); border: 1px dashed rgba(255,255,255,0.1); border-radius: 6px;">No civilizations found. Claim a region to start!</div>`;
+                } else {
+                    container.innerHTML = data.civilizations.map(civ => {
+                        const hasIncident = civ.openIncidentsCount > 0;
+                        const borderColor = hasIncident ? 'rgba(255, 149, 0, 0.3)' : 'rgba(0, 242, 255, 0.1)';
+                        const glowEffect = hasIncident ? 'box-shadow: 0 0 10px rgba(255, 149, 0, 0.1); border-color: #ff9500;' : '';
+                        
+                        return `
+                            <div class="glass-subpanel" style="background: rgba(255,255,255,0.01); border: 1px solid ${borderColor}; padding: 16px; border-radius: 6px; ${glowEffect}">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 0.95rem; color: #fff; font-weight: 600;">${civ.name}</h4>
+                                        <span style="font-size: 0.55rem; color: var(--text-dim); text-transform: uppercase;">ID: ${civ.id} • Status: ${civ.status}</span>
+                                    </div>
+                                    <div style="display: flex; gap: 8px; align-items: center;">
+                                        <span style="font-size: 0.6rem; background: rgba(0, 242, 255, 0.05); color: #00f2ff; border: 1px solid rgba(0, 242, 255, 0.2); padding: 2px 6px; border-radius: 4px;">⚖️ Rules: ${civ.activeRulesCount}</span>
+                                        ${hasIncident ? `<span style="font-size: 0.6rem; background: rgba(255, 149, 0, 0.1); color: #ff9500; border: 1px solid rgba(255, 149, 0, 0.3); padding: 2px 6px; border-radius: 4px; animation: flash-alert 2s infinite;">⚠️ INCIDENT ACTIVE</span>` : `<span style="font-size: 0.6rem; background: rgba(0, 255, 136, 0.05); color: #00ff88; border: 1px solid rgba(0, 255, 136, 0.2); padding: 2px 6px; border-radius: 4px;">✓ SECURE</span>`}
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 12px;">
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.55rem; color: var(--text-dim);">🌾 Food</div>
+                                        <div style="font-size: 0.75rem; color: #00ff88; font-weight: 600;">${civ.food.toFixed(1)}</div>
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.55rem; color: var(--text-dim);">💧 Water</div>
+                                        <div style="font-size: 0.75rem; color: #00f2ff; font-weight: 600;">${civ.water.toFixed(1)}</div>
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.55rem; color: var(--text-dim);">⚡ Energy</div>
+                                        <div style="font-size: 0.75rem; color: #ffd700; font-weight: 600;">${civ.energy.toFixed(1)}</div>
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.55rem; color: var(--text-dim);">⛏️ Minerals</div>
+                                        <div style="font-size: 0.75rem; color: #ff6b35; font-weight: 600;">${civ.minerals.toFixed(1)}</div>
+                                    </div>
+                                    <div style="text-align: center;">
+                                        <div style="font-size: 0.55rem; color: var(--text-dim);">🏛️ Housing</div>
+                                        <div style="font-size: 0.75rem; color: #aa66ff; font-weight: 600;">${civ.housing.toFixed(1)}</div>
+                                    </div>
+                                </div>
+
+                                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 8px; font-size: 0.65rem;">
+                                    <span style="color: var(--text-dim);">Community Consensus: <strong style="color: #ffd700;">${civ.reputation.toFixed(1)}%</strong></span>
+                                    <a href="/civilization/${civ.id}" class="btn-small" style="font-size: 0.55rem; padding: 2px 8px;">MONITOR →</a>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                // 2. Fetch Mesh Trades Timeline
+                const tradesResp = await fetch('/api/v1/nexus/mesh-trades');
+                if (tradesResp.ok) {
+                    const trades = await tradesResp.json();
+                    document.getElementById('globalTradeCount').textContent = trades.length;
+                    const timeline = document.getElementById('meshTradesTimeline');
+                    if (trades.length === 0) {
+                        timeline.innerHTML = `<div style="font-size: 0.65rem; color: var(--text-dim); text-align: center; padding: 20px;">No mesh trades finalized yet.</div>`;
+                    } else {
+                        timeline.innerHTML = trades.map(t => {
+                            const expCiv = data.civilizations.find(c => c.id === t.exporterId);
+                            const impCiv = data.civilizations.find(c => c.id === t.importerId);
+                            const expName = expCiv ? expCiv.name : `Civ #${t.exporterId}`;
+                            const impName = impCiv ? impCiv.name : `Civ #${t.importerId}`;
+                            return `
+                                <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); border-radius: 4px; padding: 8px; font-size: 0.65rem; font-family: monospace;">
+                                    <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                                        <span style="color: #00f2ff;">${expName} ➜ ${impName}</span>
+                                        <span style="color: var(--text-dim);">${t.createdAt ? new Date(t.createdAt).toLocaleTimeString() : 'recent'}</span>
+                                    </div>
+                                    <div style="color: #fff;">Transferred <strong style="color: #00ff88;">${t.amount} ${t.resourceType}</strong> in exchange for population flow.</div>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+
+                // 3. Fetch Global Events
+                const eventsResp = await fetch('/api/v1/global-events');
+                if (eventsResp.ok) {
+                    const events = await eventsResp.json();
+                    const list = document.getElementById('globalEventsList');
+                    if (events.length === 0) {
+                        list.innerHTML = `<div style="font-size: 0.65rem; color: var(--text-dim); text-align: center; padding: 20px;">No global threats active. Ecosystem is balanced.</div>`;
+                    } else {
+                        list.innerHTML = events.map(evt => {
+                            let typeColor = '#ff3b30';
+                            if (evt.type === 'TECH_DISCOVERY' || evt.type === 'TRADE_BOOM') typeColor = '#00ff88';
+                            return `
+                                <div style="background: rgba(255,149,0,0.02); border: 1px solid rgba(255,149,0,0.15); border-left: 3px solid ${typeColor}; border-radius: 4px; padding: 10px; font-size: 0.65rem;">
+                                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                        <strong style="color:${typeColor}; text-transform:uppercase;">${evt.type}</strong>
+                                        <span style="color:var(--text-dim); font-size:0.6rem;">⏳ ${evt.ticksRemaining} Ticks Left</span>
+                                    </div>
+                                    <p style="margin: 0; color:#fff; line-height: 1.3;">${evt.description}</p>
+                                </div>
+                            `;
+                        }).join('');
+                    }
+                }
+
+            } catch (e) {
+                console.error("Dashboard reload failed", e);
+            }
+        }
+
+        loadDashboard();
+        setInterval(loadDashboard, 8000);
+    </script>
+
+    <style>
+        @keyframes flash-alert {
+            0% { opacity: 0.5; }
+            50% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
+    </style>
+</div>
