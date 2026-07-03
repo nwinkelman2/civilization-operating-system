@@ -12,6 +12,9 @@ import io.github.opencivilizationplatform.modules.region.infrastructure.Resource
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.github.opencivilizationplatform.modules.participation.domain.RuleStatus;
 import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
+import io.github.opencivilizationplatform.modules.social.domain.Incident;
+import io.github.opencivilizationplatform.modules.social.domain.IncidentStatus;
+import io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository;
 import tools.jackson.databind.ObjectMapper;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
@@ -41,6 +44,7 @@ public class CortexEngineService {
     private final BiosphereMetricRepository biosphereMetricRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository;
+    private final IncidentRepository incidentRepository;
     private final Random random = new Random();
 
     public CortexEngineService(CivilizationRepository civilizationRepository,
@@ -50,7 +54,8 @@ public class CortexEngineService {
                                io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository,
                                BiosphereMetricRepository biosphereMetricRepository,
                                ApplicationEventPublisher eventPublisher,
-                               io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository) {
+                               io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository,
+                               IncidentRepository incidentRepository) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
         this.ruleRepository = ruleRepository;
@@ -59,6 +64,7 @@ public class CortexEngineService {
         this.biosphereMetricRepository = biosphereMetricRepository;
         this.eventPublisher = eventPublisher;
         this.technologyRepository = technologyRepository;
+        this.incidentRepository = incidentRepository;
     }
 
     @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
@@ -100,6 +106,52 @@ public class CortexEngineService {
         boolean isAgriPushActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("BOOST_AGRI"));
         boolean isRobotsActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("OPERATE_ROBOTS"));
         boolean isAutonomousTradeActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("AUTONOMOUS_TRADE"));
+        boolean isRestrictConsumptionActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("RESTRICT_CONSUMPTION"));
+        boolean isBoostProductionActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("BOOST_PRODUCTION"));
+
+        // 1.1 Carregar incidentes ativos e mitigar via robôs designados
+        List<Incident> activeIncidents = incidentRepository.findByCivilizationId(civ.getId()).stream()
+            .filter(i -> !IncidentStatus.RESOLVED.equals(i.getStatus()))
+            .toList();
+
+        int totalAssignedEco = 0;
+        int totalAssignedSecurity = 0;
+        double productivityMultiplier = 1.0;
+
+        for (Incident inc : activeIncidents) {
+            int ecoAssigned = inc.getAssignedEcoBots() != null ? inc.getAssignedEcoBots() : 0;
+            int secAssigned = inc.getAssignedSecurityBots() != null ? inc.getAssignedSecurityBots() : 0;
+            
+            totalAssignedEco += ecoAssigned;
+            totalAssignedSecurity += secAssigned;
+
+            if (ecoAssigned > 0 || secAssigned > 0) {
+                double reduction = (ecoAssigned * 10.0) + (secAssigned * 15.0);
+                double currentSeverity = inc.getSeverity() == null ? 100.0 : inc.getSeverity();
+                double nextSeverity = Math.max(0.0, currentSeverity - reduction);
+                inc.setSeverity(nextSeverity);
+
+                cortexLogs.add("[Incident Board] Mitigação ativa em " + inc.getType() + " no setor " + inc.getLocation() + ": severidade reduzida para " + String.format("%.1f", nextSeverity) + "%.");
+
+                if (nextSeverity <= 0.0) {
+                    inc.setStatus(IncidentStatus.RESOLVED);
+                    inc.setAssignedEcoBots(0);
+                    inc.setAssignedSecurityBots(0);
+                    reputationDelta += 15.0; // Ganho de reputação por solução de incidentes
+                    cortexLogs.add("[⚖️ Incident Board] RESOLVIDO: O incidente " + inc.getType() + " foi mitigado com sucesso pelos drones! Reputação +15.");
+                }
+                incidentRepository.save(inc);
+            }
+
+            if (!IncidentStatus.RESOLVED.equals(inc.getStatus())) {
+                reputationDelta -= 1.0; // Penalidade contínua de reputação
+                productivityMultiplier -= 0.10; // -10% de eficiência geral por incidente ativo
+            }
+        }
+
+        if (productivityMultiplier < 0.50) {
+            productivityMultiplier = 0.50; // Limite máximo de penalidade de 50%
+        }
 
         // 2. Parsear histórico anterior para ler contagem de robôs
         ArrayNode historyArray;
@@ -261,15 +313,34 @@ public class CortexEngineService {
                 double energyRequired = totalRobots * 0.15;
                 if (currentEnergy >= energyRequired) {
                     civ.setEnergy(currentEnergy - energyRequired);
-                    robotFoodBonus = agriBots * 0.8;
-                    robotWaterBonus = aquaBots * 0.6;
-                    robotMineralBonus = exploreBots * 0.5;
-                    robotHousingBonus = utilityBots * 0.4;
-                    cortexLogs.add("[Automação] Sistemas Robóticos ONLINE: " + totalRobots + " drones operando (Consumo: " + String.format("%.2f", energyRequired) + " energia).");
+
+                    int activeAgriBots = agriBots;
+                    int activeAquaBots = aquaBots;
+                    int activeExploreBots = exploreBots;
+                    int activeUtilityBots = utilityBots;
+                    int activeEcoBots = Math.max(0, ecoBots - totalAssignedEco);
+                    int activeSecurityBots = Math.max(0, securityBots - totalAssignedSecurity);
+
+                    double ruleProdMult = 1.0;
+                    if (isBoostProductionActive) {
+                        ruleProdMult = 1.15;
+                    } else if (isRestrictConsumptionActive) {
+                        ruleProdMult = 0.90;
+                    }
+
+                    robotFoodBonus = activeAgriBots * 0.8 * productivityMultiplier * ruleProdMult;
+                    robotWaterBonus = activeAquaBots * 0.6 * productivityMultiplier * ruleProdMult;
+                    robotMineralBonus = activeExploreBots * 0.5 * productivityMultiplier * ruleProdMult;
+                    robotHousingBonus = activeUtilityBots * 0.4 * productivityMultiplier * ruleProdMult;
+
+                    cortexLogs.add("[Automação] Sistemas Robóticos ONLINE: " + totalRobots + " drones (Ativos em produção: " + 
+                        (activeAgriBots+activeAquaBots+activeExploreBots+activeUtilityBots+activeEcoBots+activeSecurityBots+scienceBots) + 
+                        ", Mitigando incidentes: " + (totalAssignedEco+totalAssignedSecurity) + 
+                        "). Consumo: " + String.format("%.2f", energyRequired) + " energia.");
 
                     // --- IMPACTO ECOLÓGICO: Drift de qualidade do ar por atividade robótica ---
                     double industrialDrift = (exploreBots + utilityBots) * 0.02;
-                    double ecoRecovery = ecoBots * 0.04;
+                    double ecoRecovery = activeEcoBots * 0.04;
                     double netEcoImpact = industrialDrift - ecoRecovery;
 
                     if (netEcoImpact != 0) {
@@ -316,8 +387,8 @@ public class CortexEngineService {
                     }
 
                     // --- SEGURANÇA E ESTABILIDADE: Security-Bots ---
-                    if (securityBots > 0) {
-                        double stabilityBoost = securityBots * 0.4;
+                    if (activeSecurityBots > 0) {
+                        double stabilityBoost = activeSecurityBots * 0.4;
                         if (civ.getFood() < 5.0 || civ.getWater() < 5.0) {
                             stabilityBoost *= 0.2; // Reduz a eficácia em 80% sob fome generalizada
                             cortexLogs.add("[Social] Security-Bots ativos: patrulhamento urbano sob escassez (Estabilidade +" + String.format("%.2f", stabilityBoost) + " — Eficácia reduzida devido a fome generalizada).");
@@ -354,6 +425,18 @@ public class CortexEngineService {
         double foodConsumption = population * 0.10;
         double waterConsumption = population * 0.08;
         double energyConsumption = population * 0.04;
+
+        if (isRestrictConsumptionActive) {
+            foodConsumption *= 0.75;
+            waterConsumption *= 0.75;
+            energyConsumption *= 0.75;
+            cortexLogs.add("[Racionamento] Regra de Racionamento Constitucional ativa: consumo geral reduzido em 25%.");
+        }
+
+        if (isBoostProductionActive) {
+            resourceDelta[3] -= 3.0; // Consumo adicional de energia para sustentar o boost de produção
+            cortexLogs.add("[Produção Intensiva] Regra de Produção Intensiva ativa: +15% de rendimento de robôs (Consumo de energia: -3.0).");
+        }
 
         resourceDelta[0] -= foodConsumption;
         resourceDelta[1] -= waterConsumption;
@@ -542,6 +625,9 @@ public class CortexEngineService {
             }
         }
 
+        // Simular votos de consenso constitucionais
+        simulateRuleVoting(civ, cortexLogs);
+
         return new ResourceTick(
             civ.getId(), resourceDelta[0], resourceDelta[1], resourceDelta[2],
             resourceDelta[3], resourceDelta[4], populationDelta, reputationDelta,
@@ -711,6 +797,58 @@ public class CortexEngineService {
         return techs.stream()
             .filter(t -> t.getStatus() == io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.COMPLETED)
             .anyMatch(t -> requiredTechs.contains(t.getName()));
+    }
+
+    private void simulateRuleVoting(Civilization civ, List<String> cortexLogs) {
+        List<Rule> proposedRules = ruleRepository.findByCivilizationId(civ.getId()).stream()
+            .filter(r -> r.getStatus() == RuleStatus.PROPOSED)
+            .toList();
+            
+        if (proposedRules.isEmpty()) return;
+        
+        for (Rule rule : proposedRules) {
+            double yesChance = 0.3; // Base chance of 30%
+            
+            String code = rule.getLogicCode();
+            if (code != null) {
+                if (code.contains("LOCK_ENTRY")) {
+                    if (civ.getFood() < 35.0 || civ.getWater() < 35.0) {
+                        yesChance = 0.85; // High priority under scarcity
+                    } else {
+                        yesChance = 0.10;
+                    }
+                } else if (code.contains("RESTRICT_CONSUMPTION")) {
+                    if (civ.getFood() < 25.0 || civ.getWater() < 25.0 || civ.getEnergy() < 20.0) {
+                        yesChance = 0.75;
+                    } else {
+                        yesChance = 0.15;
+                    }
+                } else if (code.contains("BOOST_PRODUCTION")) {
+                    if (civ.getEnergy() < 15.0) {
+                        yesChance = 0.20;
+                    } else {
+                        yesChance = 0.60;
+                    }
+                }
+            }
+            
+            // Simular votes de cidadãos adicionados aleatoriamente neste tick
+            int votesToAdd = random.nextInt(3); // 0, 1 ou 2 votos de "sim" por tick
+            if (random.nextDouble() < yesChance && votesToAdd > 0) {
+                int currentVotes = rule.getVotesCount() == null ? 0 : rule.getVotesCount();
+                rule.setVotesCount(currentVotes + votesToAdd);
+                
+                cortexLogs.add("[Consenso] Regra proposta '" + rule.getTitle() + "' recebeu +" + votesToAdd + " votos de cidadãos (Votos: " + rule.getVotesCount() + "/10).");
+                
+                if (rule.getVotesCount() >= 10) {
+                    rule.setStatus(RuleStatus.ACTIVE);
+                    rule.setValidationStatus(io.github.opencivilizationplatform.modules.participation.domain.ValidationStatus.SCIENTIFICALLY_VALIDATED);
+                    rule.setValidatedBy("Consenso Autônomo Cortex");
+                    cortexLogs.add("[⚖️ Consenso] APROVADA: A regra '" + rule.getTitle() + "' atingiu o quórum de 10 votos e agora está ATIVA!");
+                }
+                ruleRepository.save(rule);
+            }
+        }
     }
 }
 

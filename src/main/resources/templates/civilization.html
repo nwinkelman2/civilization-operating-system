@@ -1,4 +1,59 @@
 <div th:fragment="content">
+    <style>
+        .restricted-lock-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 15, 30, 0.95);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 6px;
+            border: 1px dashed rgba(0, 242, 255, 0.25);
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            font-family: 'Outfit', sans-serif;
+        }
+        .perspective-btn {
+            color: #8599a8;
+            background: transparent;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        .perspective-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+        .perspective-btn.active {
+            color: #fff;
+            background: #00f2ff;
+            box-shadow: 0 0 8px rgba(0, 242, 255, 0.4);
+            font-weight: bold;
+        }
+        #perspective-auto.active {
+            background: #00ff88;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+            color: #000;
+        }
+        #perspective-founder.active {
+            background: #ffd700;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+            color: #000;
+        }
+        #perspective-delegate.active {
+            background: #ff6b35;
+            box-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
+        }
+    </style>
+
     <header class="page-header">
         <h1 class="glitch-text" th:attr="data-text='CIVILIZATION: ' + ${civ.name}">
             <span class="glitch-scan">⟐</span> <span th:text="${civ.name}">CIVILIZATION</span> <span class="glitch-scan">⟐</span>
@@ -9,6 +64,21 @@
             Population: <strong th:text="${civ.population}">100</strong>
         </p>
     </header>
+
+    <!-- Perspective Selector (Filtro de Responsabilidade / Modo de Visualização) -->
+    <div class="perspective-selector glass-morphism" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; margin-bottom: 20px; border-radius: 6px; border: 1px solid rgba(0, 242, 255, 0.15); background: rgba(0, 5, 10, 0.4); flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 0.65rem; color: var(--text-dim); font-weight: bold; letter-spacing: 1px;">PERSPECTIVA DE RESPONSABILIDADE:</span>
+            <div class="perspective-buttons" style="display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap;">
+                <button class="perspective-btn active" id="perspective-auto" onclick="setPerspective('auto')">🤖 DETECTAR (AUTO)</button>
+                <button class="perspective-btn" id="perspective-visitor" onclick="setPerspective('visitor')">🌐 PÚBLICO (VISITANTE)</button>
+                <button class="perspective-btn" id="perspective-citizen" onclick="setPerspective('citizen')">🎒 CIDADÃO</button>
+                <button class="perspective-btn" id="perspective-delegate" onclick="setPerspective('delegate')">🎖️ DELEGADO DE SETOR</button>
+                <button class="perspective-btn" id="perspective-founder" onclick="setPerspective('founder')">👑 COORDENADOR (ADMIN)</button>
+            </div>
+        </div>
+        <div id="perspective-status-msg" style="font-size: 0.65rem; font-family: monospace; color: #00f2ff; letter-spacing: 0.5px; font-weight: bold;">PERSPECTIVA ATIVA: AUTO</div>
+    </div>
 
     <div class="civ-dashboard">
         <!-- Top Stats -->
@@ -226,8 +296,7 @@
         </div>
 
         <div class="civ-grid-2col">
-            <!-- nexus Nodes -->
-            <div class="civ-panel">
+            <div class="civ-panel" id="nexusNodesPanel" style="position:relative;">
                 <h2 class="panel-title">nexus NODES</h2>
                 <div th:if="${#lists.isEmpty(nodes)}" style="color:var(--text-dim);padding:20px;text-align:center;font-size:0.8rem;">
                     No nexus nodes. Start your simulation to deploy nodes.
@@ -301,7 +370,7 @@
                             <!-- Dynamic Rules -->
                         </div>
                     </div>
-                    <div class="glass-subpanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div class="glass-subpanel" id="ruleProposalPanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between; position:relative;">
                         <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Propose Constitutional Rule</h3>
                         <form id="proposeRuleForm" onsubmit="handleProposeRule(event)">
                             <div class="form-group" style="margin-bottom:10px;">
@@ -357,7 +426,7 @@
                             <!-- Dynamic Projects -->
                         </div>
                     </div>
-                    <div class="glass-subpanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between;">
+                    <div class="glass-subpanel" id="projectProposalPanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between; position:relative;">
                         <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Initialize Cooperative Project</h3>
                         <form id="proposeProjectForm" onsubmit="handleProposeProject(event)">
                             <div class="form-group" style="margin-bottom:10px;">
@@ -391,9 +460,14 @@
                             <!-- Dynamic Incidents -->
                         </div>
                     </div>
-                    <div class="glass-subpanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center; min-height:200px;">
+                    <div class="glass-subpanel" id="incidentSimulationPanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; position:relative;">
                         <h3 style="font-size:0.75rem; color:#ffd700; margin-bottom:8px;">⚠️ Stability Warning</h3>
-                        <p style="font-size:0.65rem; color:var(--text-dim); margin-bottom:12px; line-height:1.4;">Unresolved incidents penalize your civilization's productivity and resource conversion rates. Acting as a mediator restores system balance and grants you reputation score.</p>
+                        <p style="font-size:0.65rem; color:var(--text-dim); margin-bottom:12px; line-height:1.4;">Unresolved incidents penalize your civilization's productivity and reputation per tick. Designate <strong style="color:#00ff88;">Eco-Bots</strong> or <strong style="color:#4af;">Security-Bots</strong> to each incident to reduce severity automatically each tick. Reaching 0% resolves the incident and awards <strong style="color:#ffd700;">+15 reputation</strong>.</p>
+                        <div style="font-size:0.6rem; color:var(--text-dim); background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:4px; padding:8px; margin-bottom:12px; line-height:1.6;">
+                            <div>🌿 <strong style="color:#00ff88;">Eco-Bot</strong>: -10% severity/tick</div>
+                            <div>🛡 <strong style="color:#4af;">Security-Bot</strong>: -15% severity/tick</div>
+                            <div>⚡ Bots assigned to incidents are <strong>removed from production pools</strong></div>
+                        </div>
                         <button class="btn-small" onclick="triggerTestIncident()" style="border-color:#ff6b35; color:#ff6b35; background:rgba(255,107,53,0.05); width:100%;">SIMULATE LOCAL INCIDENT</button>
                     </div>
                 </div>
@@ -704,7 +778,7 @@
                     'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88;' : 
                     'background:rgba(255,107,53,0.1); border:1px solid rgba(255,107,53,0.3); color:#ff6b35;';
                 const voteBtn = isActive ? '' : 
-                    `<button class="btn-small" onclick="handleVote(${r.id})" style="border-color:#ffd700; color:#ffd700; background:rgba(255,215,0,0.05); padding:2px 8px; font-size:0.65rem; font-weight:600;">VOTE (${r.votesCount || 0}/3)</button>`;
+                    `<button class="btn-small" onclick="handleVote(${r.id})" style="border-color:#ffd700; color:#ffd700; background:rgba(255,215,0,0.05); padding:2px 8px; font-size:0.65rem; font-weight:600;">VOTE (${r.votesCount || 0}/10)</button>`;
                 
                 return `
                     <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
@@ -766,17 +840,50 @@
             container.innerHTML = activeIncidents.map(i => {
                 const isCritical = i.riskLevel === 'CRITICAL' || i.riskLevel === 'HIGH';
                 const riskColor = isCritical ? '#ff3b30' : '#ff9500';
+                const severity = i.severity !== undefined && i.severity !== null ? i.severity : 100;
+                const severityPct = Math.max(0, Math.min(100, severity));
+                const severityColor = severityPct > 70 ? '#ff3b30' : severityPct > 35 ? '#ff9500' : '#00ff88';
+                const assignedEco = i.assignedEcoBots || 0;
+                const assignedSec = i.assignedSecurityBots || 0;
+
                 return `
-                    <div style="background:rgba(255,59,48,0.01); border:1px solid rgba(${isCritical ? '255,59,48' : '255,149,0'},0.15); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                        <div style="flex:1;">
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                    <div style="background:rgba(255,59,48,0.01); border:1px solid rgba(${isCritical ? '255,59,48' : '255,149,0'},0.15); padding:12px; border-radius:6px; gap:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
                                 <span style="font-weight:600; font-size:0.8rem; color:#fff;">${i.type} at ${i.location}</span>
                                 <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px; background:rgba(${isCritical ? '255,59,48' : '255,149,0'},0.1); border:1px solid ${riskColor}; color:${riskColor};">${i.riskLevel}</span>
                             </div>
-                            <p style="font-size:0.7rem; color:var(--text-dim); margin:0; line-height:1.3;">${i.description}</p>
-                        </div>
-                        <div>
                             <button class="btn-small" onclick="handleMediate(${i.id})" style="border-color:#ff9500; color:#ff9500; background:rgba(255,149,0,0.05); padding:2px 8px; font-size:0.65rem; font-weight:600;">MEDIATE</button>
+                        </div>
+                        <p style="font-size:0.7rem; color:var(--text-dim); margin:0 0 8px 0; line-height:1.3;">${i.description}</p>
+                        <!-- Severity Bar -->
+                        <div style="margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                <span style="font-size:0.6rem; color:var(--text-dim);">⚠ Severidade</span>
+                                <span style="font-size:0.6rem; color:${severityColor}; font-weight:700;">${severityPct.toFixed(1)}%</span>
+                            </div>
+                            <div style="width:100%; height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden;">
+                                <div style="width:${severityPct}%; height:100%; background:${severityColor}; border-radius:3px; transition:width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <!-- Assigned Bots Display -->
+                        <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+                            <span style="font-size:0.6rem; background:rgba(0,180,100,0.1); border:1px solid rgba(0,180,100,0.25); color:#00ff88; padding:1px 7px; border-radius:4px;">🌿 Eco-Bots: ${assignedEco}</span>
+                            <span style="font-size:0.6rem; background:rgba(0,100,220,0.1); border:1px solid rgba(0,100,220,0.25); color:#4af; padding:1px 7px; border-radius:4px;">🛡 Security-Bots: ${assignedSec}</span>
+                        </div>
+                        <!-- Assign Bots Controls -->
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <label style="font-size:0.55rem; color:var(--text-dim);">Eco-Bots:</label>
+                                <input type="number" id="eco-bots-input-${i.id}" min="0" max="20" value="${assignedEco}"
+                                    style="width:48px; font-size:0.65rem; padding:2px 4px; background:rgba(0,0,0,0.3); border:1px solid rgba(0,255,136,0.2); border-radius:4px; color:#00ff88; text-align:center;">
+                            </div>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <label style="font-size:0.55rem; color:var(--text-dim);">Security-Bots:</label>
+                                <input type="number" id="sec-bots-input-${i.id}" min="0" max="20" value="${assignedSec}"
+                                    style="width:48px; font-size:0.65rem; padding:2px 4px; background:rgba(0,0,0,0.3); border:1px solid rgba(68,170,255,0.2); border-radius:4px; color:#4af; text-align:center;">
+                            </div>
+                            <button onclick="handleAssignBots(${i.id})" style="font-size:0.6rem; padding:2px 10px; border:1px solid rgba(255,215,0,0.3); background:rgba(255,215,0,0.05); color:#ffd700; border-radius:4px; cursor:pointer; font-weight:600;">⚡ DESIGNAR DRONES</button>
                         </div>
                     </div>
                 `;
@@ -908,6 +1015,27 @@
             }
         }
 
+        async function handleAssignBots(incidentId) {
+            const ecoInput = document.getElementById(`eco-bots-input-${incidentId}`);
+            const secInput = document.getElementById(`sec-bots-input-${incidentId}`);
+            const ecoBots = ecoInput ? parseInt(ecoInput.value) || 0 : 0;
+            const secBots = secInput ? parseInt(secInput.value) || 0 : 0;
+            try {
+                const res = await fetch(
+                    `/api/v1/civilizations/${currentCivId}/incidents/${incidentId}/assign-bots?ecoBots=${ecoBots}&securityBots=${secBots}`,
+                    { method: 'POST' }
+                );
+                if (res.ok) {
+                    loadCoopData();
+                } else {
+                    const err = await res.text();
+                    alert('Erro ao designar drones: ' + err);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
         async function triggerTestIncident() {
             try {
                 const res = await fetch(`/api/v1/civilizations/${currentCivId}/incidents/propose`, {
@@ -994,6 +1122,7 @@
                 });
                 if (meResp.ok) {
                     const citizen = await meResp.json();
+                    window.currentCitizen = citizen; // Salva globalmente o cidadão autenticado
                     document.getElementById('personalWalletRole').innerText = citizen.role ? citizen.role : 'VISITOR';
                     if (citizen.wallet) {
                         document.getElementById('walletFood').innerText = citizen.wallet.food.toFixed(1);
@@ -1010,6 +1139,9 @@
                     const sector = document.getElementById('electionSector').value;
                     renderCandidates(candidates, sector);
                 }
+
+                // Aplica a perspectiva baseada na cidadania e cargo real
+                applyPerspective();
             } catch (err) {
                 console.error('Failed to load wallet or candidates:', err);
             }
@@ -1249,11 +1381,132 @@
             }
         }
 
+        // --- SISTEMA DE VISUALIZAÇÃO POR RESPONSABILIDADE & PERSPECTIVAS ---
+        let currentPerspective = 'auto';
+
+        function setPerspective(perspective) {
+            currentPerspective = perspective;
+            applyPerspective();
+        }
+
+        function toggleLockOverlay(panelId, isLocked, message, overlayId) {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
+            
+            // Remove o overlay anterior se existir
+            const existing = document.getElementById(overlayId);
+            if (existing) existing.remove();
+            
+            if (isLocked) {
+                panel.style.position = 'relative';
+                const overlay = document.createElement('div');
+                overlay.id = overlayId;
+                overlay.className = 'restricted-lock-overlay';
+                overlay.innerHTML = `
+                    <div style="font-size: 1.3rem; margin-bottom: 8px;">🔒</div>
+                    <div style="font-weight: bold; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; color: #ff6b35; margin-bottom: 4px;">Acesso Restrito</div>
+                    <div style="font-size: 0.65rem; color: var(--text-dim); max-width: 85%; line-height: 1.4; font-family: 'Outfit', sans-serif;">${message}</div>
+                `;
+                panel.appendChild(overlay);
+            }
+        }
+
+        function applyPerspective() {
+            let active = currentPerspective;
+            if (active === 'auto') {
+                if (!window.currentCitizen) {
+                    active = 'visitor';
+                } else {
+                    const hasCiv = window.currentCitizen.civilization && 
+                                   window.currentCitizen.civilization.id === currentCivId;
+                    if (!hasCiv) {
+                        active = 'visitor';
+                    } else {
+                        const role = window.currentCitizen.role;
+                        if (role === 'FOUNDER' || role === 'NEXUS_COORDINATOR') {
+                            active = 'founder';
+                        } else if (role === 'SECTOR_DELEGATE') {
+                            active = 'delegate';
+                        } else {
+                            active = 'citizen';
+                        }
+                    }
+                }
+            }
+
+            // Atualiza o texto do status da perspectiva
+            const statusEl = document.getElementById('perspective-status-msg');
+            if (statusEl) {
+                const labelMap = {
+                    visitor: '🌐 PÚBLICO (VISITANTE - SOMENTE LEITURA)',
+                    citizen: '🎒 CIDADÃO DA COMUNIDADE',
+                    delegate: '🎖️ DELEGADO DE SETOR',
+                    founder: '👑 COORDENADOR GLOBAL (ADMIN - FULL)'
+                };
+                statusEl.innerText = `PERSPECTIVA ATIVA: ${labelMap[active] || active.toUpperCase()}`;
+                
+                if (active === 'visitor') statusEl.style.color = '#00f2ff';
+                else if (active === 'citizen') statusEl.style.color = '#00ff88';
+                else if (active === 'delegate') statusEl.style.color = '#ff6b35';
+                else if (active === 'founder') statusEl.style.color = '#ffd700';
+            }
+
+            // Destaca o botão ativo no seletor
+            document.querySelectorAll('.perspective-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`perspective-${currentPerspective}`).classList.add('active');
+
+            // Aplica os overlays de bloqueio dependendo da perspectiva ativa
+            const isVisitor = (active === 'visitor');
+            const isCitizen = (active === 'citizen');
+            const isDelegate = (active === 'delegate');
+            const isFounder = (active === 'founder');
+
+            // 1. Inventário Pessoal (Cidadão+)
+            toggleLockOverlay('personalWalletPanel', isVisitor, 
+                'Este inventário pertence a cidadãos integrados. Associe seu agente a esta comunidade no painel de Imigração abaixo.', 
+                'wallet-lock');
+
+            // 2. Eleições de Delegados (Cidadão+)
+            toggleLockOverlay('sectorElectionsPanel', isVisitor, 
+                'Apenas cidadãos registrados e residentes podem participar e votar nas eleições de delegados setoriais.', 
+                'elections-lock');
+
+            // 3. Controle de frotas de robôs (Delegado+)
+            toggleLockOverlay('robotFleetPanel', isVisitor || isCitizen, 
+                'O remanejamento e priorização de frotas de robôs é reservado a Delegados de Setor eleitos.', 
+                'fleet-lock');
+
+            // 4. Proposta de Regras Constitucionais (Cidadão+)
+            toggleLockOverlay('ruleProposalPanel', isVisitor, 
+                'Apenas cidadãos residentes podem propor regras constitucionais para a comunidade.', 
+                'rule-proposal-lock');
+
+            // 5. Inicialização de Projetos (Cidadão+)
+            toggleLockOverlay('projectProposalPanel', isVisitor, 
+                'Apenas cidadãos residentes podem inicializar e propor novos projetos de engenharia.', 
+                'project-proposal-lock');
+
+            // 6. Deploy de Nós Nexus (Fundador apenas)
+            toggleLockOverlay('nexusNodesPanel', !isFounder, 
+                'O provisionamento e deploy de novos nós de rede mesh no nexus são exclusivos a Coordenadores Globais.', 
+                'nexus-nodes-lock');
+
+            // 7. Simulação de Incidentes (Fundador apenas)
+            toggleLockOverlay('incidentSimulationPanel', !isFounder, 
+                'A simulação controlada de anomalias ecológicas ou sociais é restrita a Coordenadores Globais.', 
+                'incidents-lock');
+        }
+
         // Initialize additions
         document.addEventListener('DOMContentLoaded', () => {
             updatePriorityLabels();
             loadPendingMigrations();
             setInterval(loadPendingMigrations, 10000);
+            
+            // Detecta e aplica a perspectiva inicial
+            applyPerspective();
         });
     </script>
 

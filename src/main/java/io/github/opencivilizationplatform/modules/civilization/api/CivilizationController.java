@@ -220,6 +220,16 @@ public class CivilizationController {
         return socialService.mediateIncident(incidentId);
     }
 
+    @PostMapping("/{id}/incidents/{incidentId}/assign-bots")
+    @Operation(summary = "Assign Security and Eco bots to resolve an incident")
+    public io.github.opencivilizationplatform.modules.social.domain.Incident assignBotsToIncident(
+            @PathVariable Long id,
+            @PathVariable Long incidentId,
+            @RequestParam(defaultValue = "0") int ecoBots,
+            @RequestParam(defaultValue = "0") int securityBots) {
+        return socialService.assignBotsToIncident(incidentId, ecoBots, securityBots);
+    }
+
     private String resolveToken(HttpServletRequest request) {
         String clientId = (String) request.getAttribute("X-Client-Id");
         if (clientId != null) return clientId;

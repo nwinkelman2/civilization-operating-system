@@ -43,6 +43,15 @@ public class Incident {
     @Column(name = "reported_at")
     private LocalDateTime reportedAt;
 
+    @Column(name = "assigned_eco_bots")
+    private Integer assignedEcoBots = 0;
+
+    @Column(name = "assigned_security_bots")
+    private Integer assignedSecurityBots = 0;
+
+    @Column(name = "severity")
+    private Double severity = 100.0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "civilization_id")
     private io.github.opencivilizationplatform.modules.civilization.domain.Civilization civilization;
@@ -68,6 +77,13 @@ public class Incident {
     public void setParticipantIds(List<String> participantIds) { this.participantIds = participantIds; }
     public LocalDateTime getReportedAt() { return reportedAt; }
     public void setReportedAt(LocalDateTime reportedAt) { this.reportedAt = reportedAt; }
+
+    public Integer getAssignedEcoBots() { return assignedEcoBots == null ? 0 : assignedEcoBots; }
+    public void setAssignedEcoBots(Integer assignedEcoBots) { this.assignedEcoBots = assignedEcoBots; }
+    public Integer getAssignedSecurityBots() { return assignedSecurityBots == null ? 0 : assignedSecurityBots; }
+    public void setAssignedSecurityBots(Integer assignedSecurityBots) { this.assignedSecurityBots = assignedSecurityBots; }
+    public Double getSeverity() { return severity == null ? 100.0 : severity; }
+    public void setSeverity(Double severity) { this.severity = severity; }
 
     @PrePersist
     protected void onCreate() {

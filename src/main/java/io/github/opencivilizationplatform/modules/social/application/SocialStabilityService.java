@@ -60,4 +60,14 @@ public class SocialStabilityService {
         incident.setStatus(IncidentStatus.REPORTED);
         return incidentRepository.save(incident);
     }
+
+    @org.springframework.transaction.annotation.Transactional
+    public Incident assignBotsToIncident(Long incidentId, int ecoBots, int securityBots) {
+        Incident inc = incidentRepository.findById(incidentId)
+                .orElseThrow(() -> new IllegalArgumentException("Incident not found: " + incidentId));
+        inc.setAssignedEcoBots(ecoBots);
+        inc.setAssignedSecurityBots(securityBots);
+        inc.setStatus(IncidentStatus.ANALYZING);
+        return incidentRepository.save(inc);
+    }
 }

@@ -7,6 +7,7 @@ import io.github.opencivilizationplatform.modules.civilization.domain.Civilizati
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
 import io.github.opencivilizationplatform.modules.nexus.domain.MigrationRequest;
 import io.github.opencivilizationplatform.modules.nexus.infrastructure.MigrationRequestRepository;
+import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,13 +19,16 @@ public class MigrationService {
     private final MigrationRequestRepository migrationRequestRepository;
     private final CivilizationRepository civilizationRepository;
     private final ObjectMapper objectMapper;
+    private final RuleRepository ruleRepository;
 
     public MigrationService(MigrationRequestRepository migrationRequestRepository,
                             CivilizationRepository civilizationRepository,
-                            ObjectMapper objectMapper) {
+                            ObjectMapper objectMapper,
+                            RuleRepository ruleRepository) {
         this.migrationRequestRepository = migrationRequestRepository;
         this.civilizationRepository = civilizationRepository;
         this.objectMapper = objectMapper;
+        this.ruleRepository = ruleRepository;
     }
 
     @Transactional
@@ -33,6 +37,16 @@ public class MigrationService {
                 .orElseThrow(() -> new IllegalArgumentException("Origem inválida"));
         Civilization toCiv = civilizationRepository.findById(toCivId)
                 .orElseThrow(() -> new IllegalArgumentException("Destino inválido"));
+
+        // Enforce LOCK_ENTRY rule
+        List<io.github.opencivilizationplatform.modules.participation.domain.Rule> activeRules = ruleRepository.findByCivilizationId(toCivId).stream()
+                .filter(r -> io.github.opencivilizationplatform.modules.participation.domain.RuleStatus.ACTIVE.equals(r.getStatus()))
+                .toList();
+
+        boolean isLockEntryActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("LOCK_ENTRY"));
+        if (isLockEntryActive) {
+            throw new IllegalStateException("Imigração bloqueada por regra constitucional ativa de controle de fronteira.");
+        }
 
         MigrationRequest req = new MigrationRequest();
         req.setCitizenName(citizenName);
