@@ -51,6 +51,7 @@ class PageControllerTest {
     private ResourceRegionService regionService;
     private NexusMeshService nexusService;
     private TechnologyService technologyService;
+    private io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository;
 
     @BeforeEach
     void setUp() {
@@ -70,7 +71,8 @@ class PageControllerTest {
         regionService = mock(ResourceRegionService.class);
         nexusService = mock(NexusMeshService.class);
         technologyService = mock(TechnologyService.class);
-        mockMvc = standaloneSetup(new PageController(biosphereMetricService, needService, resourceService, balanceService, facilityService, shipmentService, interactionService, ruleService, contributionService, simulationEngineService, socialStabilityService, automationService, civilizationService, regionService, nexusService, technologyService)).build();
+        meshTradeRepository = mock(io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository.class);
+        mockMvc = standaloneSetup(new PageController(biosphereMetricService, needService, resourceService, balanceService, facilityService, shipmentService, interactionService, ruleService, contributionService, simulationEngineService, socialStabilityService, automationService, civilizationService, regionService, nexusService, technologyService, meshTradeRepository)).build();
     }
 
 
