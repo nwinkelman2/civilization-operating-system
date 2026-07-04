@@ -152,6 +152,7 @@ public class NexusController {
         civ.setEcoBotsPriority(priorities.getOrDefault("eco", 0));
         civ.setScienceBotsPriority(priorities.getOrDefault("science", 0));
         civ.setSecurityBotsPriority(priorities.getOrDefault("security", 0));
+        civ.setSpyBotsPriority(priorities.getOrDefault("spy", 0));
         civilizationRepository.save(civ);
         return Map.of("success", true, "message", "Prioridades de robôs atualizadas com sucesso!");
     }

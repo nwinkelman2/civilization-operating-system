@@ -18,6 +18,7 @@ import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshSer
 import io.github.opencivilizationplatform.modules.technology.application.TechnologyService;
 import io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus;
 import io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository;
+import io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -48,6 +49,7 @@ public class PageController {
     private final NexusMeshService nexusService;
     private final TechnologyService technologyService;
     private final MeshTradeRepository meshTradeRepository;
+    private final EspionageRepository espionageRepository;
 
     public PageController(BiosphereMetricService biosphereService,
                           NeedService needService,
@@ -65,7 +67,8 @@ public class PageController {
                           ResourceRegionService regionService,
                           NexusMeshService nexusService,
                           TechnologyService technologyService,
-                          MeshTradeRepository meshTradeRepository) {
+                          MeshTradeRepository meshTradeRepository,
+                          EspionageRepository espionageRepository) {
         this.biosphereService = biosphereService;
         this.needService = needService;
         this.resourceService = resourceService;
@@ -83,6 +86,7 @@ public class PageController {
         this.nexusService = nexusService;
         this.technologyService = technologyService;
         this.meshTradeRepository = meshTradeRepository;
+        this.espionageRepository = espionageRepository;
     }
 
     private String render(Model model, String viewName, String pageTitle, String currentPage) {
@@ -103,6 +107,7 @@ public class PageController {
     @GetMapping("/biosphere")
     public String biosphere(Model model) {
         model.addAttribute("metrics", biosphereService.getAllMetrics(Pageable.unpaged()).getContent());
+        model.addAttribute("regions", regionService.getAllRegions());
         return render(model, "biosphere", "Biosphere", "biosphere");
     }
 
@@ -250,6 +255,8 @@ public class PageController {
         } else {
             model.addAttribute("resourceList", List.of());
         }
+
+        model.addAttribute("espionageOperations", espionageRepository.findByInitiatorIdOrTargetId(id, id));
 
         return render(model, "civilization", "Civilization: " + civ.getName(), "civilization");
     }

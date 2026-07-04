@@ -52,6 +52,7 @@ class PageControllerTest {
     private NexusMeshService nexusService;
     private TechnologyService technologyService;
     private io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository;
+    private io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository espionageRepository;
 
     @BeforeEach
     void setUp() {
@@ -72,7 +73,8 @@ class PageControllerTest {
         nexusService = mock(NexusMeshService.class);
         technologyService = mock(TechnologyService.class);
         meshTradeRepository = mock(io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository.class);
-        mockMvc = standaloneSetup(new PageController(biosphereMetricService, needService, resourceService, balanceService, facilityService, shipmentService, interactionService, ruleService, contributionService, simulationEngineService, socialStabilityService, automationService, civilizationService, regionService, nexusService, technologyService, meshTradeRepository)).build();
+        espionageRepository = mock(io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository.class);
+        mockMvc = standaloneSetup(new PageController(biosphereMetricService, needService, resourceService, balanceService, facilityService, shipmentService, interactionService, ruleService, contributionService, simulationEngineService, socialStabilityService, automationService, civilizationService, regionService, nexusService, technologyService, meshTradeRepository, espionageRepository)).build();
     }
 
 

@@ -94,6 +94,12 @@ public class Civilization {
     @Column(name = "security_bots_priority", nullable = false)
     private Integer securityBotsPriority = 0;
 
+    @Column(name = "spy_bots_priority", nullable = false)
+    private Integer spyBotsPriority = 0;
+
+    @Column(name = "consensus_coins", nullable = false)
+    private Double consensusCoins = 100.0;
+
     public String getResourceHistory() { return resourceHistory; }
     public void setResourceHistory(String resourceHistory) { this.resourceHistory = resourceHistory; }
 
@@ -148,6 +154,10 @@ public class Civilization {
     public void setEnergy(Double energy) { this.energy = energy; }
     public Double getHousing() { return housing; }
     public void setHousing(Double housing) { this.housing = housing; }
+    public Integer getSpyBotsPriority() { return spyBotsPriority; }
+    public void setSpyBotsPriority(Integer spyBotsPriority) { this.spyBotsPriority = spyBotsPriority; }
+    public Double getConsensusCoins() { return consensusCoins; }
+    public void setConsensusCoins(Double consensusCoins) { this.consensusCoins = consensusCoins; }
 
     @PrePersist
     protected void onCreate() {
@@ -156,5 +166,7 @@ public class Civilization {
         if (status == null) status = CivilizationStatus.EMERGING;
         if (reputationScore == null) reputationScore = 50.0;
         if (population == null) population = 100;
+        if (consensusCoins == null) consensusCoins = 100.0;
+        if (spyBotsPriority == null) spyBotsPriority = 0;
     }
 }

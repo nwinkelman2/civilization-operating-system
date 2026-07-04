@@ -47,6 +47,12 @@ class CortexEngineServiceTest {
     private io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService;
     @Mock
     private io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService;
+    @Mock
+    private io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService;
+    @Mock
+    private io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository espionageRepository;
+    
+    private final io.micrometer.core.instrument.MeterRegistry meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -64,7 +70,8 @@ class CortexEngineServiceTest {
         cortexEngineService = new CortexEngineService(
             civilizationRepository, resourceRegionRepository, ruleRepository,
             objectMapper, meshTradeRepository, biosphereMetricRepository, eventPublisher,
-            technologyRepository, incidentRepository, globalEventService, treatyService, electionService
+            technologyRepository, incidentRepository, globalEventService, treatyService, electionService,
+            marketPriceService, espionageRepository, meterRegistry
         );
     }
 

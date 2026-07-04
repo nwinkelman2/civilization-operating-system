@@ -55,7 +55,7 @@
                                         <span class="tech-status">${t.status || 'AVAILABLE'}</span>
                                     </div>
                                     <h4 class="tech-name">${t.name}</h4>
-                                    <div class="tech-cost">Cost: ${t.researchCost || 0}</div>
+                                    <div class="tech-cost">Cost: ${t.researchCost || 0} ${ (t.researchCost === 70 || t.researchCost === 175 || t.researchCost === 350 || t.researchCost === 700) ? `<span class="badge" style="background:rgba(0,255,136,0.15); color:#00ff88; font-size:0.55rem; padding:1px 4px; border:1px solid rgba(0,255,136,0.25);">Alliance -30%</span>` : '' }</div>
                                     ${t.researchProgress != null ? `
                                         <div class="tech-progress">
                                             <div class="progress-bar">

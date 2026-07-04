@@ -28,6 +28,9 @@ import org.springframework.transaction.annotation.Transactional;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
 import java.util.List;
+import io.github.opencivilizationplatform.modules.social.domain.EspionageOperation;
+import io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository;
+import io.micrometer.core.instrument.MeterRegistry;
 import java.util.Random;
 import java.util.ArrayList;
 
@@ -48,6 +51,9 @@ public class CortexEngineService {
     private final io.github.opencivilizationplatform.modules.events.application.GlobalEventService globalEventService;
     private final io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService;
     private final io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService;
+    private final io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService;
+    private final EspionageRepository espionageRepository;
+    private final MeterRegistry meterRegistry;
     private final Random random = new Random();
     private int tickCount = 0;
 
@@ -62,7 +68,10 @@ public class CortexEngineService {
                                IncidentRepository incidentRepository,
                                io.github.opencivilizationplatform.modules.events.application.GlobalEventService globalEventService,
                                io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService,
-                               io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService) {
+                               io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService,
+                               io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService,
+                               EspionageRepository espionageRepository,
+                               MeterRegistry meterRegistry) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
         this.ruleRepository = ruleRepository;
@@ -75,12 +84,20 @@ public class CortexEngineService {
         this.globalEventService = globalEventService;
         this.treatyService = treatyService;
         this.electionService = electionService;
+        this.marketPriceService = marketPriceService;
+        this.espionageRepository = espionageRepository;
+        this.meterRegistry = meterRegistry;
     }
 
     @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
     @Transactional
     @SchedulerLock(name = "cortexEngineTick", lockAtMostFor = "25s", lockAtLeastFor = "10s")
     public void tick() {
+        performTick();
+    }
+
+    @Transactional
+    public void performTick() {
         tickCount++;
         List<Civilization> civilizations = civilizationRepository.findAll();
         if (civilizations.isEmpty()) return;
@@ -93,6 +110,9 @@ public class CortexEngineService {
         // Tick down active global events
         globalEventService.tickEvents();
 
+        // Update resource market prices based on tick data
+        marketPriceService.updatePrices();
+
         // Every 50 ticks: open elections in all civs that don't have one open
         if (tickCount % 50 == 0) {
             for (Civilization civ : civilizations) {
@@ -102,13 +122,54 @@ public class CortexEngineService {
         // Tick down open elections
         electionService.tickElections();
 
+        processEspionageOperations();
+
+        if (meterRegistry != null) {
+            double totalCoins = civilizations.stream().mapToDouble(c -> c.getConsensusCoins() != null ? c.getConsensusCoins() : 0.0).sum();
+            meterRegistry.gauge("civos.simulation.currency.total_coins", totalCoins);
+            int activeMissions = espionageRepository != null ? espionageRepository.findByStatus("IN_PROGRESS").size() : 0;
+            meterRegistry.gauge("civos.simulation.espionage.active_missions", activeMissions);
+        }
+
         for (Civilization civ : civilizations) {
             ResourceTick tick = computeTick(civ);
             applyTick(civ, tick);
+            if (meterRegistry != null && civ.getHomeRegion() != null) {
+                double soil = civ.getHomeRegion().getSoilFertility() != null ? civ.getHomeRegion().getSoilFertility() : 100.0;
+                meterRegistry.gauge("civos.simulation.biosphere.soil_fertility_" + civ.getId(), soil);
+            }
         }
 
         civilizationRepository.saveAll(civilizations);
         log.debug("Cortex tick completed for {} civilizations", civilizations.size());
+    }
+
+    private void processEspionageOperations() {
+        if (espionageRepository == null) return;
+        List<EspionageOperation> activeOps = espionageRepository.findByStatus("IN_PROGRESS");
+        for (EspionageOperation op : activeOps) {
+            op.setTicksRemaining(op.getTicksRemaining() - 1);
+            if (op.getTicksRemaining() <= 0) {
+                double successRate = (op.getSpyBotsCount() * 15.0) / (op.getSpyBotsCount() * 15.0 + op.getRiskLevel() * 50.0);
+                if (random.nextDouble() < successRate) {
+                    op.setStatus("SUCCESS");
+                    if ("STEAL_TECH".equals(op.getType())) {
+                        stealResearchProgress(op.getInitiator(), op.getTarget());
+                    } else if ("SABOTAGE_BOTS".equals(op.getType())) {
+                        sabotageTargetRobots(op.getTarget());
+                    }
+                } else {
+                    op.setStatus("FAILED");
+                    double initiatorRep = op.getInitiator().getReputationScore() != null ? op.getInitiator().getReputationScore() : 50.0;
+                    op.getInitiator().setReputationScore(Math.max(0.0, initiatorRep - 10.0));
+                }
+                espionageRepository.save(op);
+                civilizationRepository.save(op.getInitiator());
+                civilizationRepository.save(op.getTarget());
+            } else {
+                espionageRepository.save(op);
+            }
+        }
     }
 
     @Transactional
@@ -124,6 +185,26 @@ public class CortexEngineService {
         List<String> cortexLogs = new ArrayList<>();
         double[] resourceDelta = new double[]{0, 0, 0, 0, 0};
         double populationDelta = 0, reputationDelta = 0;
+
+        if (random.nextDouble() < 0.05) {
+            boolean hasActiveDisaster = incidentRepository.findByCivilizationId(civ.getId()).stream()
+                .anyMatch(i -> i.getStatus() != IncidentStatus.RESOLVED && 
+                    i.getType() == io.github.opencivilizationplatform.modules.social.domain.IncidentType.OTHER &&
+                    (i.getDescription().startsWith("SECA_REGIONAL") || i.getDescription().startsWith("PRAGA_AGRICOLA")));
+            if (!hasActiveDisaster) {
+                Incident disaster = new Incident();
+                disaster.setCivilization(civ);
+                boolean isDrought = random.nextBoolean();
+                disaster.setType(io.github.opencivilizationplatform.modules.social.domain.IncidentType.OTHER);
+                disaster.setDescription(isDrought ? "SECA_REGIONAL: Severe drought depleting the water table." : "PRAGA_AGRICOLA: Agricultural pest crop blight destroying regional soil fertility.");
+                disaster.setLocation("Regional Sector " + civ.getRegion());
+                disaster.setSeverity(80.0);
+                disaster.setRiskLevel(io.github.opencivilizationplatform.modules.social.domain.RiskLevel.CRITICAL);
+                disaster.setStatus(IncidentStatus.REPORTED);
+                incidentRepository.save(disaster);
+                cortexLogs.add("[⚠️ CATÁSTROFE] Alerta de desastre regional detectado: " + (isDrought ? "SECA_REGIONAL" : "PRAGA_AGRICOLA") + "! Alocar Eco-Bots para mitigação urgente.");
+            }
+        }
 
         // 1. Carregar regras de governança ativas
         List<Rule> activeRules = ruleRepository.findByCivilizationId(civ.getId()).stream()
@@ -228,6 +309,7 @@ public class CortexEngineService {
         int ecoBots = 0;
         int scienceBots = 0;
         int securityBots = 0;
+        int spyBots = 0;
 
         if (historyArray.size() > 0) {
             JsonNode lastTick = historyArray.get(historyArray.size() - 1);
@@ -238,6 +320,7 @@ public class CortexEngineService {
             if (lastTick.has("ecoBots")) ecoBots = lastTick.get("ecoBots").asInt();
             if (lastTick.has("scienceBots")) scienceBots = lastTick.get("scienceBots").asInt();
             if (lastTick.has("securityBots")) securityBots = lastTick.get("securityBots").asInt();
+            if (lastTick.has("spyBots")) spyBots = lastTick.get("spyBots").asInt();
         }
 
         // 3. Processar Automação Robótica pelo Cortex local
@@ -246,8 +329,16 @@ public class CortexEngineService {
         double robotMineralBonus = 0;
         double robotHousingBonus = 0;
 
+        int activeAgriBots = 0;
+        int activeAquaBots = 0;
+        int activeExploreBots = 0;
+        int activeUtilityBots = 0;
+        int activeEcoBots = 0;
+        int activeSecurityBots = 0;
+        int activeSpyBots = 0;
+
         if (isRobotsActive && !robotsOffline) {
-            int totalRobots = agriBots + aquaBots + exploreBots + utilityBots + ecoBots + scienceBots + securityBots;
+            int totalRobots = agriBots + aquaBots + exploreBots + utilityBots + ecoBots + scienceBots + securityBots + spyBots;
             int pop = civ.getPopulation() != null ? civ.getPopulation() : 100;
             int maxRobots = 1 + (pop / 50);
             if (maxRobots > 15) maxRobots = 15;
@@ -265,6 +356,7 @@ public class CortexEngineService {
                 int ecoPriority = isBotTechUnlocked(civ, "ECO") ? (civ.getEcoBotsPriority() != null ? civ.getEcoBotsPriority() : 0) : 0;
                 int sciencePriority = isBotTechUnlocked(civ, "SCIENCE") ? (civ.getScienceBotsPriority() != null ? civ.getScienceBotsPriority() : 0) : 0;
                 int securityPriority = isBotTechUnlocked(civ, "SECURITY") ? (civ.getSecurityBotsPriority() != null ? civ.getSecurityBotsPriority() : 0) : 0;
+                int spyPriority = isBotTechUnlocked(civ, "SPY") ? (civ.getSpyBotsPriority() != null ? civ.getSpyBotsPriority() : 0) : 0;
 
                 int sum = (civ.getAgriBotsPriority() != null ? civ.getAgriBotsPriority() : 25)
                         + (civ.getAquaBotsPriority() != null ? civ.getAquaBotsPriority() : 25)
@@ -272,7 +364,8 @@ public class CortexEngineService {
                         + (civ.getUtilityBotsPriority() != null ? civ.getUtilityBotsPriority() : 25)
                         + ecoPriority
                         + sciencePriority
-                        + securityPriority;
+                        + securityPriority
+                        + spyPriority;
                 if (sum == 0) sum = 100;
 
                 double targetAgri = (double) (civ.getAgriBotsPriority() != null ? civ.getAgriBotsPriority() : 25) / sum;
@@ -282,30 +375,34 @@ public class CortexEngineService {
                 double targetEco = (double) ecoPriority / sum;
                 double targetScience = (double) sciencePriority / sum;
                 double targetSecurity = (double) securityPriority / sum;
+                double targetSpy = (double) spyPriority / sum;
 
                 String botType;
                 if (totalRobots == 0) {
-                    if (targetAgri >= targetAqua && targetAgri >= targetExplore && targetAgri >= targetUtility && targetAgri >= targetEco && targetAgri >= targetScience && targetAgri >= targetSecurity) {
+                    if (targetAgri >= targetAqua && targetAgri >= targetExplore && targetAgri >= targetUtility && targetAgri >= targetEco && targetAgri >= targetScience && targetAgri >= targetSecurity && targetAgri >= targetSpy) {
                         agriBots++;
                         botType = "Agri-Bot (Agropecuária)";
-                    } else if (targetAqua >= targetExplore && targetAqua >= targetUtility && targetAqua >= targetEco && targetAqua >= targetScience && targetAqua >= targetSecurity) {
+                    } else if (targetAqua >= targetExplore && targetAqua >= targetUtility && targetAqua >= targetEco && targetAqua >= targetScience && targetAqua >= targetSecurity && targetAqua >= targetSpy) {
                         aquaBots++;
                         botType = "Aqua-Bot (Recursos Hídricos)";
-                    } else if (targetExplore >= targetUtility && targetExplore >= targetEco && targetExplore >= targetScience && targetExplore >= targetSecurity) {
+                    } else if (targetExplore >= targetUtility && targetExplore >= targetEco && targetExplore >= targetScience && targetExplore >= targetSecurity && targetExplore >= targetSpy) {
                         exploreBots++;
                         botType = "Explorer-Bot (Exploração Mineral)";
-                    } else if (targetUtility >= targetEco && targetUtility >= targetScience && targetUtility >= targetSecurity) {
+                    } else if (targetUtility >= targetEco && targetUtility >= targetScience && targetUtility >= targetSecurity && targetUtility >= targetSpy) {
                         utilityBots++;
                         botType = "Utility-Bot (Infraestrutura/Moradia)";
-                    } else if (targetEco >= targetScience && targetEco >= targetSecurity) {
+                    } else if (targetEco >= targetScience && targetEco >= targetSecurity && targetEco >= targetSpy) {
                         ecoBots++;
                         botType = "Eco-Bot (Preservação Ambiental)";
-                    } else if (targetScience >= targetSecurity) {
+                    } else if (targetScience >= targetSecurity && targetScience >= targetSpy) {
                         scienceBots++;
                         botType = "Science-Bot (Pesquisa Científica)";
-                    } else {
+                    } else if (targetSecurity >= targetSpy) {
                         securityBots++;
                         botType = "Security-Bot (Seguridade/Estabilidade)";
+                    } else {
+                        spyBots++;
+                        botType = "Spy-Bot (Operações Clandestinas)";
                     }
                 } else {
                     double currentAgriRatio = (double) agriBots / totalRobots;
@@ -315,6 +412,7 @@ public class CortexEngineService {
                     double currentEcoRatio = (double) ecoBots / totalRobots;
                     double currentScienceRatio = (double) scienceBots / totalRobots;
                     double currentSecurityRatio = (double) securityBots / totalRobots;
+                    double currentSpyRatio = (double) spyBots / totalRobots;
 
                     double diffAgri = targetAgri - currentAgriRatio;
                     double diffAqua = targetAqua - currentAquaRatio;
@@ -323,6 +421,7 @@ public class CortexEngineService {
                     double diffEco = targetEco - currentEcoRatio;
                     double diffScience = targetScience - currentScienceRatio;
                     double diffSecurity = targetSecurity - currentSecurityRatio;
+                    double diffSpy = targetSpy - currentSpyRatio;
 
                     double maxDiff = diffAgri;
                     botType = "Agri-Bot (Agropecuária)";
@@ -351,6 +450,10 @@ public class CortexEngineService {
                         maxDiff = diffSecurity;
                         botType = "Security-Bot (Seguridade/Estabilidade)";
                     }
+                    if (diffSpy > maxDiff) {
+                        maxDiff = diffSpy;
+                        botType = "Spy-Bot (Operações Clandestinas)";
+                    }
 
                     if (botType.contains("Agri")) agriBots++;
                     else if (botType.contains("Aqua")) aquaBots++;
@@ -359,23 +462,25 @@ public class CortexEngineService {
                     else if (botType.contains("Eco")) ecoBots++;
                     else if (botType.contains("Science")) scienceBots++;
                     else if (botType.contains("Security")) securityBots++;
+                    else if (botType.contains("Spy")) spyBots++;
                 }
                 totalRobots++;
                 cortexLogs.add("[Automação] Cortex fabricou 1 " + botType + " (Custo: 15 minerais, 10 energia).");
             }
 
-            // Operar robôs (consomem 0.15 energia cada)
+            // Operar robôs (consomem 0.15 energia, spy-bots consomem 0.25 cada)
             if (totalRobots > 0) {
-                double energyRequired = totalRobots * 0.15;
+                double energyRequired = (totalRobots - spyBots) * 0.15 + spyBots * 0.25;
                 if (currentEnergy >= energyRequired) {
                     civ.setEnergy(currentEnergy - energyRequired);
 
-                    int activeAgriBots = agriBots;
-                    int activeAquaBots = aquaBots;
-                    int activeExploreBots = exploreBots;
-                    int activeUtilityBots = utilityBots;
-                    int activeEcoBots = Math.max(0, ecoBots - totalAssignedEco);
-                    int activeSecurityBots = Math.max(0, securityBots - totalAssignedSecurity);
+                    activeAgriBots = agriBots;
+                    activeAquaBots = aquaBots;
+                    activeExploreBots = exploreBots;
+                    activeUtilityBots = utilityBots;
+                    activeEcoBots = Math.max(0, ecoBots - totalAssignedEco);
+                    activeSecurityBots = Math.max(0, securityBots - totalAssignedSecurity);
+                    activeSpyBots = spyBots;
 
                     double ruleProdMult = 1.0;
                     if (isBoostProductionActive) {
@@ -390,12 +495,12 @@ public class CortexEngineService {
                     robotHousingBonus = activeUtilityBots * 0.4 * productivityMultiplier * ruleProdMult;
 
                     cortexLogs.add("[Automação] Sistemas Robóticos ONLINE: " + totalRobots + " drones (Ativos em produção: " + 
-                        (activeAgriBots+activeAquaBots+activeExploreBots+activeUtilityBots+activeEcoBots+activeSecurityBots+scienceBots) + 
+                        (activeAgriBots+activeAquaBots+activeExploreBots+activeUtilityBots+activeEcoBots+activeSecurityBots+scienceBots+activeSpyBots) + 
                         ", Mitigando incidentes: " + (totalAssignedEco+totalAssignedSecurity) + 
                         "). Consumo: " + String.format("%.2f", energyRequired) + " energia.");
 
                     // --- IMPACTO ECOLÓGICO: Drift de qualidade do ar por atividade robótica ---
-                    double industrialDrift = (exploreBots + utilityBots) * 0.02;
+                    double industrialDrift = (exploreBots + utilityBots + spyBots) * 0.02;
                     double ecoRecovery = activeEcoBots * 0.04;
                     double netEcoImpact = industrialDrift - ecoRecovery;
 
@@ -461,12 +566,71 @@ public class CortexEngineService {
 
         // 4. Calcular baselines da região
         if (civ.getHomeRegionId() != null) {
+            final double finalFoodBonus = robotFoodBonus;
+            final double finalWaterBonus = robotWaterBonus;
+            final double finalMineralBonus = robotMineralBonus;
+            final int finalEcoBots = activeEcoBots;
+
             resourceRegionRepository.findById(civ.getHomeRegionId()).ifPresent(region -> {
-                resourceDelta[0] += region.getFoodAvailability() * 0.5;
-                resourceDelta[1] += region.getWaterAvailability() * 0.5;
-                resourceDelta[2] += region.getMineralAvailability() * 0.5;
+                double soil = region.getSoilFertility() == null ? 100.0 : region.getSoilFertility();
+                double waterT = region.getWaterTable() == null ? 100.0 : region.getWaterTable();
+                double mineralsAvail = region.getMineralAvailability() == null ? 100.0 : region.getMineralAvailability();
+
+                // Compute base extraction scaled by biosphere metrics
+                double baseFoodExt = region.getFoodAvailability() * 0.5 * (soil / 100.0);
+                double baseWaterExt = region.getWaterAvailability() * 0.5 * (waterT / 100.0);
+                double baseMineralExt = mineralsAvail * 0.5;
+
+                double totalFoodExt = baseFoodExt + finalFoodBonus;
+                double totalWaterExt = baseWaterExt + finalWaterBonus;
+                double totalMineralExt = baseMineralExt + finalMineralBonus;
+
+                resourceDelta[0] += baseFoodExt;
+                resourceDelta[1] += baseWaterExt;
+                resourceDelta[2] += baseMineralExt;
                 resourceDelta[3] += region.getEnergyAvailability() * 0.5;
                 resourceDelta[4] += region.getHousingAvailability() * 0.5;
+
+                boolean isDroughtActive = incidentRepository.findByCivilizationId(civ.getId()).stream()
+                    .anyMatch(i -> i.getStatus() != IncidentStatus.RESOLVED && "SECA_REGIONAL".equals(i.getType()));
+                boolean isBlightActive = incidentRepository.findByCivilizationId(civ.getId()).stream()
+                    .anyMatch(i -> i.getStatus() != IncidentStatus.RESOLVED && "PRAGA_AGRICOLA".equals(i.getType()));
+
+                // Depletion logic: heavy extraction decays metrics
+                double soilDecay = totalFoodExt > 10.0 ? (totalFoodExt - 10.0) * 0.4 : 0.0;
+                double waterDecay = totalWaterExt > 10.0 ? (totalWaterExt - 10.0) * 0.4 : 0.0;
+                double mineralDecay = totalMineralExt > 5.0 ? (totalMineralExt - 5.0) * 0.2 : 0.0;
+
+                if (isDroughtActive) {
+                    waterDecay += 15.0;
+                }
+                if (isBlightActive) {
+                    soilDecay += 15.0;
+                }
+
+                // Regeneration logic: 2.0% regeneration if extraction is low
+                double soilRegen = totalFoodExt < 10.0 ? 2.0 : 0.0;
+                double waterRegen = totalWaterExt < 10.0 ? 2.0 : 0.0;
+                double mineralRegen = totalMineralExt < 5.0 ? 1.0 : 0.0;
+
+                // Eco-bot recovery: Eco-bots boost soil fertility and water table regeneration
+                double ecoBotRegen = finalEcoBots * 0.5;
+                soilRegen += ecoBotRegen;
+                waterRegen += ecoBotRegen;
+
+                double newSoil = Math.max(0.0, Math.min(100.0, soil - soilDecay + soilRegen));
+                double newWaterT = Math.max(0.0, Math.min(100.0, waterT - waterDecay + waterRegen));
+                double newMineral = Math.max(0.0, Math.min(100.0, mineralsAvail - mineralDecay + mineralRegen));
+
+                region.setSoilFertility(newSoil);
+                region.setWaterTable(newWaterT);
+                region.setMineralAvailability(newMineral);
+                resourceRegionRepository.save(region);
+
+                // Add to logs
+                cortexLogs.add(String.format(java.util.Locale.ROOT, 
+                    "[Ecosistema] Fertilidade do Solo: %.1f%% (Net: %+.1f%%), Aquífero: %.1f%% (Net: %+.1f%%), Minerais: %.1f%% (Net: %+.1f%%)",
+                    newSoil, (soilRegen - soilDecay), newWaterT, (waterRegen - waterDecay), newMineral, (mineralRegen - mineralDecay)));
             });
         }
 
@@ -557,6 +721,10 @@ public class CortexEngineService {
             if (regionEnergyAvail < 15.0 || civ.getEnergy() < 30.0) deficientResources.add("ENERGY");
 
             for (String criticalResource : deficientResources) {
+                if (executeCircularBarterSearch(civ, criticalResource, resourceDelta, cortexLogs)) {
+                    continue;
+                }
+
                 List<Civilization> allCivs = civilizationRepository.findAll();
                 Civilization partner = null;
 
@@ -605,7 +773,6 @@ public class CortexEngineService {
                     else if (!criticalResource.equals("WATER") && currentWaterVal > 60.0) offeredResource = "WATER";
 
                     if (offeredResource != null) {
-                        // Prevenir loop de escambo
                         final Civilization finalPartner = partner;
                         final String finalOfferedResource = offeredResource;
                         boolean isLoop = meshTradeRepository.findAllByOrderByCreatedAtDesc().stream().limit(5).anyMatch(t -> 
@@ -681,13 +848,12 @@ public class CortexEngineService {
             }
         }
 
-        // Simular votos de consenso constitucionais
         simulateRuleVoting(civ, cortexLogs);
 
         return new ResourceTick(
             civ.getId(), resourceDelta[0], resourceDelta[1], resourceDelta[2],
             resourceDelta[3], resourceDelta[4], populationDelta, reputationDelta,
-            agriBots, aquaBots, exploreBots, utilityBots, ecoBots, scienceBots, securityBots, cortexLogs
+            agriBots, aquaBots, exploreBots, utilityBots, ecoBots, scienceBots, securityBots, spyBots, cortexLogs
         );
     }
 
@@ -727,6 +893,7 @@ public class CortexEngineService {
             newTick.put("ecoBots", tick.ecoBots());
             newTick.put("scienceBots", tick.scienceBots());
             newTick.put("securityBots", tick.securityBots());
+            newTick.put("spyBots", tick.spyBots());
 
             ArrayNode logsArray = objectMapper.createArrayNode();
             for (String logMsg : tick.logs()) {
@@ -840,6 +1007,7 @@ public class CortexEngineService {
             case "ECO" -> java.util.List.of("Water Wells", "Irrigation Systems", "Water Treatment", "Atmospheric Processing");
             case "SCIENCE" -> java.util.List.of("Fire Mastery", "Mathematics", "Scientific Method", "Fusion Power");
             case "SECURITY" -> java.util.List.of("Shelter Building", "Town Planning", "Urban Development", "Arcologies");
+            case "SPY" -> java.util.List.of("Primitive Tools", "Bronze Working", "Steel Manufacturing", "Nanotechnology");
             default -> java.util.List.of();
         };
 
@@ -904,6 +1072,139 @@ public class CortexEngineService {
                 }
                 ruleRepository.save(rule);
             }
+        }
+    }
+
+    private boolean executeCircularBarterSearch(Civilization civ, String criticalResource, double[] resourceDelta, List<String> cortexLogs) {
+        List<Civilization> allCivs = civilizationRepository.findAll();
+        double currentMinerals = civ.getMinerals() != null ? civ.getMinerals() : 0;
+        double currentEnergy = civ.getEnergy() != null ? civ.getEnergy() : 0;
+        double currentFoodVal = civ.getFood() != null ? civ.getFood() : 0;
+        double currentWaterVal = civ.getWater() != null ? civ.getWater() : 0;
+
+        String offeredResource = null;
+        if (!criticalResource.equals("MINERALS") && currentMinerals > 60.0) offeredResource = "MINERALS";
+        else if (!criticalResource.equals("ENERGY") && currentEnergy > 60.0) offeredResource = "ENERGY";
+        else if (!criticalResource.equals("FOOD") && currentFoodVal > 60.0) offeredResource = "FOOD";
+        else if (!criticalResource.equals("WATER") && currentWaterVal > 60.0) offeredResource = "WATER";
+
+        if (offeredResource == null) return false;
+
+        for (Civilization partner1 : allCivs) {
+            if (partner1.getId().equals(civ.getId())) continue;
+
+            double p1Stock = getResourceStock(partner1, criticalResource);
+            double p1OfferedStock = getResourceStock(partner1, offeredResource);
+            if (p1Stock > 80.0 && p1OfferedStock < 30.0) {
+                String p1SurplusResource = null;
+                for (String res : List.of("FOOD", "WATER", "MINERALS", "ENERGY")) {
+                    if (!res.equals(offeredResource) && !res.equals(criticalResource) && getResourceStock(partner1, res) > 60.0) {
+                        p1SurplusResource = res;
+                        break;
+                    }
+                }
+
+                if (p1SurplusResource != null) {
+                    for (Civilization partner2 : allCivs) {
+                        if (partner2.getId().equals(civ.getId()) || partner2.getId().equals(partner1.getId())) continue;
+
+                        double p2ZStock = getResourceStock(partner2, p1SurplusResource);
+                        double p2OfferedStock = getResourceStock(partner2, offeredResource);
+                        if (p2ZStock < 30.0 && p2OfferedStock > 80.0) {
+                            double tradeQty = 30.0;
+                            boolean p1TradeActive = ruleRepository.findByCivilizationId(partner1.getId()).stream()
+                                    .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
+                                    .anyMatch(r -> r.getLogicCode().contains("AUTONOMOUS_TRADE"));
+                            boolean p2TradeActive = ruleRepository.findByCivilizationId(partner2.getId()).stream()
+                                    .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
+                                    .anyMatch(r -> r.getLogicCode().contains("AUTONOMOUS_TRADE"));
+
+                            if (p1TradeActive && p2TradeActive) {
+                                adjustResourceStock(civ, offeredResource, -tradeQty, resourceDelta);
+                                adjustResourceStock(partner1, offeredResource, tradeQty, null);
+
+                                adjustResourceStock(partner1, p1SurplusResource, -tradeQty, null);
+                                adjustResourceStock(partner2, p1SurplusResource, tradeQty, null);
+
+                                adjustResourceStock(partner2, criticalResource, -tradeQty, null);
+                                adjustResourceStock(civ, criticalResource, tradeQty, resourceDelta);
+
+                                String logMsg = "[Grafo Escambo Triangular] Rota Circular resolvida: '" + civ.getName() + "' exportou " + tradeQty + " de " + offeredResource + 
+                                    " para '" + partner1.getName() + "'; '" + partner1.getName() + "' exportou " + tradeQty + " de " + p1SurplusResource + 
+                                    " para '" + partner2.getName() + "'; '" + partner2.getName() + "' exportou " + tradeQty + " de " + criticalResource + 
+                                    " para '" + civ.getName() + "'.";
+                                cortexLogs.add(logMsg);
+
+                                addLogToPartnerHistory(partner1, "[Grafo Escambo Triangular] Rota Circular resolvida com '" + civ.getName() + "' e '" + partner2.getName() + "'.");
+                                addLogToPartnerHistory(partner2, "[Grafo Escambo Triangular] Rota Circular resolvida com '" + civ.getName() + "' e '" + partner1.getName() + "'.");
+
+                                saveMeshTrade(civ, partner1, offeredResource, tradeQty, p1SurplusResource, tradeQty, "TRIANGULAR_BARTER_A");
+                                saveMeshTrade(partner1, partner2, p1SurplusResource, tradeQty, criticalResource, tradeQty, "TRIANGULAR_BARTER_B");
+                                saveMeshTrade(partner2, civ, criticalResource, tradeQty, offeredResource, tradeQty, "TRIANGULAR_BARTER_C");
+
+                                civilizationRepository.save(partner1);
+                                civilizationRepository.save(partner2);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    private void stealResearchProgress(Civilization attacker, Civilization defender) {
+        if (technologyRepository == null) return;
+        List<io.github.opencivilizationplatform.modules.technology.domain.Technology> defenderTechs = 
+            technologyRepository.findByCivilizationId(defender.getId()).stream()
+            .filter(t -> t.getStatus() == io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.RESEARCHING)
+            .toList();
+
+        if (defenderTechs.isEmpty()) return;
+        io.github.opencivilizationplatform.modules.technology.domain.Technology dTech = defenderTechs.get(0);
+        int currentProgress = dTech.getResearchProgress() != null ? dTech.getResearchProgress() : 0;
+        int stolenAmount = Math.min(15, currentProgress);
+        dTech.setResearchProgress(currentProgress - stolenAmount);
+        technologyRepository.save(dTech);
+
+        List<io.github.opencivilizationplatform.modules.technology.domain.Technology> attackerTechs = 
+            technologyRepository.findByCivilizationId(attacker.getId()).stream()
+            .filter(t -> t.getStatus() == io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.RESEARCHING)
+            .toList();
+
+        if (!attackerTechs.isEmpty() && stolenAmount > 0) {
+            io.github.opencivilizationplatform.modules.technology.domain.Technology aTech = attackerTechs.get(0);
+            int aProgress = aTech.getResearchProgress() != null ? aTech.getResearchProgress() : 0;
+            int aCost = aTech.getResearchCost() != null ? aTech.getResearchCost() : 100;
+            aTech.setResearchProgress(Math.min(aCost, aProgress + stolenAmount));
+            if (aTech.getResearchProgress() >= aCost) {
+                aTech.setStatus(io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.COMPLETED);
+            }
+            technologyRepository.save(aTech);
+        }
+    }
+
+    private void sabotageTargetRobots(Civilization defender) {
+        try {
+            ArrayNode historyArray;
+            if (defender.getResourceHistory() == null || defender.getResourceHistory().isBlank() || defender.getResourceHistory().equals("[]")) {
+                return;
+            }
+            historyArray = (ArrayNode) objectMapper.readTree(defender.getResourceHistory());
+            if (historyArray.isEmpty()) return;
+
+            ObjectNode lastTick = (ObjectNode) historyArray.get(historyArray.size() - 1);
+            List<String> botKeys = List.of("agriBots", "aquaBots", "exploreBots", "utilityBots");
+            for (String key : botKeys) {
+                if (lastTick.has(key) && lastTick.get(key).asInt() > 0) {
+                    lastTick.put(key, lastTick.get(key).asInt() - 1);
+                    break;
+                }
+            }
+            defender.setResourceHistory(objectMapper.writeValueAsString(historyArray));
+        } catch (Exception e) {
+            log.error("Error executing robot sabotage on defender: ", e);
         }
     }
 }

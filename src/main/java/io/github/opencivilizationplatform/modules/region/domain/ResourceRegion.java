@@ -44,6 +44,12 @@ public class ResourceRegion {
     @Column(name = "housing_availability")
     private Double housingAvailability;
 
+    @Column(name = "soil_fertility")
+    private Double soilFertility = 100.0;
+
+    @Column(name = "water_table")
+    private Double waterTable = 100.0;
+
     @Column(name = "dominant_resource")
     @Enumerated(EnumType.STRING)
     private ResourceType dominantResource;
@@ -96,8 +102,16 @@ public class ResourceRegion {
     public Long getClaimedByCivilizationId() { return claimedByCivilizationId; }
     public void setClaimedByCivilizationId(Long id) { this.claimedByCivilizationId = id; }
 
+    public Double getSoilFertility() { return soilFertility == null ? 100.0 : soilFertility; }
+    public void setSoilFertility(Double soilFertility) { this.soilFertility = soilFertility; }
+
+    public Double getWaterTable() { return waterTable == null ? 100.0 : waterTable; }
+    public void setWaterTable(Double waterTable) { this.waterTable = waterTable; }
+
     @PrePersist
     protected void onCreate() {
         if (claimed == null) claimed = false;
+        if (soilFertility == null) soilFertility = 100.0;
+        if (waterTable == null) waterTable = 100.0;
     }
 }

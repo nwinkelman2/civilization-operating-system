@@ -18,5 +18,6 @@ public record ResourceTick(
     int ecoBots,
     int scienceBots,
     int securityBots,
+    int spyBots,
     List<String> logs
 ) {}

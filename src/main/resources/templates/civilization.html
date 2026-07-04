@@ -91,6 +91,13 @@
                 </div>
             </div>
             <div class="civ-stat-card">
+                <span class="civ-stat-icon">🪙</span>
+                <div>
+                    <span class="civ-stat-label">CONSENSUS COINS</span>
+                    <span class="civ-stat-value" th:text="${civ.consensusCoins != null ? #numbers.formatDecimal(civ.consensusCoins, 1, 1) : '100.0'}">100.0</span>
+                </div>
+            </div>
+            <div class="civ-stat-card">
                 <span class="civ-stat-icon">🏠</span>
                 <div>
                     <span class="civ-stat-label">REGION</span>
@@ -234,6 +241,12 @@
                         </div>
                         <input type="range" id="range-security" min="0" max="100" th:value="${civ.securityBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
                     </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🕵️ Spy-Bots (Operações Clandestinas): <strong id="val-spy">0</strong>%</span>
+                        </div>
+                        <input type="range" id="range-spy" min="0" max="100" th:value="${civ.spyBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
                 </div>
 
                 <div style="font-size: 0.65rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
@@ -353,13 +366,14 @@
             </div>
             
             <!-- Tab Buttons -->
-            <div class="coop-tabs" style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px; margin-bottom:20px;">
+            <div class="coop-tabs" style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px; margin-bottom:20px; flex-wrap: wrap;">
                 <button class="coop-tab-btn active" onclick="switchCoopTab('rules')" id="tab-btn-rules">nexus Constitution</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('projects')" id="tab-btn-projects">Engineering Projects</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('incidents')" id="tab-btn-incidents">Stability Board</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('automation')" id="tab-btn-automation">Cortex Autonomous Core</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('elections')" id="tab-btn-elections">🗳️ Elections</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('treaties')" id="tab-btn-treaties">📜 Treaties</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('espionage')" id="tab-btn-espionage">🕵️ Espionagem</button>
             </div>
 
             <!-- Tab Contents -->
@@ -510,6 +524,13 @@
                                 </div>
                                 <div id="explorerbot-count" style="font-size:1.1rem; font-weight:700; color:#f5d76e;">0</div>
                             </div>
+                            <div class="robot-metric-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem; font-weight:600; color:#fff;">Spy-Bots (Operações Clandestinas)</div>
+                                    <div style="font-size:0.6rem; color:var(--text-dim);">Consumo: 0.25 Energia/tick</div>
+                                </div>
+                                <div id="spybot-count" style="font-size:1.1rem; font-weight:700; color:#ff3b30;">0</div>
+                            </div>
                         </div>
                     </div>
                     <!-- Right column: Automation Logs -->
@@ -581,6 +602,57 @@
                                 <input type="text" id="treaty-invited-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., 2, 3">
                             </div>
                             <button type="submit" class="btn-small" style="width:100%; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">PROPOSE TREATY</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Espionage Tab -->
+            <div class="coop-tab-content" id="coop-content-espionage">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Operações Clandestinas Ativas & Histórico</h3>
+                        <div id="espionage-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <div th:if="${#lists.isEmpty(espionageOperations)}" style="color:var(--text-dim); text-align:center; padding-top:40px;">Nenhuma operação lançada ou sofrida ainda.</div>
+                            <div th:each="op : ${espionageOperations}" style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                                <div style="flex:1;">
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                        <span style="font-weight:600; font-size:0.8rem; color:#fff;" th:text="${op.type} + ' contra ' + ${op.target.name}">Operation</span>
+                                        <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px;" 
+                                              th:styleappend="${op.status == 'SUCCESS'} ? 'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88;' : (${op.status == 'FAILED'} ? 'background:rgba(255,59,48,0.1); border:1px solid rgba(255,59,48,0.3); color:#ff3b30;' : 'background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); color:#ffd700;')" 
+                                              th:text="${op.status}">STATUS</span>
+                                    </div>
+                                    <p style="font-size:0.7rem; color:var(--text-dim); margin:0 0 4px 0;">
+                                        Iniciado por: <strong th:text="${op.initiator.name}">Proposer</strong> &bull; Drones: <strong th:text="${op.spyBotsCount}">0</strong>
+                                    </p>
+                                    <p style="font-size:0.6rem; color:var(--text-dim); margin:0;" th:if="${op.status == 'IN_PROGRESS'}">
+                                        Ticks restantes: <strong th:text="${op.ticksRemaining}">4</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" id="launchEspionagePanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Lançar Operação Clandestina</h3>
+                        <form id="launchEspionageForm" onsubmit="handleLaunchEspionage(event)">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Civilização Alvo</label>
+                                <select id="esp-target-input" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                    <option th:each="c : ${allCivilizations}" th:if="${c.id != civ.id}" th:value="${c.id}" th:text="${c.name}">Alexandria</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Tipo de Missão</label>
+                                <select id="esp-type-input" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                    <option value="STEAL_TECH">STEAL_TECH (Roubar progresso científico da tecnologia ativa)</option>
+                                    <option value="SABOTAGE_BOTS">SABOTAGE_BOTS (Sabotar e desativar drones de produção)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Quantidade de Spy-Bots alocados</label>
+                                <input type="number" id="esp-bots-input" required min="1" max="10" value="2" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                            </div>
+                            <button type="submit" class="btn-small" style="width:100%; border-color:#ff3b30; color:#ff3b30; background:rgba(255,59,48,0.05);">INICIAR INFILTRAÇÃO CLANDESTINA</button>
                         </form>
                     </div>
                 </div>
@@ -794,6 +866,9 @@
             document.getElementById('aquabot-count').innerText = lastTick.aquaBots || 0;
             document.getElementById('utilitybot-count').innerText = lastTick.utilityBots || 0;
             document.getElementById('explorerbot-count').innerText = lastTick.exploreBots || 0;
+            if (document.getElementById('spybot-count')) {
+                document.getElementById('spybot-count').innerText = lastTick.spyBots || 0;
+            }
 
             // 3. Atualizar logs de automação
             const logsContainer = document.getElementById('automation-logs-container');
@@ -1262,6 +1337,29 @@
             }
         }
 
+        async function handleLaunchEspionage(e) {
+            e.preventDefault();
+            const targetId = document.getElementById('esp-target-input').value;
+            const type = document.getElementById('esp-type-input').value;
+            const botsCount = document.getElementById('esp-bots-input').value;
+
+            try {
+                const res = await fetch(`/api/v1/espionage/launch?initiatorId=${currentCivId}&targetId=${targetId}&type=${type}&spyBotsCount=${botsCount}`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    alert('Operação clandestina de infiltração iniciada com sucesso!');
+                    loadCoopData();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const txt = await res.text();
+                    alert('Falha ao lançar operação: ' + (txt || 'Recursos insuficientes.'));
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
         function showAddNodeModal(civId) {
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
@@ -1443,6 +1541,7 @@
             const eco = document.getElementById('range-eco').value;
             const science = document.getElementById('range-science').value;
             const security = document.getElementById('range-security').value;
+            const spy = document.getElementById('range-spy').value;
 
             document.getElementById('val-agri').innerText = agri;
             document.getElementById('val-aqua').innerText = aqua;
@@ -1451,6 +1550,7 @@
             document.getElementById('val-eco').innerText = eco;
             document.getElementById('val-science').innerText = science;
             document.getElementById('val-security').innerText = security;
+            document.getElementById('val-spy').innerText = spy;
         }
 
         async function saveRobotPriorities() {
@@ -1465,12 +1565,13 @@
             const eco = parseInt(document.getElementById('range-eco').value);
             const science = parseInt(document.getElementById('range-science').value);
             const security = parseInt(document.getElementById('range-security').value);
+            const spy = parseInt(document.getElementById('range-spy').value);
 
             try {
                 const res = await fetch(`/api/v1/nexus/civilizations/${currentCivId}/robot-priorities`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ agri, aqua, explore, utility, eco, science, security })
+                    body: JSON.stringify({ agri, aqua, explore, utility, eco, science, security, spy })
                 });
                 if (res.ok) {
                     indicator.innerText = 'Salvo';
@@ -1704,6 +1805,11 @@
             toggleLockOverlay('incidentSimulationPanel', !isFounder, 
                 'A simulação controlada de anomalias ecológicas ou sociais é restrita a Coordenadores Globais.', 
                 'incidents-lock');
+
+            // 8. Espionage Form Lock (Citizen+)
+            toggleLockOverlay('launchEspionagePanel', isVisitor, 
+                'Apenas cidadãos residentes podem lançar operações clandestinas contra outras comunidades.', 
+                'espionage-lock');
         }
 
         // Initialize additions
