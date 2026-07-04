@@ -209,6 +209,8 @@ public class CortexEngineService {
                         stealResearchProgress(op.getInitiator(), op.getTarget());
                     } else if ("SABOTAGE_BOTS".equals(op.getType())) {
                         sabotageTargetRobots(op.getTarget());
+                    } else if ("INTERCEPT_SHIPMENT".equals(op.getType())) {
+                        interceptTargetShipment(op.getInitiator(), op.getTarget());
                     }
                 } else {
                     op.setStatus("FAILED");
@@ -579,14 +581,14 @@ public class CortexEngineService {
                     }
 
                     // --- AUTOMAÇÃO CIENTÍFICA: Science-Bots ---
-                    if (scienceBots > 0 && technologyRepository != null) {
+                    if ((scienceBots > 0 || treatyScienceBonus > 0) && technologyRepository != null) {
                         List<io.github.opencivilizationplatform.modules.technology.domain.Technology> researching = 
                             technologyRepository.findByCivilizationIdAndStatus(civ.getId(), io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.RESEARCHING);
                         if (!researching.isEmpty()) {
                             for (io.github.opencivilizationplatform.modules.technology.domain.Technology tech : researching) {
-                                int progressToAdd = (int)(scienceBots * 2 * treatyScienceBotMult);
+                                int progressToAdd = (int)(scienceBots * 2 * treatyScienceBotMult + treatyScienceBonus);
                                 tech.setResearchProgress(tech.getResearchProgress() + progressToAdd);
-                                cortexLogs.add("[Pesquisa] Science-Bots injetaram +" + progressToAdd + " de progresso na tecnologia '" + tech.getName() + "'" + (treatyScienceBotMult > 1.0 ? " (Aliança de Pesquisa ×" + String.format("%.0f", treatyScienceBotMult) + ")" : "") + ".");
+                                cortexLogs.add("[Pesquisa] Progresso científico de +" + progressToAdd + " injetado na tecnologia '" + tech.getName() + "'" + (treatyScienceBonus > 0 ? " (Tratado Aliança Científica)" : "") + ".");
                                 if (tech.getResearchProgress() >= tech.getResearchCost()) {
                                     tech.setStatus(io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.COMPLETED);
                                     tech.setResearchProgress(tech.getResearchCost());
@@ -1244,6 +1246,39 @@ public class CortexEngineService {
             }
             technologyRepository.save(aTech);
         }
+    }
+
+    private void interceptTargetShipment(Civilization initiator, Civilization target) {
+        if (shipmentRepository == null) return;
+        
+        List<Shipment> activeShipments = shipmentRepository.findByStatus(ShipmentStatus.IN_TRANSIT).stream()
+            .filter(s -> s.getDestination() != null && s.getDestination().equals(target.getName()))
+            .toList();
+            
+        if (activeShipments.isEmpty()) {
+            log.info("Espionage intercept success, but no active shipments in transit to {}", target.getName());
+            return;
+        }
+        
+        // Pick the shipment with the highest quantity to intercept
+        Shipment intercepted = activeShipments.stream()
+            .max(java.util.Comparator.comparingDouble(Shipment::getQuantity))
+            .orElse(activeShipments.get(0));
+            
+        String originalDest = intercepted.getDestination();
+        intercepted.setDestination(initiator.getName());
+        
+        // Recalculate ETA based on distance from origin to the new destination (initiator)
+        java.util.Optional<Civilization> originCivOpt = civilizationRepository.findByName(intercepted.getOrigin());
+        if (originCivOpt.isPresent()) {
+            double distance = calculateDistance(originCivOpt.get().getHomeRegion(), initiator.getHomeRegion());
+            int transitSeconds = (int) (distance * 10.0) + 2;
+            intercepted.setEta(LocalDateTime.now().plusSeconds(transitSeconds));
+        }
+        
+        shipmentRepository.save(intercepted);
+        log.info("[Espionage Clandestina] Shipment intercepted: {} x {} from {} diverted from {} to {}",
+                 intercepted.getQuantity(), intercepted.getCargo(), intercepted.getOrigin(), originalDest, initiator.getName());
     }
 
     private void sabotageTargetRobots(Civilization defender) {

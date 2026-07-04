@@ -116,12 +116,15 @@
         let nodes = [];
         let markers = {};
         let tradeLines = [];
+        let flowIntervals = [];
 
         async function fetchNetworkData() {
             try {
-                // Clear old layers
+                // Clear old layers and intervals
                 tradeLines.forEach(l => l.remove());
                 tradeLines = [];
+                flowIntervals.forEach(clearInterval);
+                flowIntervals = [];
 
                 const resp = await fetch('/api/v1/civilizations/network-summary');
                 if (!resp.ok) return;
@@ -180,6 +183,26 @@
                             }).addTo(map);
                             line.bindTooltip(`Trade: ${t.resourceType} (${t.amount})`, { sticky: true });
                             tradeLines.push(line);
+
+                            // Draw animated flow marker
+                            const flowMarker = L.circleMarker([exporter.latitude, exporter.longitude], {
+                                color: '#00f2ff',
+                                fillColor: '#00f2ff',
+                                fillOpacity: 0.8,
+                                radius: 4
+                            }).addTo(map);
+
+                            let tRatio = 0;
+                            const animInterval = setInterval(() => {
+                                tRatio += 0.01;
+                                if (tRatio > 1.0) tRatio = 0;
+                                const curLat = exporter.latitude + (importer.latitude - exporter.latitude) * tRatio;
+                                const curLng = exporter.longitude + (importer.longitude - exporter.longitude) * tRatio;
+                                flowMarker.setLatLng([curLat, curLng]);
+                            }, 40);
+                            
+                            flowIntervals.push(animInterval);
+                            tradeLines.push(flowMarker);
                         }
                     });
                 }

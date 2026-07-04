@@ -86,7 +86,10 @@ public class TreatyService {
             switch (treaty.getType()) {
                 case FREE_TRADE -> tradeMult += 0.15;
                 case NON_AGGRESSION -> repDelta += 2.0;
-                case RESEARCH_ALLIANCE -> scienceBotMult *= 2.0;
+                case RESEARCH_ALLIANCE -> {
+                    scienceBotMult *= 2.0;
+                    scienceBonus += 0.5;
+                }
             }
         }
         return new double[]{scienceBonus, tradeMult, repDelta, scienceBotMult};
