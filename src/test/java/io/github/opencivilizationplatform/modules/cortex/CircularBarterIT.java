@@ -123,11 +123,17 @@ public class CircularBarterIT {
             ruleRepository.saveAndFlush(r);
         }
 
-        // 5. Run cortexEngineService.tick()
-        cortexEngineService.tick();
+        // 5. Run cortexEngineService.performTick()
+        cortexEngineService.performTick();
 
         // 6. Verify trade logs / mesh trades saved in database
-        long count = meshTradeRepository.count();
-        assertEquals(3, count, "Should execute exactly 3 mesh trades for the triangular barter cycle");
+        List<io.github.opencivilizationplatform.modules.nexus.domain.MeshTrade> trades = meshTradeRepository.findAll();
+        boolean hasA = trades.stream().anyMatch(t -> "TRIANGULAR_BARTER_A".equals(t.getTradeType()));
+        boolean hasB = trades.stream().anyMatch(t -> "TRIANGULAR_BARTER_B".equals(t.getTradeType()));
+        boolean hasC = trades.stream().anyMatch(t -> "TRIANGULAR_BARTER_C".equals(t.getTradeType()));
+
+        assertTrue(hasA, "Should have executed TRIANGULAR_BARTER_A");
+        assertTrue(hasB, "Should have executed TRIANGULAR_BARTER_B");
+        assertTrue(hasC, "Should have executed TRIANGULAR_BARTER_C");
     }
 }

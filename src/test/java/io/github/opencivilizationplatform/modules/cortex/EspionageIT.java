@@ -107,7 +107,7 @@ public class EspionageIT {
 
         // 4. Tick several times to resolve the operation
         for (int i = 0; i < 4; i++) {
-            cortexEngineService.tick();
+            cortexEngineService.performTick();
         }
 
         EspionageOperation updatedOp = espionageRepository.findById(op.getId()).orElseThrow();
