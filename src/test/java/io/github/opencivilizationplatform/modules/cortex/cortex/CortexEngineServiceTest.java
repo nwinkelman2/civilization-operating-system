@@ -51,6 +51,10 @@ class CortexEngineServiceTest {
     private io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService;
     @Mock
     private io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository espionageRepository;
+    @Mock
+    private io.github.opencivilizationplatform.modules.technology.infrastructure.LicensedTechnologyRepository licensedTechnologyRepository;
+    @Mock
+    private io.github.opencivilizationplatform.modules.logistics.infrastructure.ShipmentRepository shipmentRepository;
     
     private final io.micrometer.core.instrument.MeterRegistry meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
 
@@ -71,7 +75,7 @@ class CortexEngineServiceTest {
             civilizationRepository, resourceRegionRepository, ruleRepository,
             objectMapper, meshTradeRepository, biosphereMetricRepository, eventPublisher,
             technologyRepository, incidentRepository, globalEventService, treatyService, electionService,
-            marketPriceService, espionageRepository, meterRegistry
+            marketPriceService, espionageRepository, meterRegistry, licensedTechnologyRepository, shipmentRepository
         );
     }
 

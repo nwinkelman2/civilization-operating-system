@@ -351,6 +351,13 @@
                     <span class="tech-name" th:text="${t.name}">Tech</span>
                     <span class="tech-status" th:text="${t.status}">LOCKED</span>
                     <span class="tech-progress" th:if="${t.researchCost}" th:text="${t.researchProgress} + '/' + ${t.researchCost}">0/100</span>
+                    
+                    <div th:if="${t.status.name() == 'RESEARCHING'}" style="margin-top: 8px;">
+                        <form th:id="'contrib-form-' + ${t.id}" style="display: flex; gap: 4px; align-items: center;" onsubmit="return false;">
+                            <input type="number" name="coins" min="1" max="50" value="5" style="width: 50px; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,242,255,0.2); color: #fff; font-size: 0.7rem; border-radius: 4px; padding: 2px;" required />
+                            <button type="button" th:onclick="'submitContribution(' + ${t.id} + ', ' + ${civ.id} + ')'" style="background: rgba(0,255,136,0.2); border: 1px solid rgba(0,255,136,0.4); color: #00ff88; font-size: 0.65rem; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-family:\'Outfit\', sans-serif;">Contribuir</button>
+                        </form>
+                    </div>
                 </div>
             </div>
             <a th:href="@{'/api/v1/tech-tree/' + ${civ.id}}" style="display:block;text-align:center;margin-top:12px;color:var(--accent-cyan);font-size:0.8rem;">
@@ -374,6 +381,7 @@
                 <button class="coop-tab-btn" onclick="switchCoopTab('elections')" id="tab-btn-elections">🗳️ Elections</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('treaties')" id="tab-btn-treaties">📜 Treaties</button>
                 <button class="coop-tab-btn" onclick="switchCoopTab('espionage')" id="tab-btn-espionage">🕵️ Espionagem</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('transit')" id="tab-btn-transit">🚚 Logistics Transit</button>
             </div>
 
             <!-- Tab Contents -->
@@ -654,8 +662,62 @@
                             </div>
                             <button type="submit" class="btn-small" style="width:100%; border-color:#ff3b30; color:#ff3b30; background:rgba(255,59,48,0.05);">INICIAR INFILTRAÇÃO CLANDESTINA</button>
                         </form>
+            <!-- 8. Logistics Transit Tab -->
+            <div class="coop-tab-content" id="coop-content-transit">
+                <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Active Resource Shipments (IN_TRANSIT)</h3>
+                <div class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                    <div th:if="${#lists.isEmpty(shipments)}" style="color:var(--text-dim); text-align:center; padding-top:40px;">Nenhuma remessa logística ativa ou pendente no momento.</div>
+                    <div th:each="s : ${shipments}" style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight:600; font-size:0.8rem; color:#fff;" th:text="${s.cargo} + ' (' + ${s.quantity} + ' ' + ${s.unit} + ')'">Cargo</span>
+                            <div style="font-size:0.7rem; color:var(--text-dim); margin-top:4px;">
+                                Rota: <strong th:text="${s.origin}">Origin</strong> ➔ <strong th:text="${s.destination}">Destination</strong>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px;" 
+                                  th:styleappend="${s.status.name() == 'IN_TRANSIT'} ? 'background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); color:#ffd700;' : 'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88;'" 
+                                  th:text="${s.status}">STATUS</span>
+                            <div style="font-size:0.6rem; color:var(--text-dim); margin-top:4px;" th:if="${s.eta != null}">
+                                ETA: <span th:text="${#temporals.format(s.eta, 'yyyy-MM-dd HH:mm:ss')}">--</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Painel de Patentes Licenciáveis -->
+        <div class="civ-panel" style="margin-top: 20px;">
+            <h2 class="panel-title">PATENTES LICENCIADAS & COMPARTILHADAS</h2>
+            
+            <!-- Licenciadas Ativas -->
+            <div th:if="${!licensedTechs.isEmpty()}" style="margin-bottom: 15px;">
+                <h3 style="font-size: 0.75rem; color: #00ff88; margin-bottom: 8px;">Patentes Licenciadas Ativas:</h3>
+                <div class="tech-grid" style="margin-bottom: 15px;">
+                    <div class="tech-card tech-done" th:each="lt : ${licensedTechs}">
+                        <span class="tech-name" th:text="${lt.techName}">Licensed Tech</span>
+                        <span class="tech-status" style="color: #00ff88;">LICENCIADA ATIVA</span>
+                        <span class="tech-progress" th:text="'Royalty: ' + ${lt.feePerTick} + ' Coins/tick'">5.0 Coins/tick</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Licenciáveis Disponíveis -->
+            <div th:if="${!licensableTechs.isEmpty()}">
+                <h3 style="font-size: 0.75rem; color: var(--accent-cyan); margin-bottom: 8px;">Patentes Disponíveis de Outros Cortex:</h3>
+                <div class="tech-grid">
+                    <div class="tech-card tech-locked" th:each="lt : ${licensableTechs}">
+                        <span class="tech-name" th:text="${lt.name}">Licensable Tech</span>
+                        <span class="tech-status" th:text="'Custo: 5.0 Coins/tick'">Custo: 5.0 Coins/tick</span>
+                        <form style="margin-top: 8px; display: flex; gap: 4px;" onsubmit="return false;">
+                            <button type="button" th:onclick="'licenseTech(' + ${lt.id} + ', ' + ${civ.id} + ')'" style="background: rgba(0,242,255,0.2); border: 1px solid rgba(0,242,255,0.4); color: #00f2ff; font-size: 0.65rem; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-family:\'Outfit\', sans-serif;">Licenciar Patente</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${licensableTechs.isEmpty() && licensedTechs.isEmpty()}" style="font-size: 0.75rem; color: var(--text-dim); text-align: center; padding: 15px;">
+                Nenhuma patente licenciada ou disponível para esta civilização no momento.
             </div>
         </div>
 
@@ -1810,6 +1872,42 @@
             toggleLockOverlay('launchEspionagePanel', isVisitor, 
                 'Apenas cidadãos residentes podem lançar operações clandestinas contra outras comunidades.', 
                 'espionage-lock');
+        }
+
+        function submitContribution(techId, civId) {
+            const input = document.querySelector(`#contrib-form-${techId} input[name="coins"]`);
+            const coins = parseFloat(input.value);
+            if (isNaN(coins) || coins <= 0) return;
+            
+            fetch(`/api/v1/tech-tree/${techId}/contribute`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ civilizationId: civId, coins: coins })
+            })
+            .then(r => {
+                if (r.ok) {
+                    window.location.reload();
+                } else {
+                    r.json().then(data => alert('Erro: ' + (data.message || 'Falha na contribuição')));
+                }
+            })
+            .catch(e => console.error(e));
+        }
+
+        function licenseTech(techId, civId) {
+            fetch(`/api/v1/tech-tree/${techId}/license`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ licenseeId: civId, feePerTick: 5.0 })
+            })
+            .then(r => {
+                if (r.ok) {
+                    window.location.reload();
+                } else {
+                    r.json().then(data => alert('Erro: ' + (data.message || 'Falha ao licenciar')));
+                }
+            })
+            .catch(e => console.error(e));
         }
 
         // Initialize additions

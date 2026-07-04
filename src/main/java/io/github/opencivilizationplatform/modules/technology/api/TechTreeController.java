@@ -2,6 +2,7 @@ package io.github.opencivilizationplatform.modules.technology.api;
 
 import io.github.opencivilizationplatform.modules.technology.application.TechnologyService;
 import io.github.opencivilizationplatform.modules.technology.domain.Technology;
+import io.github.opencivilizationplatform.modules.technology.domain.LicensedTechnology;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -42,5 +43,27 @@ public class TechTreeController {
     @Operation(summary = "Advance research progress")
     public Technology advanceResearch(@PathVariable Long techId, @RequestBody Map<String, Integer> body) {
         return service.advanceResearch(techId, body.getOrDefault("amount", 1));
+    }
+
+    @PostMapping("/{techId}/contribute")
+    @Operation(summary = "Contribute consensus coins to research progress")
+    public Technology contributeCoins(@PathVariable Long techId, @RequestBody Map<String, Object> body) {
+        Long civilizationId = Long.valueOf(body.get("civilizationId").toString());
+        Double coins = Double.valueOf(body.get("coins").toString());
+        return service.contributeCoins(techId, civilizationId, coins);
+    }
+
+    @PostMapping("/{techId}/license")
+    @Operation(summary = "License a completed technology")
+    public LicensedTechnology licenseTechnology(@PathVariable Long techId, @RequestBody Map<String, Object> body) {
+        Long licenseeId = Long.valueOf(body.get("licenseeId").toString());
+        Double feePerTick = Double.valueOf(body.get("feePerTick").toString());
+        return service.licenseTechnology(techId, licenseeId, feePerTick);
+    }
+
+    @GetMapping("/licensed/{licenseeId}")
+    @Operation(summary = "Get licensed technologies for a civilization")
+    public List<LicensedTechnology> getLicensedTechnologies(@PathVariable Long licenseeId) {
+        return service.getLicensedTechnologies(licenseeId);
     }
 }

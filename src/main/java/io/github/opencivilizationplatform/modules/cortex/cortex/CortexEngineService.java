@@ -31,6 +31,12 @@ import java.util.List;
 import io.github.opencivilizationplatform.modules.social.domain.EspionageOperation;
 import io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.github.opencivilizationplatform.modules.technology.infrastructure.LicensedTechnologyRepository;
+import io.github.opencivilizationplatform.modules.logistics.infrastructure.ShipmentRepository;
+import io.github.opencivilizationplatform.modules.logistics.domain.Shipment;
+import io.github.opencivilizationplatform.modules.logistics.domain.ShipmentStatus;
+import io.github.opencivilizationplatform.modules.technology.domain.LicensedTechnology;
+import java.time.LocalDateTime;
 import java.util.Random;
 import java.util.ArrayList;
 
@@ -54,6 +60,8 @@ public class CortexEngineService {
     private final io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService;
     private final EspionageRepository espionageRepository;
     private final MeterRegistry meterRegistry;
+    private final LicensedTechnologyRepository licensedTechnologyRepository;
+    private final ShipmentRepository shipmentRepository;
     private final Random random = new Random();
     private int tickCount = 0;
 
@@ -71,7 +79,9 @@ public class CortexEngineService {
                                io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService,
                                io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService,
                                EspionageRepository espionageRepository,
-                               MeterRegistry meterRegistry) {
+                               MeterRegistry meterRegistry,
+                               LicensedTechnologyRepository licensedTechnologyRepository,
+                               ShipmentRepository shipmentRepository) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
         this.ruleRepository = ruleRepository;
@@ -87,6 +97,8 @@ public class CortexEngineService {
         this.marketPriceService = marketPriceService;
         this.espionageRepository = espionageRepository;
         this.meterRegistry = meterRegistry;
+        this.licensedTechnologyRepository = licensedTechnologyRepository;
+        this.shipmentRepository = shipmentRepository;
     }
 
     @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
@@ -99,6 +111,46 @@ public class CortexEngineService {
     @Transactional
     public void performTick() {
         tickCount++;
+
+        // 1. Process active shipments that have arrived (eta <= now)
+        if (shipmentRepository != null) {
+            List<Shipment> inTransit = shipmentRepository.findByStatus(ShipmentStatus.IN_TRANSIT);
+            for (Shipment s : inTransit) {
+                if (s.getEta() != null && LocalDateTime.now().isAfter(s.getEta())) {
+                    java.util.Optional<Civilization> destOpt = civilizationRepository.findByName(s.getDestination());
+                    if (destOpt.isPresent()) {
+                        Civilization dest = destOpt.get();
+                        adjustResourceStockForShipmentDelivery(dest, s.getCargo(), s.getQuantity());
+                        civilizationRepository.save(dest);
+                    }
+                    s.setStatus(ShipmentStatus.DELIVERED);
+                    shipmentRepository.save(s);
+                }
+            }
+        }
+
+        // 2. Process tech license royalties
+        if (licensedTechnologyRepository != null) {
+            List<LicensedTechnology> activeLicenses = licensedTechnologyRepository.findAll();
+            for (LicensedTechnology lt : activeLicenses) {
+                Civilization licensee = lt.getLicensee();
+                Civilization licensor = lt.getLicensor();
+                double fee = lt.getFeePerTick();
+
+                double licenseeCoins = licensee.getConsensusCoins() != null ? licensee.getConsensusCoins() : 0.0;
+                if (licenseeCoins >= fee) {
+                    licensee.setConsensusCoins(licenseeCoins - fee);
+                    double licensorCoins = licensor.getConsensusCoins() != null ? licensor.getConsensusCoins() : 0.0;
+                    licensor.setConsensusCoins(licensorCoins + fee);
+                    civilizationRepository.save(licensee);
+                    civilizationRepository.save(licensor);
+                } else {
+                    licensedTechnologyRepository.delete(lt);
+                    log.info("License for tech '{}' revoked from {} due to insufficient Consensus Coins", lt.getTechName(), licensee.getName());
+                }
+            }
+        }
+
         List<Civilization> civilizations = civilizationRepository.findAll();
         if (civilizations.isEmpty()) return;
 
@@ -787,16 +839,17 @@ public class CortexEngineService {
                         }
 
                         double tradeQty = 30.0;
-                        adjustResourceStock(civ, criticalResource, tradeQty, resourceDelta);
                         adjustResourceStock(partner, criticalResource, -tradeQty, null);
-                        adjustResourceStock(civ, offeredResource, -tradeQty, resourceDelta);
-                        adjustResourceStock(partner, offeredResource, tradeQty, null);
+                        createShipment(partner, civ, criticalResource, tradeQty);
 
-                        String logMsg = "[Comércio Autônomo] Cortex importou " + tradeQty + " de " + criticalResource + 
+                        adjustResourceStock(civ, offeredResource, -tradeQty, resourceDelta);
+                        createShipment(civ, partner, offeredResource, tradeQty);
+
+                        String logMsg = "[Comércio Autônomo] Cortex iniciou envio de " + tradeQty + " de " + criticalResource + 
                             " da sociedade '" + partner.getName() + "' em troca de " + tradeQty + " de " + offeredResource + ".";
                         cortexLogs.add(logMsg);
 
-                        addLogToPartnerHistory(partner, "[Comércio Autônomo] Cortex exportou " + tradeQty + " de " + criticalResource + 
+                        addLogToPartnerHistory(partner, "[Comércio Autônomo] Cortex enviou " + tradeQty + " de " + criticalResource + 
                             " para '" + civ.getName() + "' em troca de " + tradeQty + " de " + offeredResource + ".");
 
                         saveMeshTrade(partner, civ, criticalResource, tradeQty, offeredResource, tradeQty, "RESOURCE_BARTER");
@@ -806,8 +859,8 @@ public class CortexEngineService {
                         int partnerPop = partner.getPopulation() != null ? partner.getPopulation() : 0;
                         if (partnerPop < 300) {
                             double tradeQty = 35.0;
-                            adjustResourceStock(civ, criticalResource, tradeQty, resourceDelta);
                             adjustResourceStock(partner, criticalResource, -tradeQty, null);
+                            createShipment(partner, civ, criticalResource, tradeQty);
 
                             populationDelta -= 5;
                             partner.setPopulation(partnerPop + 5);
@@ -827,8 +880,8 @@ public class CortexEngineService {
                         double partnerStock = getResourceStock(partner, criticalResource);
                         if (partnerStock > 100.0) {
                             double tradeQty = 25.0;
-                            adjustResourceStock(civ, criticalResource, tradeQty, resourceDelta);
                             adjustResourceStock(partner, criticalResource, -tradeQty, null);
+                            createShipment(partner, civ, criticalResource, tradeQty);
 
                             String logMsg = "[Auxílio Regional] Cortex importou " + tradeQty + " de " + criticalResource + 
                                 " da sociedade '" + partner.getName() + "' sob regime de ajuda humanitária entre nós Cortex.";
@@ -1016,11 +1069,19 @@ public class CortexEngineService {
         java.util.List<io.github.opencivilizationplatform.modules.technology.domain.Technology> techs = 
             technologyRepository.findByCivilizationId(civ.getId());
         
-        if (techs.isEmpty()) return true;
-
-        return techs.stream()
+        boolean hasOwnCompleted = techs.stream()
             .filter(t -> t.getStatus() == io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.COMPLETED)
             .anyMatch(t -> requiredTechs.contains(t.getName()));
+            
+        if (hasOwnCompleted) return true;
+        
+        if (licensedTechnologyRepository != null) {
+            boolean hasLicensedActive = licensedTechnologyRepository.findByLicenseeId(civ.getId()).stream()
+                .anyMatch(lt -> requiredTechs.contains(lt.getTechName()));
+            if (hasLicensedActive) return true;
+        }
+        
+        return techs.isEmpty();
     }
 
     private void simulateRuleVoting(Civilization civ, List<String> cortexLogs) {
@@ -1121,13 +1182,13 @@ public class CortexEngineService {
 
                             if (p1TradeActive && p2TradeActive) {
                                 adjustResourceStock(civ, offeredResource, -tradeQty, resourceDelta);
-                                adjustResourceStock(partner1, offeredResource, tradeQty, null);
+                                createShipment(civ, partner1, offeredResource, tradeQty);
 
                                 adjustResourceStock(partner1, p1SurplusResource, -tradeQty, null);
-                                adjustResourceStock(partner2, p1SurplusResource, tradeQty, null);
+                                createShipment(partner1, partner2, p1SurplusResource, tradeQty);
 
                                 adjustResourceStock(partner2, criticalResource, -tradeQty, null);
-                                adjustResourceStock(civ, criticalResource, tradeQty, resourceDelta);
+                                createShipment(partner2, civ, criticalResource, tradeQty);
 
                                 String logMsg = "[Grafo Escambo Triangular] Rota Circular resolvida: '" + civ.getName() + "' exportou " + tradeQty + " de " + offeredResource + 
                                     " para '" + partner1.getName() + "'; '" + partner1.getName() + "' exportou " + tradeQty + " de " + p1SurplusResource + 
@@ -1206,6 +1267,49 @@ public class CortexEngineService {
         } catch (Exception e) {
             log.error("Error executing robot sabotage on defender: ", e);
         }
+    }
+
+    private void adjustResourceStockForShipmentDelivery(Civilization civ, String resource, double amount) {
+        if (resource.equalsIgnoreCase("FOOD")) {
+            civ.setFood(Math.max(0, (civ.getFood() != null ? civ.getFood() : 0.0) + amount));
+        } else if (resource.equalsIgnoreCase("WATER")) {
+            civ.setWater(Math.max(0, (civ.getWater() != null ? civ.getWater() : 0.0) + amount));
+        } else if (resource.equalsIgnoreCase("MINERALS") || resource.equalsIgnoreCase("MINERAL")) {
+            civ.setMinerals(Math.max(0, (civ.getMinerals() != null ? civ.getMinerals() : 0.0) + amount));
+        } else if (resource.equalsIgnoreCase("ENERGY")) {
+            civ.setEnergy(Math.max(0, (civ.getEnergy() != null ? civ.getEnergy() : 0.0) + amount));
+        }
+    }
+
+    private void createShipment(Civilization originCiv, Civilization destinationCiv, String resource, double quantity) {
+        if (shipmentRepository == null) {
+            adjustResourceStockForShipmentDelivery(destinationCiv, resource, quantity);
+            civilizationRepository.save(destinationCiv);
+            return;
+        }
+
+        double distance = calculateDistance(originCiv.getHomeRegion(), destinationCiv.getHomeRegion());
+        int transitSeconds = (int) (distance * 10.0) + 2;
+
+        Shipment shipment = new Shipment();
+        shipment.setOrigin(originCiv.getName());
+        shipment.setDestination(destinationCiv.getName());
+        shipment.setCargo(resource);
+        shipment.setQuantity(quantity);
+        shipment.setUnit("UNITS");
+        shipment.setStatus(ShipmentStatus.IN_TRANSIT);
+        shipment.setEta(LocalDateTime.now().plusSeconds(transitSeconds));
+
+        shipmentRepository.save(shipment);
+        log.info("Physical Shipment created: {} -> {} ({} x {}, ETA: {}s)", 
+                 originCiv.getName(), destinationCiv.getName(), quantity, resource, transitSeconds);
+    }
+
+    private double calculateDistance(ResourceRegion r1, ResourceRegion r2) {
+        if (r1 == null || r2 == null || r1.getLocation() == null || r2.getLocation() == null) {
+            return 1.0;
+        }
+        return r1.getLocation().distance(r2.getLocation());
     }
 }
 

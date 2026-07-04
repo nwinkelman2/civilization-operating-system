@@ -242,6 +242,9 @@ public class PageController {
         model.addAttribute("techTree", techTree);
         model.addAttribute("techCount", techTree.stream()
             .filter(t -> t.getStatus() == TechnologyStatus.COMPLETED).count());
+        model.addAttribute("shipments", shipmentService.getAllShipments(org.springframework.data.domain.Pageable.unpaged()).getContent());
+        model.addAttribute("licensedTechs", technologyService.getLicensedTechnologies(id));
+        model.addAttribute("licensableTechs", technologyService.getLicensableTechnologies(id));
 
         // Build resource list from region
         if (region != null) {
