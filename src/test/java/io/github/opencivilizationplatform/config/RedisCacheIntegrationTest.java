@@ -23,8 +23,11 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import org.springframework.test.annotation.DirtiesContext;
+
 @SpringBootTest
 @ActiveProfiles("test")
+@DirtiesContext
 public class RedisCacheIntegrationTest {
 
     @DynamicPropertySource
@@ -41,6 +44,24 @@ public class RedisCacheIntegrationTest {
 
     @Autowired
     private BalanceService balanceService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService simulationEngineService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private io.github.opencivilizationplatform.modules.nexus.application.NexusAIService nexusAIService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService nexusMeshService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private io.github.opencivilizationplatform.modules.events.application.EventService eventService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private io.github.opencivilizationplatform.modules.cortex.cortex.CortexEngineService cortexEngineService;
+
+    @org.springframework.test.context.bean.override.mockito.MockitoBean
+    private io.github.opencivilizationplatform.modules.contribution.application.DelegateElectionService delegateElectionService;
 
     @Test
     void shouldVerifyRedisCacheManagerActive() {
@@ -105,7 +126,7 @@ public class RedisCacheIntegrationTest {
         // 2. Mutate the cache directly: put a dummy list containing a specific dummy BalanceDTO
         BalanceDTO dummyDto = new BalanceDTO("dummy-category", 999.0, 999.0, "units", 100.0, "STABLE");
         List<BalanceDTO> dummyList = List.of(dummyDto);
-        cache.put(SimpleKey.EMPTY, dummyList);
+        cache.put("report", dummyList);
 
         // 3. Invoke balanceService.getBalanceReport() a second time
         List<BalanceDTO> secondCall = balanceService.getBalanceReport();

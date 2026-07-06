@@ -12,6 +12,7 @@ import io.github.opencivilizationplatform.modules.participation.domain.RuleStatu
 import io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository;
 import io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository;
 import io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository;
+import io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -51,10 +52,16 @@ public class CortexBusinessSmokeTest {
     @Autowired
     private MeshTradeRepository meshTradeRepository;
 
+    @Autowired
+    private IncidentRepository incidentRepository;
+
     @BeforeEach
     void setUp() {
         meshTradeRepository.deleteAll();
         ruleRepository.deleteAll();
+        if (incidentRepository != null) {
+            incidentRepository.deleteAll();
+        }
         civilizationRepository.deleteAll();
         resourceRegionRepository.deleteAll();
         technologyRepository.deleteAll();

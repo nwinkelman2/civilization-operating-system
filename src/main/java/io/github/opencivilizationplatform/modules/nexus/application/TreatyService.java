@@ -88,7 +88,7 @@ public class TreatyService {
                 case NON_AGGRESSION -> repDelta += 2.0;
                 case RESEARCH_ALLIANCE -> {
                     scienceBotMult *= 2.0;
-                    scienceBonus += 0.5;
+                    scienceBonus += 1.0;
                 }
             }
         }

@@ -65,6 +65,9 @@ public class CortexEngineService {
     private final Random random = new Random();
     private int tickCount = 0;
 
+    @org.springframework.beans.factory.annotation.Value("${cortex.disable-disasters:false}")
+    private boolean disableDisasters;
+
     public CortexEngineService(CivilizationRepository civilizationRepository,
                                ResourceRegionRepository resourceRegionRepository,
                                RuleRepository ruleRepository,
@@ -240,7 +243,7 @@ public class CortexEngineService {
         double[] resourceDelta = new double[]{0, 0, 0, 0, 0};
         double populationDelta = 0, reputationDelta = 0;
 
-        if (random.nextDouble() < 0.05) {
+        if (!disableDisasters && random.nextDouble() < 0.05) {
             boolean hasActiveDisaster = incidentRepository.findByCivilizationId(civ.getId()).stream()
                 .anyMatch(i -> i.getStatus() != IncidentStatus.RESOLVED && 
                     i.getType() == io.github.opencivilizationplatform.modules.social.domain.IncidentType.OTHER &&
@@ -580,26 +583,7 @@ public class CortexEngineService {
                         }
                     }
 
-                    // --- AUTOMAÇÃO CIENTÍFICA: Science-Bots ---
-                    if ((scienceBots > 0 || treatyScienceBonus > 0) && technologyRepository != null) {
-                        List<io.github.opencivilizationplatform.modules.technology.domain.Technology> researching = 
-                            technologyRepository.findByCivilizationIdAndStatus(civ.getId(), io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.RESEARCHING);
-                        if (!researching.isEmpty()) {
-                            for (io.github.opencivilizationplatform.modules.technology.domain.Technology tech : researching) {
-                                int progressToAdd = (int)(scienceBots * 2 * treatyScienceBotMult + treatyScienceBonus);
-                                tech.setResearchProgress(tech.getResearchProgress() + progressToAdd);
-                                cortexLogs.add("[Pesquisa] Progresso científico de +" + progressToAdd + " injetado na tecnologia '" + tech.getName() + "'" + (treatyScienceBonus > 0 ? " (Tratado Aliança Científica)" : "") + ".");
-                                if (tech.getResearchProgress() >= tech.getResearchCost()) {
-                                    tech.setStatus(io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.COMPLETED);
-                                    tech.setResearchProgress(tech.getResearchCost());
-                                    cortexLogs.add("[Pesquisa] ⚙️ TECNOLOGIA CONCLUÍDA: '" + tech.getName() + "' foi totalmente pesquisada pelo Cortex!");
-                                }
-                                technologyRepository.save(tech);
-                            }
-                        } else {
-                            cortexLogs.add("[Pesquisa] Science-Bots ociosos: nenhuma tecnologia ativa para pesquisa.");
-                        }
-                    }
+
 
                     // --- SEGURANÇA E ESTABILIDADE: Security-Bots ---
                     if (activeSecurityBots > 0) {
@@ -615,6 +599,30 @@ public class CortexEngineService {
                 } else {
                     cortexLogs.add("[Alerta Automação] Sistemas Robóticos OFFLINE: Reserva de energia insuficiente.");
                 }
+            }
+        }
+
+        // --- AUTOMAÇÃO CIENTÍFICA (Science-Bots & Tratados de Aliança Científica) ---
+        if ((((isRobotsActive && !robotsOffline && scienceBots > 0) || treatyScienceBonus > 0)) && technologyRepository != null) {
+            List<io.github.opencivilizationplatform.modules.technology.domain.Technology> researching = 
+                technologyRepository.findByCivilizationIdAndStatus(civ.getId(), io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.RESEARCHING);
+            if (!researching.isEmpty()) {
+                for (io.github.opencivilizationplatform.modules.technology.domain.Technology tech : researching) {
+                    int botsProgress = (isRobotsActive && !robotsOffline) ? (int)(scienceBots * 2 * treatyScienceBotMult) : 0;
+                    int progressToAdd = botsProgress + (int)treatyScienceBonus;
+                    if (progressToAdd > 0) {
+                        tech.setResearchProgress(tech.getResearchProgress() + progressToAdd);
+                        cortexLogs.add("[Pesquisa] Progresso científico de +" + progressToAdd + " injetado na tecnologia '" + tech.getName() + "'" + (treatyScienceBonus > 0 ? " (Tratado Aliança Científica)" : "") + ".");
+                        if (tech.getResearchProgress() >= tech.getResearchCost()) {
+                            tech.setStatus(io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus.COMPLETED);
+                            tech.setResearchProgress(tech.getResearchCost());
+                            cortexLogs.add("[Pesquisa] ⚙️ TECNOLOGIA CONCLUÍDA: '" + tech.getName() + "' foi totalmente pesquisada pelo Cortex!");
+                        }
+                        technologyRepository.save(tech);
+                    }
+                }
+            } else if (isRobotsActive && !robotsOffline && scienceBots > 0) {
+                cortexLogs.add("[Pesquisa] Science-Bots ociosos: nenhuma tecnologia ativa para pesquisa.");
             }
         }
 

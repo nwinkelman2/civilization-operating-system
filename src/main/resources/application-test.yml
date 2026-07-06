@@ -25,6 +25,9 @@ spring:
     console:
       enabled: false
 
+cortex:
+  disable-disasters: true
+
 logging:
   level:
     org.springframework.cache: DEBUG
