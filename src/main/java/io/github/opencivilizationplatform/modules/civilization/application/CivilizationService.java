@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.civilization.application;
 
 import io.github.opencivilizationplatform.config.seed.CivilizationScale;
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.CivilizationCreatedEvent;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
@@ -16,9 +18,11 @@ import java.util.List;
 public class CivilizationService {
 
     private final CivilizationRepository repository;
+    private final EventBus eventBus;
 
-    public CivilizationService(CivilizationRepository repository) {
+    public CivilizationService(CivilizationRepository repository, EventBus eventBus) {
         this.repository = repository;
+        this.eventBus = eventBus;
     }
 
     @Transactional(readOnly = true)
@@ -39,7 +43,14 @@ public class CivilizationService {
         civ.setRegion(region);
         civ.setOwnerToken(ownerToken);
         civ.setStatus(CivilizationStatus.EMERGING);
-        return repository.save(civ);
+        civ = repository.save(civ);
+
+        eventBus.publish(new CivilizationCreatedEvent(
+            "CivilizationService", civ.getId(), civ.getName(),
+            civ.getRegion(), civ.getScale(), civ.getOwnerToken()
+        ));
+
+        return civ;
     }
 
     @Transactional

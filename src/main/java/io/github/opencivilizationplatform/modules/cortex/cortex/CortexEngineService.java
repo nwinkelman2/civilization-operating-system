@@ -1,5 +1,7 @@
 package io.github.opencivilizationplatform.modules.cortex.cortex;
 
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.ResourceTickProcessedEvent;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
 import io.github.opencivilizationplatform.modules.cortex.domain.ResourceTick;
@@ -7,29 +9,33 @@ import io.github.opencivilizationplatform.modules.region.domain.ResourceRegion;
 import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Service
 public class CortexEngineService {
 
     private static final Logger log = LoggerFactory.getLogger(CortexEngineService.class);
 
+    private final AtomicReference<LocalDateTime> lastTickTime = new AtomicReference<>(LocalDateTime.now());
     private final CivilizationRepository civilizationRepository;
     private final ResourceRegionRepository resourceRegionRepository;
+    private final EventBus eventBus;
     private final Random random = new Random();
 
     public CortexEngineService(CivilizationRepository civilizationRepository,
-                               ResourceRegionRepository resourceRegionRepository) {
+                                ResourceRegionRepository resourceRegionRepository,
+                                EventBus eventBus) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
+        this.eventBus = eventBus;
     }
 
-    @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
     @Transactional
     public void tick() {
         List<Civilization> civilizations = civilizationRepository.findAll();
@@ -38,9 +44,16 @@ public class CortexEngineService {
         for (Civilization civ : civilizations) {
             ResourceTick tick = computeTick(civ);
             applyTick(civ, tick);
+            eventBus.publish(new ResourceTickProcessedEvent(
+                "CortexEngineService", civ.getId(),
+                tick.foodDelta(), tick.waterDelta(), tick.mineralsDelta(),
+                tick.energyDelta(), tick.housingDelta(),
+                tick.populationDelta(), tick.reputationDelta()
+            ));
         }
 
         civilizationRepository.saveAll(civilizations);
+        lastTickTime.set(LocalDateTime.now());
         log.debug("Cortex tick completed for {} civilizations", civilizations.size());
     }
 
@@ -111,6 +124,10 @@ public class CortexEngineService {
             (civ.getReputationScore() != null ? civ.getReputationScore() : 50) + tick.reputationDelta(),
             0, 100
         ));
+    }
+
+    public LocalDateTime getLastTickTime() {
+        return lastTickTime.get();
     }
 
     private double clamp(double value, double min, double max) {

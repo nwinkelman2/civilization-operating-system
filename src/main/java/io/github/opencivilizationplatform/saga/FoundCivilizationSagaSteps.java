@@ -1,0 +1,109 @@
+package io.github.opencivilizationplatform.saga;
+
+import io.github.opencivilizationplatform.modules.civilization.application.CivilizationService;
+import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
+import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
+import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
+import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
+import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
+
+@Component
+public class FoundCivilizationSagaSteps {
+
+    private static final Logger log = LoggerFactory.getLogger(FoundCivilizationSagaSteps.class);
+    private final CivilizationService civilizationService;
+    private final ResourceRegionService regionService;
+    private final VoxtexMeshService voxtexService;
+
+    public FoundCivilizationSagaSteps(CivilizationService civilizationService,
+                                       ResourceRegionService regionService,
+                                       VoxtexMeshService voxtexService) {
+        this.civilizationService = civilizationService;
+        this.regionService = regionService;
+        this.voxtexService = voxtexService;
+    }
+
+    public SagaStep<FoundCivilizationContext> createCivilization() {
+        return new SagaStep<>() {
+            @Override
+            public void execute(FoundCivilizationContext ctx) {
+                Civilization civ = civilizationService.createCivilization(
+                    ctx.getName(), ctx.getScale(),
+                    regionService.getRegion(ctx.getRegionId()).getName(),
+                    ctx.getOwnerToken()
+                );
+                ctx.setCivilization(civ);
+                log.info("SAGA step: civilization {} created (id={})", civ.getName(), civ.getId());
+            }
+
+            @Override
+            public void compensate(FoundCivilizationContext ctx) {
+                if (ctx.getCivilization() != null && ctx.getCivilization().getId() != null) {
+                    civilizationService.updateStatus(ctx.getCivilization().getId(), CivilizationStatus.FALLEN);
+                    log.warn("SAGA compensate: civilization {} marked as FALLEN", ctx.getCivilization().getId());
+                }
+            }
+
+            @Override
+            public String getName() { return "CreateCivilization"; }
+        };
+    }
+
+    public SagaStep<FoundCivilizationContext> claimRegion() {
+        return new SagaStep<>() {
+            @Override
+            public void execute(FoundCivilizationContext ctx) {
+                regionService.claimRegion(ctx.getRegionId(), ctx.getCivilization().getId());
+                ctx.setRegionClaimed(true);
+                log.info("SAGA step: region {} claimed for civilization {}", ctx.getRegionId(), ctx.getCivilization().getId());
+            }
+
+            @Override
+            public void compensate(FoundCivilizationContext ctx) {
+                if (ctx.isRegionClaimed()) {
+                    regionService.unclaimRegion(ctx.getRegionId());
+                    log.warn("SAGA compensate: region {} unclaimed", ctx.getRegionId());
+                }
+            }
+
+            @Override
+            public String getName() { return "ClaimRegion"; }
+        };
+    }
+
+    public SagaStep<FoundCivilizationContext> deployVoxtexNode() {
+        return new SagaStep<>() {
+            @Override
+            public void execute(FoundCivilizationContext ctx) {
+                String regionName = regionService.getRegion(ctx.getRegionId()).getName();
+                voxtexService.registerNode(
+                    ctx.getCivilization().getName() + "-Primary",
+                    VoxtexNodeType.PRIMARY,
+                    regionName,
+                    ctx.getCivilization().getId(),
+                    "Primary neural node for " + ctx.getCivilization().getName()
+                );
+                ctx.setVoxtexNodeDeployed(true);
+                log.info("SAGA step: voxtex node deployed for civilization {}", ctx.getCivilization().getId());
+            }
+
+            @Override
+            public void compensate(FoundCivilizationContext ctx) {
+                if (ctx.isVoxtexNodeDeployed()) {
+                    var nodes = voxtexService.getNodesForCivilization(ctx.getCivilization().getId());
+                    nodes.forEach(node -> {
+                        voxtexService.updateNodeStatus(node.getId(),
+                            io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeStatus.OFFLINE);
+                    });
+                    log.warn("SAGA compensate: voxtex nodes set to OFFLINE for civilization {}", ctx.getCivilization().getId());
+                }
+            }
+
+            @Override
+            public String getName() { return "DeployVoxtexNode"; }
+        };
+    }
+}

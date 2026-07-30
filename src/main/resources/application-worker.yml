@@ -1,0 +1,21 @@
+server:
+  port: ${WORKER_PORT:9090}
+
+spring:
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
+civos:
+  eventbus:
+    type: ${CIVOS_EVENTBUS_TYPE:spring}
+
+cortex:
+  engine:
+    tick-rate-ms: ${CORTEX_TICK_RATE_MS:30000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics

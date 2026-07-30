@@ -1,4 +1,46 @@
 services:
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.7.0
+    container_name: civos-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    restart: unless-stopped
+
+  kafka:
+    image: confluentinc/cp-kafka:7.7.0
+    container_name: civos-kafka
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    ports:
+      - "9093:9093"
+    restart: unless-stopped
+
+  debezium:
+    image: debezium/connect:3.0.0.Final
+    container_name: civos-debezium
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      BOOTSTRAP_SERVERS: kafka:9092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: civos_debezium_config
+      OFFSET_STORAGE_TOPIC: civos_debezium_offsets
+      STATUS_STORAGE_TOPIC: civos_debezium_status
+    ports:
+      - "8083:8083"
+    restart: unless-stopped
+
   postgres:
     image: postgis/postgis:17-3.5
     container_name: civos-postgres
@@ -58,6 +100,37 @@ services:
       - "8081:8080"
     restart: unless-stopped
 
+  cortex-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    container_name: civos-cortex-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      SPRING_PROFILES_ACTIVE: worker
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/openciv
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      CIVOS_EVENTBUS_TYPE: kafka
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      WORKER_PORT: 9090
+    ports:
+      - "9090:9090"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: civos-frontend
+    ports:
+      - "3000:80"
+    restart: unless-stopped
+
   nginx:
     image: nginx:alpine
     container_name: civos-nginx
@@ -68,6 +141,7 @@ services:
     depends_on:
       - app
       - app-primary
+      - frontend
     restart: unless-stopped
 
 volumes:

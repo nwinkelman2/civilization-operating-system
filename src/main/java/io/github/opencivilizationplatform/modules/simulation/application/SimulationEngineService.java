@@ -35,6 +35,7 @@ public class SimulationEngineService {
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
     private final AtomicInteger activeRulesCount = new AtomicInteger(0);
+    private final AtomicReference<LocalDateTime> lastTickTime = new AtomicReference<>(LocalDateTime.now());
     private final List<String> monitoredCategories = new ArrayList<>();
     private final LinkedList<String> decisionHistory = new LinkedList<>();
 
@@ -49,6 +50,8 @@ public class SimulationEngineService {
         int tick = tickCounter.incrementAndGet();
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         log.info("[CORTEX TICK {}] Simulation cycle starting...", tick);
+
+        lastTickTime.set(LocalDateTime.now());
 
         List<Rule> rules = ruleService.getValidatedRules();
         if (rules == null || rules.isEmpty()) {
@@ -101,6 +104,10 @@ public class SimulationEngineService {
         }
 
         log.info("[CORTEX TICK {}] Cycle complete. {} rules evaluated.", tick, rules.size());
+    }
+
+    public LocalDateTime getLastTickTime() {
+        return lastTickTime.get();
     }
 
     @EventListener

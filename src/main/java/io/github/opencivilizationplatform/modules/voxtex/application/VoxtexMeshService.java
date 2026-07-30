@@ -1,5 +1,7 @@
 package io.github.opencivilizationplatform.modules.voxtex.application;
 
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.VoxtexMessageSentEvent;
 import io.github.opencivilizationplatform.modules.voxtex.domain.*;
 import io.github.opencivilizationplatform.modules.voxtex.infrastructure.*;
 import org.slf4j.Logger;
@@ -21,16 +23,19 @@ public class VoxtexMeshService {
     private final VoxtexNodeRepository nodeRepository;
     private final VoxtexMessageRepository messageRepository;
     private final VoxtexConnectionRepository connectionRepository;
+    private final EventBus eventBus;
 
     // SSE emitters for real-time streaming
     private final List<Consumer<VoxtexMessage>> messageListeners = new CopyOnWriteArrayList<>();
 
     public VoxtexMeshService(VoxtexNodeRepository nodeRepository,
                               VoxtexMessageRepository messageRepository,
-                              VoxtexConnectionRepository connectionRepository) {
+                              VoxtexConnectionRepository connectionRepository,
+                              EventBus eventBus) {
         this.nodeRepository = nodeRepository;
         this.messageRepository = messageRepository;
         this.connectionRepository = connectionRepository;
+        this.eventBus = eventBus;
     }
 
     // --- Node Management ---
@@ -92,6 +97,11 @@ public class VoxtexMeshService {
 
         // Notify SSE listeners
         notifyListeners(msg);
+
+        eventBus.publish(new VoxtexMessageSentEvent(
+            "VoxtexMeshService", msg.getId(), msg.getSourceNode().getId(),
+            msg.getTargetNode().getId(), msg.getMessageType().name(), msg.getContent()
+        ));
 
         log.info("VOXTEX MESH: {} -> {} [{}]", source.getName(), target.getName(), messageType);
         return msg;

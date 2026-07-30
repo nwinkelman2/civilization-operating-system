@@ -12,14 +12,17 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 public class WebSocketConfig implements WebSocketConfigurer {
 
     private final VoxtexWebSocketHandler voxtexHandler;
+    private final WebSocketAuthInterceptor authInterceptor;
 
-    public WebSocketConfig(VoxtexWebSocketHandler voxtexHandler) {
+    public WebSocketConfig(VoxtexWebSocketHandler voxtexHandler, WebSocketAuthInterceptor authInterceptor) {
         this.voxtexHandler = voxtexHandler;
+        this.authInterceptor = authInterceptor;
     }
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(voxtexHandler, "/ws/voxtex")
-            .setAllowedOrigins("*");
+            .setAllowedOrigins("*")
+            .addInterceptors(authInterceptor);
     }
 }

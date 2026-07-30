@@ -1,0 +1,24 @@
+{
+  "name": "civos-postgres-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.postgresql.PostgresConnector",
+    "database.hostname": "postgres",
+    "database.port": "5432",
+    "database.user": "postgres",
+    "database.password": "postgres",
+    "database.dbname": "openciv",
+    "topic.prefix": "civos.cdc",
+    "plugin.name": "pgoutput",
+    "schemas.enable": false,
+    "table.include.list": "public.civilizations,public.voxtex_nodes,public.voxtex_messages,public.resources,public.resource_regions,public.trade_agreements,public.game_events",
+    "tombstones.on.delete": false,
+    "decimal.handling.mode": "double",
+    "heartbeat.interval.ms": "5000",
+    "key.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "key.converter.schemas.enable": false,
+    "value.converter": "org.apache.kafka.connect.json.JsonConverter",
+    "value.converter.schemas.enable": false,
+    "snapshot.mode": "initial",
+    "slot.name": "civos_cdc_slot"
+  }
+}

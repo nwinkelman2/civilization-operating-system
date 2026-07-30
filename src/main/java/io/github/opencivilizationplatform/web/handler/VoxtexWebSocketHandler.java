@@ -30,8 +30,9 @@ public class VoxtexWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
+        String clientId = (String) session.getAttributes().get("X-Client-Id");
         sessions.put(session.getId(), session);
-        log.info("WebSocket connected: {}", session.getId());
+        log.info("WebSocket connected: sessionId={}, clientId={}", session.getId(), clientId);
     }
 
     @Override
@@ -58,6 +59,10 @@ public class VoxtexWebSocketHandler extends TextWebSocketHandler {
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         sessions.remove(session.getId());
         log.info("WebSocket disconnected: {}", session.getId());
+    }
+
+    public int getActiveSessionCount() {
+        return (int) sessions.values().stream().filter(WebSocketSession::isOpen).count();
     }
 
     public void broadcastMessage(VoxtexMessage msg) {
