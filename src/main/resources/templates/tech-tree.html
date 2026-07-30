@@ -12,7 +12,10 @@
             <input type="number" id="techCivId" class="form-input" placeholder="Enter civilization ID..." min="1" style="width:200px;">
         </div>
         <button onclick="loadTechTree()" class="btn-primary">LOAD TECH TREE</button>
+        <button onclick="toggleGraphMode()" id="btnGraphMode" class="btn-secondary" style="margin-left:auto;">&#9737; GRAPH VIEW</button>
     </div>
+
+    <canvas id="techTreeCanvas" style="display:none;width:100%;height:600px;border-radius:10px;border:1px solid rgba(0,242,255,0.15);background:rgba(0,0,0,0.5);"></canvas>
 
     <div id="techContainer">
         <p class="loading-text">Enter a civilization ID and click LOAD TECH TREE</p>
@@ -33,6 +36,7 @@
                     return;
                 }
                 const techs = await resp.json();
+                techData = techs;
 
                 if (!techs || techs.length === 0) {
                     container.innerHTML = '<p class="empty-text">No technologies available yet.</p>';
@@ -51,7 +55,7 @@
                                         <span class="tech-status">${t.status || 'AVAILABLE'}</span>
                                     </div>
                                     <h4 class="tech-name">${t.name}</h4>
-                                    <div class="tech-cost">Cost: ${t.researchCost || 0}</div>
+                                    <div class="tech-cost">Cost: ${t.researchCost || 0} ${ (t.researchCost === 70 || t.researchCost === 175 || t.researchCost === 350 || t.researchCost === 700) ? `<span class="badge" style="background:rgba(0,255,136,0.15); color:#00ff88; font-size:0.55rem; padding:1px 4px; border:1px solid rgba(0,255,136,0.25);">Alliance -30%</span>` : '' }</div>
                                     ${t.researchProgress != null ? `
                                         <div class="tech-progress">
                                             <div class="progress-bar">
@@ -93,6 +97,162 @@
                 if (resp.ok) { loadTechTree(); }
                 else { alert('Failed: ' + (await resp.text())); }
             } catch(e) { alert('Error: ' + e); }
+        }
+
+        // ─────────────────────────────────────────────
+        // CANVAS GRAPH MODE — Force-directed tech graph
+        // ─────────────────────────────────────────────
+        let graphMode = false;
+        let techData = [];
+        let graphNodes = [];
+        let animFrameId = null;
+
+        function toggleGraphMode() {
+            graphMode = !graphMode;
+            const canvas = document.getElementById('techTreeCanvas');
+            const container = document.getElementById('techContainer');
+            const btn = document.getElementById('btnGraphMode');
+            if (graphMode) {
+                canvas.style.display = 'block';
+                container.style.display = 'none';
+                btn.textContent = '☰ CARD VIEW';
+                if (techData.length > 0) renderGraph();
+            } else {
+                canvas.style.display = 'none';
+                container.style.display = 'block';
+                btn.textContent = '⊙ GRAPH VIEW';
+                if (animFrameId) cancelAnimationFrame(animFrameId);
+            }
+        }
+
+        function statusColor(status) {
+            switch ((status || '').toUpperCase()) {
+                case 'COMPLETED': return '#00ff88';
+                case 'RESEARCHING': return '#00f2ff';
+                case 'LOCKED': return '#444';
+                default: return '#ffd700';
+            }
+        }
+
+        function renderGraph() {
+            const canvas = document.getElementById('techTreeCanvas');
+            const dpr = window.devicePixelRatio || 1;
+            const W = canvas.clientWidth;
+            const H = canvas.clientHeight;
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+
+            // Init nodes with positions by tier
+            const tiers = [...new Set(techData.map(t => t.tier))].sort((a,b)=>a-b);
+            const tierCount = tiers.length || 1;
+
+            graphNodes = techData.map((t, i) => {
+                const tierIndex = tiers.indexOf(t.tier);
+                const nodesInTier = techData.filter(x => x.tier === t.tier);
+                const posInTier = nodesInTier.indexOf(t);
+                return {
+                    ...t,
+                    x: (tierIndex + 1) * (W / (tierCount + 1)),
+                    y: (posInTier + 1) * (H / (nodesInTier.length + 1)),
+                    vx: 0, vy: 0,
+                    r: 28
+                };
+            });
+
+            let pulse = 0;
+
+            function draw() {
+                ctx.clearRect(0, 0, W, H);
+                pulse = (pulse + 0.02) % (Math.PI * 2);
+
+                // Edges: connect consecutive tiers
+                graphNodes.forEach(node => {
+                    if (node.prerequisites) {
+                        const prereqNames = node.prerequisites.split(',').map(s => s.trim().toLowerCase());
+                        graphNodes.forEach(other => {
+                            if (prereqNames.includes((other.name || '').toLowerCase())) {
+                                const t = (Math.sin(pulse) * 0.5 + 0.5);
+                                const grad = ctx.createLinearGradient(other.x, other.y, node.x, node.y);
+                                grad.addColorStop(0, statusColor(other.status) + '88');
+                                grad.addColorStop(t, '#ffffff');
+                                grad.addColorStop(1, statusColor(node.status) + '44');
+                                ctx.strokeStyle = grad;
+                                ctx.lineWidth = 1.5;
+                                ctx.setLineDash([6, 4]);
+                                ctx.beginPath();
+                                ctx.moveTo(other.x, other.y);
+                                ctx.lineTo(node.x, node.y);
+                                ctx.stroke();
+                                ctx.setLineDash([]);
+                            }
+                        });
+                    }
+                });
+
+                // Nodes
+                graphNodes.forEach(node => {
+                    const col = statusColor(node.status);
+                    const glow = 10 + 5 * Math.sin(pulse + graphNodes.indexOf(node) * 0.5);
+
+                    // Glow ring
+                    const radGrad = ctx.createRadialGradient(node.x, node.y, 0, node.x, node.y, node.r + glow);
+                    radGrad.addColorStop(0, col + 'cc');
+                    radGrad.addColorStop(1, col + '00');
+                    ctx.fillStyle = radGrad;
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.r + glow, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Node circle
+                    ctx.fillStyle = 'rgba(8,14,28,0.92)';
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.strokeStyle = col;
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+                    ctx.stroke();
+
+                    // Label
+                    ctx.fillStyle = '#e8f0ff';
+                    ctx.font = 'bold 9px Outfit, sans-serif';
+                    ctx.textAlign = 'center';
+                    const words = (node.name || '').split(' ');
+                    words.slice(0, 2).forEach((w, li) => {
+                        ctx.fillText(w, node.x, node.y + li * 11 - (words.length > 1 ? 5 : 0));
+                    });
+
+                    // Tier badge
+                    ctx.fillStyle = col + 'aa';
+                    ctx.font = '7px Outfit, sans-serif';
+                    ctx.fillText('T' + node.tier, node.x, node.y + node.r + 12);
+                });
+
+                animFrameId = requestAnimationFrame(draw);
+            }
+
+            if (animFrameId) cancelAnimationFrame(animFrameId);
+            draw();
+
+            // Click to research
+            canvas.onclick = function(e) {
+                const rect = canvas.getBoundingClientRect();
+                const mx = e.clientX - rect.left;
+                const my = e.clientY - rect.top;
+                graphNodes.forEach(node => {
+                    const dx = mx - node.x, dy = my - node.y;
+                    if (Math.sqrt(dx*dx + dy*dy) <= node.r + 12) {
+                        const civId = document.getElementById('techCivId').value;
+                        if (!civId) return;
+                        if (node.status === 'AVAILABLE') startResearch(Number(civId), node.id);
+                        else if (node.status === 'RESEARCHING') advanceResearch(Number(civId), node.id);
+                    }
+                });
+            };
         }
     </script>
 

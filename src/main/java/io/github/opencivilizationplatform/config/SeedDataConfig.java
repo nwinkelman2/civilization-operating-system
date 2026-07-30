@@ -135,26 +135,30 @@ public class SeedDataConfig {
     @Bean
     public CommandLineRunner initData() {
         return args -> {
-            if (resourceRepository.count() > 0) {
-                log.info("Database already seeded — skipping. Scale was set to {}", scale);
-                return;
+            try {
+                if (resourceRepository.count() > 0) {
+                    log.info("Database already seeded — skipping. Scale was set to {}", scale);
+                    return;
+                }
+                log.info("Seeding database at {} scale...", scale);
+
+                seedResources();
+                seedNeeds();
+                seedFacilities();
+                seedShipments();
+                seedInteractions();
+                seedBiosphereMetrics();
+                seedRules();
+                seedAutomationUnits();
+                seedCommittees();
+                seedSocial();
+                seedContribution();
+                seedResourceRegions();
+
+                log.info("Seed complete at {} scale.", scale);
+            } catch (Exception e) {
+                log.warn("Database seeding interrupted or already completed by another instance: {}", e.getMessage());
             }
-            log.info("Seeding database at {} scale...", scale);
-
-            seedResources();
-            seedNeeds();
-            seedFacilities();
-            seedShipments();
-            seedInteractions();
-            seedBiosphereMetrics();
-            seedRules();
-            seedAutomationUnits();
-            seedCommittees();
-            seedSocial();
-            seedContribution();
-            seedResourceRegions();
-
-            log.info("Seed complete at {} scale.", scale);
         };
     }
 

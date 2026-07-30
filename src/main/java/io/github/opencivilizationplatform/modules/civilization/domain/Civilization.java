@@ -70,6 +70,54 @@ public class Civilization {
     @Column(nullable = false)
     private Double housing = 50.0;
 
+    @Column(name = "resource_history", columnDefinition = "TEXT")
+    private String resourceHistory = "[]";
+
+    @Column(name = "agri_bots_priority", nullable = false)
+    private Integer agriBotsPriority = 25;
+
+    @Column(name = "aqua_bots_priority", nullable = false)
+    private Integer aquaBotsPriority = 25;
+
+    @Column(name = "explore_bots_priority", nullable = false)
+    private Integer exploreBotsPriority = 25;
+
+    @Column(name = "utility_bots_priority", nullable = false)
+    private Integer utilityBotsPriority = 25;
+
+    @Column(name = "eco_bots_priority", nullable = false)
+    private Integer ecoBotsPriority = 0;
+
+    @Column(name = "science_bots_priority", nullable = false)
+    private Integer scienceBotsPriority = 0;
+
+    @Column(name = "security_bots_priority", nullable = false)
+    private Integer securityBotsPriority = 0;
+
+    @Column(name = "spy_bots_priority", nullable = false)
+    private Integer spyBotsPriority = 0;
+
+    @Column(name = "consensus_coins", nullable = false)
+    private Double consensusCoins = 100.0;
+
+    public String getResourceHistory() { return resourceHistory; }
+    public void setResourceHistory(String resourceHistory) { this.resourceHistory = resourceHistory; }
+
+    public Integer getAgriBotsPriority() { return agriBotsPriority; }
+    public void setAgriBotsPriority(Integer agriBotsPriority) { this.agriBotsPriority = agriBotsPriority; }
+    public Integer getAquaBotsPriority() { return aquaBotsPriority; }
+    public void setAquaBotsPriority(Integer aquaBotsPriority) { this.aquaBotsPriority = aquaBotsPriority; }
+    public Integer getExploreBotsPriority() { return exploreBotsPriority; }
+    public void setExploreBotsPriority(Integer exploreBotsPriority) { this.exploreBotsPriority = exploreBotsPriority; }
+    public Integer getUtilityBotsPriority() { return utilityBotsPriority; }
+    public void setUtilityBotsPriority(Integer utilityBotsPriority) { this.utilityBotsPriority = utilityBotsPriority; }
+    public Integer getEcoBotsPriority() { return ecoBotsPriority; }
+    public void setEcoBotsPriority(Integer ecoBotsPriority) { this.ecoBotsPriority = ecoBotsPriority; }
+    public Integer getScienceBotsPriority() { return scienceBotsPriority; }
+    public void setScienceBotsPriority(Integer scienceBotsPriority) { this.scienceBotsPriority = scienceBotsPriority; }
+    public Integer getSecurityBotsPriority() { return securityBotsPriority; }
+    public void setSecurityBotsPriority(Integer securityBotsPriority) { this.securityBotsPriority = securityBotsPriority; }
+
     public Civilization() {}
 
     // getters + setters for ALL fields
@@ -106,6 +154,10 @@ public class Civilization {
     public void setEnergy(Double energy) { this.energy = energy; }
     public Double getHousing() { return housing; }
     public void setHousing(Double housing) { this.housing = housing; }
+    public Integer getSpyBotsPriority() { return spyBotsPriority; }
+    public void setSpyBotsPriority(Integer spyBotsPriority) { this.spyBotsPriority = spyBotsPriority; }
+    public Double getConsensusCoins() { return consensusCoins; }
+    public void setConsensusCoins(Double consensusCoins) { this.consensusCoins = consensusCoins; }
 
     @PrePersist
     protected void onCreate() {
@@ -114,5 +166,7 @@ public class Civilization {
         if (status == null) status = CivilizationStatus.EMERGING;
         if (reputationScore == null) reputationScore = 50.0;
         if (population == null) population = 100;
+        if (consensusCoins == null) consensusCoins = 100.0;
+        if (spyBotsPriority == null) spyBotsPriority = 0;
     }
 }

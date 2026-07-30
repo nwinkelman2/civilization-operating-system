@@ -2,7 +2,10 @@ package io.github.opencivilizationplatform.config;
 
 import io.github.opencivilizationplatform.modules.cortex.cortex.CortexEngineService;
 import io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService;
-import io.github.opencivilizationplatform.web.handler.VoxtexWebSocketHandler;
+import io.github.opencivilizationplatform.web.handler.NexusWebSocketHandler;
+import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
+import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
+import io.github.opencivilizationplatform.modules.nexus.infrastructure.NexusNodeRepository;
 import org.springframework.boot.health.contributor.Health;
 import org.springframework.boot.health.contributor.HealthIndicator;
 import org.springframework.stereotype.Component;
@@ -18,16 +21,25 @@ public class CustomHealthIndicator implements HealthIndicator {
     private final DataSource dataSource;
     private final CortexEngineService cortexEngine;
     private final SimulationEngineService simulationEngine;
-    private final VoxtexWebSocketHandler webSocketHandler;
+    private final NexusWebSocketHandler webSocketHandler;
+    private final CivilizationRepository civilizationRepository;
+    private final ResourceRegionRepository regionRepository;
+    private final NexusNodeRepository nodeRepository;
 
     public CustomHealthIndicator(DataSource dataSource,
                                   CortexEngineService cortexEngine,
                                   SimulationEngineService simulationEngine,
-                                  VoxtexWebSocketHandler webSocketHandler) {
+                                  NexusWebSocketHandler webSocketHandler,
+                                  CivilizationRepository civilizationRepository,
+                                  ResourceRegionRepository regionRepository,
+                                  NexusNodeRepository nodeRepository) {
         this.dataSource = dataSource;
         this.cortexEngine = cortexEngine;
         this.simulationEngine = simulationEngine;
         this.webSocketHandler = webSocketHandler;
+        this.civilizationRepository = civilizationRepository;
+        this.regionRepository = regionRepository;
+        this.nodeRepository = nodeRepository;
     }
 
     @Override
@@ -39,6 +51,14 @@ public class CustomHealthIndicator implements HealthIndicator {
             checkCortexEngine(builder);
             checkSimulationEngine(builder);
             checkWebSocket(builder);
+
+            long civCount = civilizationRepository.count();
+            long regionCount = regionRepository.count();
+            long nodeCount = nodeRepository.count();
+            builder.withDetail("civilizations", civCount)
+                   .withDetail("resourceRegions", regionCount)
+                   .withDetail("nexusNodes", nodeCount)
+                   .withDetail("meshOnline", nodeCount > 0);
 
             return builder.build();
         } catch (Exception e) {

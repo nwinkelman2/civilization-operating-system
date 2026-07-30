@@ -1,4 +1,4 @@
-const CACHE_NAME = 'civ-os-v1';
+const CACHE_NAME = 'civ-os-v2';
 const urlsToCache = [
   '/',
   '/css/main.css'

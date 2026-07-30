@@ -30,6 +30,10 @@ class ContributionServiceTest {
     private ProjectRepository projectRepository;
     @Mock
     private ContributionRepository contributionRepository;
+    @Mock
+    private io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository;
+    @Mock
+    private io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenWalletRepository citizenWalletRepository;
 
     @InjectMocks
     private ContributionService contributionService;
@@ -60,5 +64,32 @@ class ContributionServiceTest {
         c.setImpactScore(100.0);
         when(contributionRepository.save(c)).thenReturn(c);
         assertEquals(100.0, contributionService.recordContribution(c).getImpactScore());
+    }
+
+    @Test
+    void testDonateToCommunitySilos() {
+        Citizen citizen = new Citizen();
+        citizen.setCitizenId("CIT-TEST");
+        citizen.setReputationScore(10.0);
+        
+        io.github.opencivilizationplatform.modules.civilization.domain.Civilization civ = new io.github.opencivilizationplatform.modules.civilization.domain.Civilization();
+        civ.setFood(40.0);
+        citizen.setCivilization(civ);
+
+        io.github.opencivilizationplatform.modules.contribution.domain.CitizenWallet wallet = new io.github.opencivilizationplatform.modules.contribution.domain.CitizenWallet();
+        wallet.setFood(30.0);
+        citizen.setWallet(wallet);
+
+        when(citizenRepository.findByCitizenId("CIT-TEST")).thenReturn(java.util.Optional.of(citizen));
+
+        contributionService.donateToCommunitySilos("CIT-TEST", "FOOD", 10.0);
+
+        assertEquals(20.0, wallet.getFood());
+        assertEquals(50.0, civ.getFood());
+        assertEquals(30.0, citizen.getReputationScore());
+        
+        verify(citizenWalletRepository, times(1)).save(wallet);
+        verify(citizenRepository, times(1)).save(citizen);
+        verify(civilizationRepository, times(1)).save(civ);
     }
 }

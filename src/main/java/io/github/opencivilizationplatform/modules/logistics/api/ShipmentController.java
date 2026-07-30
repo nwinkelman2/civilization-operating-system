@@ -31,4 +31,10 @@ public class ShipmentController {
     public Shipment saveShipment(@Valid @RequestBody Shipment shipment) {
         return shipmentService.saveShipment(shipment);
     }
+
+    @GetMapping("/active")
+    @Operation(summary = "List active shipments", description = "Returns shipments currently IN_TRANSIT for map rendering")
+    public java.util.List<Shipment> getActiveShipments() {
+        return shipmentService.getActiveShipments();
+    }
 }

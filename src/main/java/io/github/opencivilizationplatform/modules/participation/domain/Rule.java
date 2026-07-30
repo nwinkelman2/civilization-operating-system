@@ -1,5 +1,6 @@
 package io.github.opencivilizationplatform.modules.participation.domain;
 
+import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -42,6 +43,14 @@ public class Rule {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "civilization_id")
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Civilization civilization;
+
+    @Column(nullable = false)
+    private String sector = "GENERAL";
+
     public Rule() {}
 
     public Long getId() { return id; }
@@ -62,6 +71,11 @@ public class Rule {
     public void setVotesCount(Integer votesCount) { this.votesCount = votesCount; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Civilization getCivilization() { return civilization; }
+    public void setCivilization(Civilization civilization) { this.civilization = civilization; }
+
+    public String getSector() { return sector; }
+    public void setSector(String sector) { this.sector = sector; }
 
     @PrePersist
     protected void onCreate() {

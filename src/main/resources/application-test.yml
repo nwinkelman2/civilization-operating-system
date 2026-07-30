@@ -5,6 +5,11 @@ spring:
     username: sa
     password:
 
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:db/migration/V7__add_shedlock.sql
+
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     hibernate:
@@ -19,3 +24,11 @@ spring:
   h2:
     console:
       enabled: false
+
+cortex:
+  disable-disasters: true
+
+logging:
+  level:
+    org.springframework.cache: DEBUG
+    org.springframework.data.redis: DEBUG

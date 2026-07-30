@@ -1,24 +1,25 @@
 package io.github.opencivilizationplatform.config;
 
-import io.github.bucket4j.Bandwidth;
-import io.github.bucket4j.Bucket;
-import io.github.bucket4j.Refill;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.annotation.Order;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.time.Duration;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @Order(1)
 public class RateLimitingFilter implements Filter {
 
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final StringRedisTemplate redisTemplate;
+    private static final int MAX_REQUESTS_PER_MINUTE = 100;
+
+    public RateLimitingFilter(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
@@ -28,26 +29,36 @@ public class RateLimitingFilter implements Filter {
         String path = httpRequest.getRequestURI();
 
         if (path.startsWith("/api/v1/")) {
-            String clientIp = httpRequest.getRemoteAddr();
-            Bucket bucket = buckets.computeIfAbsent(clientIp, this::newBucket);
-
-            if (bucket.tryConsume(1)) {
-                chain.doFilter(request, response);
+            String clientIp = httpRequest.getHeader("X-Forwarded-For");
+            if (clientIp == null || clientIp.isEmpty() || "unknown".equalsIgnoreCase(clientIp)) {
+                clientIp = httpRequest.getRemoteAddr();
             } else {
+                clientIp = clientIp.split(",")[0].trim();
+            }
+            String redisKey = "rate:limit:" + clientIp;
+
+            Long currentCount = redisTemplate.opsForValue().increment(redisKey);
+            if (currentCount != null) {
+                if (currentCount == 1L) {
+                    redisTemplate.expire(redisKey, Duration.ofMinutes(1));
+                } else {
+                    Long ttl = redisTemplate.getExpire(redisKey);
+                    if (ttl != null && ttl == -1L) {
+                        redisTemplate.expire(redisKey, Duration.ofMinutes(1));
+                    }
+                }
+            }
+
+            if (currentCount != null && currentCount > MAX_REQUESTS_PER_MINUTE) {
                 HttpServletResponse httpResponse = (HttpServletResponse) response;
                 httpResponse.setStatus(429);
                 httpResponse.setContentType("application/json");
                 httpResponse.getWriter().write("""
                         {"error":"Too many requests","message":"Rate limit exceeded. Try again later."}
                         """);
+                return;
             }
-        } else {
-            chain.doFilter(request, response);
         }
-    }
-
-    private Bucket newBucket(String ip) {
-        Bandwidth limit = Bandwidth.classic(100, Refill.greedy(100, Duration.ofMinutes(1)));
-        return Bucket.builder().addLimit(limit).build();
+        chain.doFilter(request, response);
     }
 }

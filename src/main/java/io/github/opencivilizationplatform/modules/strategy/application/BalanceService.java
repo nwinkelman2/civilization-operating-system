@@ -26,7 +26,7 @@ public class BalanceService {
         this.needRepository = needRepository;
     }
 
-    @Cacheable("balance")
+    @Cacheable(value = "balance", key = "'report'")
     public List<BalanceDTO> getBalanceReport() {
         Map<String, Double> supply = resourceRepository.findAll().stream()
                 .collect(Collectors.groupingBy(r -> r.getType().name(),

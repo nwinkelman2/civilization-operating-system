@@ -4,8 +4,9 @@ import io.github.opencivilizationplatform.config.seed.CivilizationScale;
 import io.github.opencivilizationplatform.modules.civilization.application.CivilizationService;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
+import io.github.opencivilizationplatform.modules.participation.application.GovernanceBootstrapService;
 import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
-import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
+import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -33,16 +34,39 @@ class CivilizationControllerTest {
     private MockMvc mockMvc;
     private CivilizationService civilizationService;
     private ResourceRegionService resourceRegionService;
-    private VoxtexMeshService voxtexMeshService;
+    private NexusMeshService NexusMeshService;
     private JwtService jwtService;
+    private GovernanceBootstrapService governanceBootstrapService;
+    private io.github.opencivilizationplatform.modules.participation.application.RuleService ruleService;
+    private io.github.opencivilizationplatform.modules.contribution.application.ContributionService contributionService;
+    private io.github.opencivilizationplatform.modules.social.application.SocialStabilityService socialService;
+    private io.github.opencivilizationplatform.modules.contribution.application.DelegateElectionService delegateElectionService;
+    private io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository citizenRepository;
 
     @BeforeEach
     void setUp() {
         civilizationService = mock(CivilizationService.class);
         resourceRegionService = mock(ResourceRegionService.class);
-        voxtexMeshService = mock(VoxtexMeshService.class);
+        NexusMeshService = mock(NexusMeshService.class);
         jwtService = mock(JwtService.class);
-        mockMvc = standaloneSetup(new CivilizationController(civilizationService, resourceRegionService, voxtexMeshService, jwtService))
+        governanceBootstrapService = mock(GovernanceBootstrapService.class);
+        ruleService = mock(io.github.opencivilizationplatform.modules.participation.application.RuleService.class);
+        contributionService = mock(io.github.opencivilizationplatform.modules.contribution.application.ContributionService.class);
+        socialService = mock(io.github.opencivilizationplatform.modules.social.application.SocialStabilityService.class);
+        delegateElectionService = mock(io.github.opencivilizationplatform.modules.contribution.application.DelegateElectionService.class);
+        citizenRepository = mock(io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository.class);
+        var treatyService = mock(io.github.opencivilizationplatform.modules.nexus.application.TreatyService.class);
+        var nexusElectionService = mock(io.github.opencivilizationplatform.modules.nexus.application.ElectionService.class);
+        var civilizationRepository = mock(io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository.class);
+        var ruleRepository = mock(io.github.opencivilizationplatform.modules.participation.infrastructure.RuleRepository.class);
+        var incidentRepository = mock(io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository.class);
+        var meshTradeRepository = mock(io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository.class);
+
+        mockMvc = standaloneSetup(new CivilizationController(
+                civilizationService, resourceRegionService, NexusMeshService, jwtService,
+                governanceBootstrapService, ruleService, contributionService, socialService,
+                delegateElectionService, citizenRepository, treatyService, nexusElectionService,
+                civilizationRepository, ruleRepository, incidentRepository, meshTradeRepository))
                 .setCustomArgumentResolvers(new PageableHandlerMethodArgumentResolver())
                 .build();
     }

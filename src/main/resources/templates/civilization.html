@@ -1,4 +1,59 @@
 <div th:fragment="content">
+    <style>
+        .restricted-lock-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(10, 15, 30, 0.95);
+            backdrop-filter: blur(4px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            border-radius: 6px;
+            border: 1px dashed rgba(0, 242, 255, 0.25);
+            color: #fff;
+            text-align: center;
+            padding: 20px;
+            font-family: 'Outfit', sans-serif;
+        }
+        .perspective-btn {
+            color: #8599a8;
+            background: transparent;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.65rem;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+        }
+        .perspective-btn:hover {
+            color: #fff;
+            background: rgba(255,255,255,0.05);
+        }
+        .perspective-btn.active {
+            color: #fff;
+            background: #00f2ff;
+            box-shadow: 0 0 8px rgba(0, 242, 255, 0.4);
+            font-weight: bold;
+        }
+        #perspective-auto.active {
+            background: #00ff88;
+            box-shadow: 0 0 8px rgba(0, 255, 136, 0.4);
+            color: #000;
+        }
+        #perspective-founder.active {
+            background: #ffd700;
+            box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+            color: #000;
+        }
+        #perspective-delegate.active {
+            background: #ff6b35;
+            box-shadow: 0 0 8px rgba(255, 107, 53, 0.4);
+        }
+    </style>
+
     <header class="page-header">
         <h1 class="glitch-text" th:attr="data-text='CIVILIZATION: ' + ${civ.name}">
             <span class="glitch-scan">⟐</span> <span th:text="${civ.name}">CIVILIZATION</span> <span class="glitch-scan">⟐</span>
@@ -9,6 +64,21 @@
             Population: <strong th:text="${civ.population}">100</strong>
         </p>
     </header>
+
+    <!-- Perspective Selector (Filtro de Responsabilidade / Modo de Visualização) -->
+    <div class="perspective-selector glass-morphism" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; margin-bottom: 20px; border-radius: 6px; border: 1px solid rgba(0, 242, 255, 0.15); background: rgba(0, 5, 10, 0.4); flex-wrap: wrap; gap: 12px;">
+        <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span style="font-size: 0.65rem; color: var(--text-dim); font-weight: bold; letter-spacing: 1px;">PERSPECTIVA DE RESPONSABILIDADE:</span>
+            <div class="perspective-buttons" style="display: flex; gap: 6px; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.05); flex-wrap: wrap;">
+                <button class="perspective-btn active" id="perspective-auto" onclick="setPerspective('auto')">🤖 DETECTAR (AUTO)</button>
+                <button class="perspective-btn" id="perspective-visitor" onclick="setPerspective('visitor')">🌐 PÚBLICO (VISITANTE)</button>
+                <button class="perspective-btn" id="perspective-citizen" onclick="setPerspective('citizen')">🎒 CIDADÃO</button>
+                <button class="perspective-btn" id="perspective-delegate" onclick="setPerspective('delegate')">🎖️ DELEGADO DE SETOR</button>
+                <button class="perspective-btn" id="perspective-founder" onclick="setPerspective('founder')">👑 COORDENADOR (ADMIN)</button>
+            </div>
+        </div>
+        <div id="perspective-status-msg" style="font-size: 0.65rem; font-family: monospace; color: #00f2ff; letter-spacing: 0.5px; font-weight: bold;">PERSPECTIVA ATIVA: AUTO</div>
+    </div>
 
     <div class="civ-dashboard">
         <!-- Top Stats -->
@@ -21,6 +91,13 @@
                 </div>
             </div>
             <div class="civ-stat-card">
+                <span class="civ-stat-icon">🪙</span>
+                <div>
+                    <span class="civ-stat-label">CONSENSUS COINS</span>
+                    <span class="civ-stat-value" th:text="${civ.consensusCoins != null ? #numbers.formatDecimal(civ.consensusCoins, 1, 1) : '100.0'}">100.0</span>
+                </div>
+            </div>
+            <div class="civ-stat-card">
                 <span class="civ-stat-icon">🏠</span>
                 <div>
                     <span class="civ-stat-label">REGION</span>
@@ -30,7 +107,7 @@
             <div class="civ-stat-card">
                 <span class="civ-stat-icon">🧠</span>
                 <div>
-                    <span class="civ-stat-label">VOXTEX NODES</span>
+                    <span class="civ-stat-label">nexus NODES</span>
                     <span class="civ-stat-value" th:text="${#lists.size(nodes)}">0</span>
                 </div>
             </div>
@@ -39,6 +116,167 @@
                 <div>
                     <span class="civ-stat-label">TECH RESEARCHED</span>
                     <span class="civ-stat-value" th:text="${techCount}">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- PERSONAL INVENTORY & SECTOR ELECTIONS GRID -->
+        <div class="civ-grid-2col" style="margin-bottom: 20px;">
+            <!-- Personal Wallet Panel -->
+            <div class="civ-panel" id="personalWalletPanel" style="background: rgba(0, 242, 255, 0.02); border-color: rgba(0, 242, 255, 0.15);">
+                <h2 class="panel-title" style="color: #00f2ff; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🎒 MEU INVENTÁRIO PESSOAL</span>
+                    <span style="font-size: 0.65rem; opacity: 0.7; color: #00f2ff; border: 1px solid rgba(0,242,255,0.3); padding: 1px 6px; border-radius: 3px;" id="personalWalletRole">CIDADÃO</span>
+                </h2>
+                <div class="civ-resources" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 15px;">
+                    <div class="resource-bar-item" style="--bar-color: #00f2ff; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; width: 100%;">
+                            <span class="rb-label" style="width:auto;">🌾 FOOD</span>
+                            <span class="rb-value" id="walletFood" style="width:auto;">0.0</span>
+                        </div>
+                        <button class="btn-small" style="width: 100%; font-size: 0.65rem; padding: 2px 4px; margin-top: auto;" onclick="donateResource('FOOD', 5)">DOAR 5</button>
+                    </div>
+                    <div class="resource-bar-item" style="--bar-color: #006aff; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; width: 100%;">
+                            <span class="rb-label" style="width:auto;">💧 WATER</span>
+                            <span class="rb-value" id="walletWater" style="width:auto;">0.0</span>
+                        </div>
+                        <button class="btn-small" style="width: 100%; font-size: 0.65rem; padding: 2px 4px; margin-top: auto;" onclick="donateResource('WATER', 5)">DOAR 5</button>
+                    </div>
+                    <div class="resource-bar-item" style="--bar-color: #ff6b35; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; width: 100%;">
+                            <span class="rb-label" style="width:auto;">⛏️ MINERALS</span>
+                            <span class="rb-value" id="walletMinerals" style="width:auto;">0.0</span>
+                        </div>
+                        <button class="btn-small" style="width: 100%; font-size: 0.65rem; padding: 2px 4px; margin-top: auto;" onclick="donateResource('MINERALS', 5)">DOAR 5</button>
+                    </div>
+                    <div class="resource-bar-item" style="--bar-color: #ffd700; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 4px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 0;">
+                        <div style="display:flex; justify-content:space-between; width: 100%;">
+                            <span class="rb-label" style="width:auto;">⚡ ENERGY</span>
+                            <span class="rb-value" id="walletEnergy" style="width:auto;">0.0</span>
+                        </div>
+                        <button class="btn-small" style="width: 100%; font-size: 0.65rem; padding: 2px 4px; margin-top: auto;" onclick="donateResource('ENERGY', 5)">DOAR 5</button>
+                    </div>
+                </div>
+                <div style="font-size: 0.7rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    Doar recursos para os silos comunitários aumenta a sua <strong>Reputação</strong> no CIVOS.
+                </div>
+            </div>
+
+            <!-- Sectoral Elections Panel -->
+            <div class="civ-panel" id="sectorElectionsPanel" style="background: rgba(0, 255, 136, 0.02); border-color: rgba(0, 255, 136, 0.15);">
+                <h2 class="panel-title" style="color: #00ff88;">🗳️ ELEIÇÕES DE DELEGADOS</h2>
+                
+                <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                    <select id="electionSector" class="btn-small" style="flex: 1; background: rgba(0,0,0,0.4); color: #fff; border: 1px solid rgba(0,255,136,0.3); font-size: 0.7rem;" onchange="loadCandidates()">
+                        <option value="FOOD">Setor Alimentação (FOOD)</option>
+                        <option value="ENERGY">Setor Energia (ENERGY)</option>
+                        <option value="TECH">Setor Tecnologia (TECH)</option>
+                        <option value="LOGISTICS">Setor Logística (LOGISTICS)</option>
+                    </select>
+                </div>
+
+                <div id="candidatesList" style="display: flex; flex-direction: column; gap: 8px; max-height: 120px; overflow-y: auto; margin-bottom: 10px;">
+                    <div style="color:var(--text-dim); text-align:center; font-size:0.75rem; padding:10px;">Buscando candidatos qualificados...</div>
+                </div>
+
+                <div style="font-size: 0.7rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    Candidatos pré-qualificados pelo Cortex (Reputação &ge; 40). O Cortex apura os votos periodicamente.
+                </div>
+            </div>
+        </div>
+
+        <!-- ROBOT FLEET CONTROL & CITIZEN MIGRATION GRID -->
+        <div class="civ-grid-2col" style="margin-bottom: 20px;">
+            <!-- Robot Fleet Control Panel -->
+            <div class="civ-panel" id="robotFleetPanel" style="background: rgba(255, 215, 0, 0.02); border-color: rgba(255, 215, 0, 0.15); padding: 16px;">
+                <h2 class="panel-title" style="color: #ffd700; display: flex; align-items: center; justify-content: space-between;">
+                    <span>🤖 CONTROLE DE FROTAS DE ROBÔS</span>
+                    <span id="robotSaveIndicator" style="font-size: 0.65rem; color: #ffd700; opacity: 0.8; border: 1px solid rgba(255,215,0,0.3); padding: 1px 6px; border-radius: 3px;">Salvo</span>
+                </h2>
+                
+                <div style="margin-bottom: 12px;">
+                    <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:8px;">
+                        Distribuição das frotas de robôs por prioridade de tarefa:
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🌾 Agri-Bots (Agropecuária): <strong id="val-agri">25</strong>%</span>
+                        </div>
+                        <input type="range" id="range-agri" min="0" max="100" th:value="${civ.agriBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>💧 Aqua-Bots (Hídrico): <strong id="val-aqua">25</strong>%</span>
+                        </div>
+                        <input type="range" id="range-aqua" min="0" max="100" th:value="${civ.aquaBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>⛏️ Explorer-Bots (Exploração): <strong id="val-explore">25</strong>%</span>
+                        </div>
+                        <input type="range" id="range-explore" min="0" max="100" th:value="${civ.exploreBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🛠️ Utility-Bots (Infraestrutura): <strong id="val-utility">25</strong>%</span>
+                        </div>
+                        <input type="range" id="range-utility" min="0" max="100" th:value="${civ.utilityBotsPriority ?: 25}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🌱 Eco-Bots (Ecológico/Biosfera): <strong id="val-eco">0</strong>%</span>
+                        </div>
+                        <input type="range" id="range-eco" min="0" max="100" th:value="${civ.ecoBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🔬 Science-Bots (Pesquisa/Tecnologia): <strong id="val-science">0</strong>%</span>
+                        </div>
+                        <input type="range" id="range-science" min="0" max="100" th:value="${civ.scienceBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🛡️ Security-Bots (Estabilidade Social): <strong id="val-security">0</strong>%</span>
+                        </div>
+                        <input type="range" id="range-security" min="0" max="100" th:value="${civ.securityBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                    <div class="robot-priority-item" style="margin-bottom: 8px;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:3px;">
+                            <span>🕵️ Spy-Bots (Operações Clandestinas): <strong id="val-spy">0</strong>%</span>
+                        </div>
+                        <input type="range" id="range-spy" min="0" max="100" th:value="${civ.spyBotsPriority ?: 0}" style="width:100%; accent-color:#ffd700;" oninput="updatePriorityLabels()" onchange="saveRobotPriorities()"/>
+                    </div>
+                </div>
+
+                <div style="font-size: 0.65rem; color: var(--text-dim); text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    O total das prioridades é normalizado pelo Cortex. Somente Sector Delegates podem ajustar frotas.
+                </div>
+            </div>
+
+            <!-- Citizen Migration Panel -->
+            <div class="civ-panel" id="migrationTransitPanel" style="background: rgba(255, 107, 53, 0.02); border-color: rgba(255, 107, 53, 0.15); padding: 16px;">
+                <h2 class="panel-title" style="color: #ff6b35;">🚪 TRÂNSITO DE CIDADÃOS / IMIGRAÇÃO</h2>
+                
+                <!-- Apply for Migration (Common Citizens) -->
+                <div id="migrationApplyForm" style="margin-bottom: 12px;">
+                    <div style="font-size:0.7rem; color:var(--text-dim); margin-bottom:6px;">Solicitar transferência de cidade de moradia:</div>
+                    <div style="display:flex; gap:6px; margin-bottom:6px;">
+                        <select id="migTargetCiv" class="btn-small" style="flex:1; background:rgba(0,0,0,0.4); border:1px solid rgba(255, 107, 53, 0.3); font-size:0.7rem; color:#fff;">
+                            <option value="">Selecione o Cortex Destino...</option>
+                            <option th:each="c : ${allCivilizations}" th:if="${c.id != civ.id}" th:value="${c.id}" th:text="${c.name}">Alexandria</option>
+                        </select>
+                        <button class="btn-small" style="background:#ff6b35; color:#fff; border-color:#ff6b35; font-size:0.7rem;" onclick="submitMigrationRequest()">SOLICITAR</button>
+                    </div>
+                    <input type="text" id="migReason" class="btn-small" placeholder="Motivo do trânsito..." style="width:100%; font-size:0.7rem; background:rgba(0,0,0,0.3); border:1px solid rgba(255,107,53,0.3); text-align:left; color:#fff;"/>
+                </div>
+
+                <!-- Review Migration Requests -->
+                <div id="migrationReviewSection" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 8px;">
+                    <h3 style="font-size:0.7rem; color:#ff6b35; margin-bottom:6px;">Solicitações de Entrada Pendentes</h3>
+                    <div id="pendingMigrationsList" style="display:flex; flex-direction:column; gap:6px; max-height:110px; overflow-y:auto;">
+                        <div style="color:var(--text-dim); text-align:center; font-size:0.65rem; padding:8px;">Nenhuma solicitação de imigração.</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -59,27 +297,37 @@
             </div>
         </div>
 
+        <!-- DEMOGRAPHIC & RESOURCE ECOSYSTEM CHART -->
+        <div class="civ-panel animate-panel" style="margin-bottom:20px; background:rgba(0,5,10,0.3); border-color:rgba(0,242,255,0.15); padding:16px;">
+            <h2 class="panel-title" style="color:#00f2ff; font-size:0.75rem; display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                <span>📊 DEMOGRAPHIC & RESOURCE ECOSYSTEM</span>
+                <span id="chart-tick-indicator" style="font-size:0.65rem; color:var(--text-dim); font-weight:normal; letter-spacing:1px;">CORTEX STATUS: SYSTEM DEPLOYED</span>
+            </h2>
+            <div style="position:relative; height:180px; width:100%;">
+                <canvas id="ecosystemChart"></canvas>
+            </div>
+        </div>
+
         <div class="civ-grid-2col">
-            <!-- Voxtex Nodes -->
-            <div class="civ-panel">
-                <h2 class="panel-title">VOXTEX NODES</h2>
+            <div class="civ-panel" id="nexusNodesPanel" style="position:relative;">
+                <h2 class="panel-title">nexus NODES</h2>
                 <div th:if="${#lists.isEmpty(nodes)}" style="color:var(--text-dim);padding:20px;text-align:center;font-size:0.8rem;">
-                    No voxtex nodes. Start your simulation to deploy nodes.
+                    No nexus nodes. Start your simulation to deploy nodes.
                 </div>
-                <div class="voxtex-nodes" th:unless="${#lists.isEmpty(nodes)}">
-                    <div class="voxtex-node-item" th:each="n : ${nodes}">
-                        <span class="voxtex-node-icon" th:classappend="${n.status == 'ACTIVE'} ? 'voxtex-active' : 'voxtex-idle'">●</span>
-                        <span class="voxtex-node-name" th:text="${n.name}">Node</span>
-                        <span class="voxtex-node-type" th:text="${n.type}">PRIMARY</span>
-                        <span class="voxtex-node-status" th:text="${n.status}">ACTIVE</span>
+                <div class="nexus-nodes" th:unless="${#lists.isEmpty(nodes)}">
+                    <div class="nexus-node-item" th:each="n : ${nodes}">
+                        <span class="nexus-node-icon" th:classappend="${n.status == 'ACTIVE'} ? 'nexus-active' : 'nexus-idle'">●</span>
+                        <span class="nexus-node-name" th:text="${n.name}">Node</span>
+                        <span class="nexus-node-type" th:text="${n.type}">PRIMARY</span>
+                        <span class="nexus-node-status" th:text="${n.status}">ACTIVE</span>
                     </div>
                 </div>
-                <button class="btn-small" onclick="showAddNodeModal(${civ.id})" style="margin-top:12px;width:100%;">
+                <button class="btn-small" th:onclick="|showAddNodeModal(${civ.id})|" style="margin-top:12px;width:100%;">
                     + DEPLOY NODE
                 </button>
             </div>
 
-            <!-- Diplomacy / Voxtex Messages -->
+            <!-- Diplomacy / nexus Messages -->
             <div class="civ-panel">
                 <h2 class="panel-title">MESH DIPLOMACY</h2>
                 <div th:if="${#lists.isEmpty(messages)}" style="color:var(--text-dim);padding:20px;text-align:center;font-size:0.8rem;">
@@ -103,11 +351,375 @@
                     <span class="tech-name" th:text="${t.name}">Tech</span>
                     <span class="tech-status" th:text="${t.status}">LOCKED</span>
                     <span class="tech-progress" th:if="${t.researchCost}" th:text="${t.researchProgress} + '/' + ${t.researchCost}">0/100</span>
+                    
+                    <div th:if="${t.status.name() == 'RESEARCHING'}" style="margin-top: 8px;">
+                        <form th:id="'contrib-form-' + ${t.id}" style="display: flex; gap: 4px; align-items: center;" onsubmit="return false;">
+                            <input type="number" name="coins" min="1" max="50" value="5" style="width: 50px; background: rgba(0,0,0,0.3); border: 1px solid rgba(0,242,255,0.2); color: #fff; font-size: 0.7rem; border-radius: 4px; padding: 2px;" required />
+                            <button type="button" th:onclick="'submitContribution(' + ${t.id} + ', ' + ${civ.id} + ')'" style="background: rgba(0,255,136,0.2); border: 1px solid rgba(0,255,136,0.4); color: #00ff88; font-size: 0.65rem; border-radius: 4px; padding: 2px 6px; cursor: pointer; font-family:\'Outfit\', sans-serif;">Contribuir</button>
+                        </form>
+                    </div>
                 </div>
             </div>
             <a th:href="@{'/api/v1/tech-tree/' + ${civ.id}}" style="display:block;text-align:center;margin-top:12px;color:var(--accent-cyan);font-size:0.8rem;">
                 View Full Tech Tree →
             </a>
+        </div>
+
+        <!-- COOPERATIVE AGENT OPERATIONS -->
+        <div class="civ-panel coop-agent-panel" style="margin-top: 30px; border-color: rgba(0, 242, 255, 0.2); background: rgba(0, 5, 10, 0.4);">
+            <div class="panel-header-coop" style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                <h2 class="panel-title" style="color:#00f2ff; margin-bottom:0; font-size:0.85rem;"><span style="color:#00ff88;">⟐</span> COOPERATIVE AGENT OPERATIONS <span style="color:#00ff88;">⟐</span></h2>
+                <div class="coop-badge" style="background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); border-radius:12px; padding:2px 8px; font-size:0.6rem; color:#00ff88;">AGENTS IN CHARGE</div>
+            </div>
+            
+            <!-- Tab Buttons -->
+            <div class="coop-tabs" style="display:flex; gap:8px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:10px; margin-bottom:20px; flex-wrap: wrap;">
+                <button class="coop-tab-btn active" onclick="switchCoopTab('rules')" id="tab-btn-rules">nexus Constitution</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('projects')" id="tab-btn-projects">Engineering Projects</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('incidents')" id="tab-btn-incidents">Stability Board</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('automation')" id="tab-btn-automation">Cortex Autonomous Core</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('elections')" id="tab-btn-elections">🗳️ Elections</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('treaties')" id="tab-btn-treaties">📜 Treaties</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('espionage')" id="tab-btn-espionage">🕵️ Espionagem</button>
+                <button class="coop-tab-btn" onclick="switchCoopTab('transit')" id="tab-btn-transit">🚚 Logistics Transit</button>
+            </div>
+
+            <!-- Tab Contents -->
+            <!-- 1. nexus Tab -->
+            <div class="coop-tab-content active" id="coop-content-rules">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Active & Proposed Constitutional Rules</h3>
+                        <div id="rules-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <!-- Dynamic Rules -->
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" id="ruleProposalPanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between; position:relative;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Propose Constitutional Rule</h3>
+                        <form id="proposeRuleForm" onsubmit="handleProposeRule(event)">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Rule Title</label>
+                                <input type="text" id="rule-title-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., Renewable Grid Mandate">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Description</label>
+                                <textarea id="rule-desc-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff; min-height:60px;" placeholder="Describe how this rule supports resource efficiency or biosphere health..."></textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Rule Input Mode</label>
+                                <div style="display:flex; gap:10px; margin-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:5px;">
+                                    <span onclick="switchRuleInputMode('visual')" id="rule-mode-vis" style="font-size:0.65rem; color:#00f2ff; cursor:pointer; font-weight:600;">[ MODO VISUAL ]</span>
+                                    <span onclick="switchRuleInputMode('advanced')" id="rule-mode-adv" style="font-size:0.65rem; color:var(--text-dim); cursor:pointer;">[ AVANÇADO ]</span>
+                                </div>
+                                
+                                <!-- Visual Mode Controls -->
+                                <div id="rule-input-vis-container" style="display:block;">
+                                    <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Se recurso estiver crítico:</label>
+                                    <select id="rule-logic-vis-metric" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff; margin-bottom:6px;">
+                                        <option value="ENERGY">ENERGY (Energia)</option>
+                                        <option value="FOOD">FOOD (Alimentos)</option>
+                                        <option value="WATER">WATER (Água)</option>
+                                        <option value="HOUSING">HOUSING (Moradia)</option>
+                                    </select>
+                                    <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Ação Cortex:</label>
+                                    <select id="rule-logic-vis-action" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                        <option value="LOCK_ENTRY">LOCK_ENTRY (Bloquear novos entrantes/imigrantes)</option>
+                                        <option value="RESTRICT_CONSUMPTION">RESTRICT_CONSUMPTION (Racionamento emergencial)</option>
+                                        <option value="BOOST_PRODUCTION">BOOST_PRODUCTION (Priorizar produção agro/energia)</option>
+                                    </select>
+                                </div>
+
+                                <!-- Advanced Mode Controls -->
+                                <div id="rule-input-adv-container" style="display:none;">
+                                    <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Logic Code (JSON Logic)</label>
+                                    <textarea id="rule-logic-adv-code" class="form-input" style="width:100%; font-size:0.7rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff; min-height:80px; font-family:monospace;" placeholder='{"type": "RESERVE_CHECK", "metric": "ENERGY", "min_buffer_months": 3}'></textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-small" style="width:100%; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">PROPOSE RULE</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Projects Tab -->
+            <div class="coop-tab-content" id="coop-content-projects">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Active Cooperative Projects</h3>
+                        <div id="projects-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <!-- Dynamic Projects -->
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" id="projectProposalPanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between; position:relative;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Initialize Cooperative Project</h3>
+                        <form id="proposeProjectForm" onsubmit="handleProposeProject(event)">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Project Title</label>
+                                <input type="text" id="proj-title-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., Algae Bioreactor Installation">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Description</label>
+                                <textarea id="proj-desc-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff; min-height:60px;" placeholder="Detail what this infrastructure builds..."></textarea>
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Infrastructure Category</label>
+                                <select id="proj-cat-input" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                    <option value="AGRICULTURE">Agriculture (Boosts Food +15%)</option>
+                                    <option value="ENERGY">Energy (Boosts Power +15%)</option>
+                                    <option value="ENVIRONMENTAL">Environmental (Boosts Housing +15%)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn-small" style="width:100%; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">START PROJECT</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Incidents Tab -->
+            <div class="coop-tab-content" id="coop-content-incidents">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Local Social & Ecological Incidents</h3>
+                        <div id="incidents-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <!-- Dynamic Incidents -->
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" id="incidentSimulationPanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px; position:relative;">
+                        <h3 style="font-size:0.75rem; color:#ffd700; margin-bottom:8px;">⚠️ Stability Warning</h3>
+                        <p style="font-size:0.65rem; color:var(--text-dim); margin-bottom:12px; line-height:1.4;">Unresolved incidents penalize your civilization's productivity and reputation per tick. Designate <strong style="color:#00ff88;">Eco-Bots</strong> or <strong style="color:#4af;">Security-Bots</strong> to each incident to reduce severity automatically each tick. Reaching 0% resolves the incident and awards <strong style="color:#ffd700;">+15 reputation</strong>.</p>
+                        <div style="font-size:0.6rem; color:var(--text-dim); background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); border-radius:4px; padding:8px; margin-bottom:12px; line-height:1.6;">
+                            <div>🌿 <strong style="color:#00ff88;">Eco-Bot</strong>: -10% severity/tick</div>
+                            <div>🛡 <strong style="color:#4af;">Security-Bot</strong>: -15% severity/tick</div>
+                            <div>⚡ Bots assigned to incidents are <strong>removed from production pools</strong></div>
+                        </div>
+                        <button class="btn-small" onclick="triggerTestIncident()" style="border-color:#ff6b35; color:#ff6b35; background:rgba(255,107,53,0.05); width:100%;">SIMULATE LOCAL INCIDENT</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Cortex Automation Tab -->
+            <div class="coop-tab-content" id="coop-content-automation">
+                <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap: 20px;">
+                    <!-- Left column: Robots Status -->
+                    <div class="glass-subpanel" style="background:rgba(0,10,20,0.2); border:1px solid rgba(0,242,255,0.1); padding:16px; border-radius:6px;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:15px; letter-spacing:1px;"><span style="color:#00ff88;">🤖</span> ACTIVE ROBOTIC UNITS</h3>
+                        <div id="robots-container" style="display:flex; flex-direction:column; gap:12px;">
+                            <div class="robot-metric-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem; font-weight:600; color:#fff;">Agri-Bots (Agropecuária)</div>
+                                    <div style="font-size:0.6rem; color:var(--text-dim);">Produção: +0.8 Alimento/tick</div>
+                                </div>
+                                <div id="agribot-count" style="font-size:1.1rem; font-weight:700; color:#00ff88;">0</div>
+                            </div>
+                            <div class="robot-metric-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem; font-weight:600; color:#fff;">Aqua-Bots (Recursos Hídricos)</div>
+                                    <div style="font-size:0.6rem; color:var(--text-dim);">Produção: +0.6 Água/tick</div>
+                                </div>
+                                <div id="aquabot-count" style="font-size:1.1rem; font-weight:700; color:#00f2ff;">0</div>
+                            </div>
+                            <div class="robot-metric-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem; font-weight:600; color:#fff;">Utility-Bots (Moradia)</div>
+                                    <div style="font-size:0.6rem; color:var(--text-dim);">Produção: +0.4 Moradia/tick</div>
+                                </div>
+                                <div id="utilitybot-count" style="font-size:1.1rem; font-weight:700; color:#bf55ec;">0</div>
+                            </div>
+                            <div class="robot-metric-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem; font-weight:600; color:#fff;">Explorer-Bots (Minerais)</div>
+                                    <div style="font-size:0.6rem; color:var(--text-dim);">Produção: +0.5 Minerais/tick</div>
+                                </div>
+                                <div id="explorerbot-count" style="font-size:1.1rem; font-weight:700; color:#f5d76e;">0</div>
+                            </div>
+                            <div class="robot-metric-card" style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <div style="font-size:0.75rem; font-weight:600; color:#fff;">Spy-Bots (Operações Clandestinas)</div>
+                                    <div style="font-size:0.6rem; color:var(--text-dim);">Consumo: 0.25 Energia/tick</div>
+                                </div>
+                                <div id="spybot-count" style="font-size:1.1rem; font-weight:700; color:#ff3b30;">0</div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Right column: Automation Logs -->
+                    <div class="glass-subpanel" style="background:rgba(0,10,20,0.2); border:1px solid rgba(0,242,255,0.1); padding:16px; border-radius:6px; display:flex; flex-direction:column; justify-content:space-between;">
+                        <div>
+                            <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:15px; letter-spacing:1px;"><span style="color:#ffd700;">📡</span> CORTEX AUTOMATED OPERATIONS LOGS</h3>
+                            <div id="automation-logs-container" class="scroll-list" style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; padding-right:5px; font-family:'Courier New', monospace; font-size:0.7rem; color:#8599a8;">
+                                <div style="color:var(--text-dim); text-align:center; padding-top:40px;">Buscando logs de automação do Cortex...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Elections Tab -->
+            <div class="coop-tab-content" id="coop-content-elections">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Cortex Consensus & Elections History</h3>
+                        <div id="elections-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <!-- Dynamic Elections -->
+                            <div style="color:var(--text-dim); text-align:center; padding-top:40px;">No elections held yet. Elections open automatically.</div>
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Cast Consensus Vote</h3>
+                        <form id="voteElectionForm" onsubmit="handleCastVote(event)">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Election ID</label>
+                                <input type="number" id="vote-election-id" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., 1">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Candidate Name</label>
+                                <input type="text" id="vote-candidate-name" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., Alice">
+                            </div>
+                            <button type="submit" class="btn-small" style="width:100%; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">SUBMIT CONSENSUS VOTE</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 6. Treaties Tab -->
+            <div class="coop-tab-content" id="coop-content-treaties">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Active & Proposed Treaties</h3>
+                        <div id="treaties-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <!-- Dynamic Treaties -->
+                            <div style="color:var(--text-dim); text-align:center; padding-top:40px;">No treaties proposed yet. Propose a treaty to cooperate.</div>
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Propose Global Treaty</h3>
+                        <form id="proposeTreatyForm" onsubmit="handleProposeTreaty(event)">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Treaty Title</label>
+                                <input type="text" id="treaty-title-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., Free Resource Accord">
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Treaty Type</label>
+                                <select id="treaty-type-input" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                    <option value="FREE_TRADE">FREE_TRADE (Free exchange & +15% trade quantities)</option>
+                                    <option value="NON_AGGRESSION">NON_AGGRESSION (Stability & +2 reputation/tick)</option>
+                                    <option value="RESEARCH_ALLIANCE">RESEARCH_ALLIANCE (Science-Bot efficiency ×2)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Invited Civilization IDs (comma separated)</label>
+                                <input type="text" id="treaty-invited-input" required class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;" placeholder="e.g., 2, 3">
+                            </div>
+                            <button type="submit" class="btn-small" style="width:100%; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">PROPOSE TREATY</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 7. Espionage Tab -->
+            <div class="coop-tab-content" id="coop-content-espionage">
+                <div style="display:grid; grid-template-columns: 1.5fr 1fr; gap: 20px;">
+                    <div>
+                        <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Operações Clandestinas Ativas & Histórico</h3>
+                        <div id="espionage-list-container" class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                            <div th:if="${#lists.isEmpty(espionageOperations)}" style="color:var(--text-dim); text-align:center; padding-top:40px;">Nenhuma operação lançada ou sofrida ainda.</div>
+                            <div th:each="op : ${espionageOperations}" style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                                <div style="flex:1;">
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                        <span style="font-weight:600; font-size:0.8rem; color:#fff;" th:text="${op.type} + ' contra ' + ${op.target.name}">Operation</span>
+                                        <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px;" 
+                                              th:styleappend="${op.status == 'SUCCESS'} ? 'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88;' : (${op.status == 'FAILED'} ? 'background:rgba(255,59,48,0.1); border:1px solid rgba(255,59,48,0.3); color:#ff3b30;' : 'background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); color:#ffd700;')" 
+                                              th:text="${op.status}">STATUS</span>
+                                    </div>
+                                    <p style="font-size:0.7rem; color:var(--text-dim); margin:0 0 4px 0;">
+                                        Iniciado por: <strong th:text="${op.initiator.name}">Proposer</strong> &bull; Drones: <strong th:text="${op.spyBotsCount}">0</strong>
+                                    </p>
+                                    <p style="font-size:0.6rem; color:var(--text-dim); margin:0;" th:if="${op.status == 'IN_PROGRESS'}">
+                                        Ticks restantes: <strong th:text="${op.ticksRemaining}">4</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="glass-subpanel" id="launchEspionagePanel" style="background:rgba(255,255,255,0.01); border:1px solid rgba(0,242,255,0.05); padding:16px; border-radius:6px;">
+                        <h3 style="font-size:0.75rem; color:#00f2ff; margin-bottom:12px;">Lançar Operação Clandestina</h3>
+                        <form id="launchEspionageForm" onsubmit="handleLaunchEspionage(event)">
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Civilização Alvo</label>
+                                <select id="esp-target-input" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                    <option th:each="c : ${allCivilizations}" th:if="${c.id != civ.id}" th:value="${c.id}" th:text="${c.name}">Alexandria</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:10px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Tipo de Missão</label>
+                                <select id="esp-type-input" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                                    <option value="STEAL_TECH">STEAL_TECH (Roubar progresso científico da tecnologia ativa)</option>
+                                    <option value="SABOTAGE_BOTS">SABOTAGE_BOTS (Sabotar e desativar drones de produção)</option>
+                                    <option value="INTERCEPT_SHIPMENT">INTERCEPT_SHIPMENT (Interceptar e desviar remessas físicas em trânsito)</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:12px;">
+                                <label style="font-size:0.6rem; color:var(--text-dim); display:block; margin-bottom:4px;">Quantidade de Spy-Bots alocados</label>
+                                <input type="number" id="esp-bots-input" required min="1" max="10" value="2" class="form-input" style="width:100%; font-size:0.75rem; padding:6px; background:rgba(0,0,0,0.2); border:1px solid rgba(0,242,255,0.1); border-radius:4px; color:#fff;">
+                            </div>
+                            <button type="submit" class="btn-small" style="width:100%; border-color:#ff3b30; color:#ff3b30; background:rgba(255,59,48,0.05);">INICIAR INFILTRAÇÃO CLANDESTINA</button>
+                        </form>
+            <!-- 8. Logistics Transit Tab -->
+            <div class="coop-tab-content" id="coop-content-transit">
+                <h3 style="font-size:0.75rem; color:var(--text-dim); margin-bottom:12px;">Active Resource Shipments (IN_TRANSIT)</h3>
+                <div class="scroll-list" style="display:flex; flex-direction:column; gap:10px; max-height:280px; overflow-y:auto; padding-right:5px;">
+                    <div th:if="${#lists.isEmpty(shipments)}" style="color:var(--text-dim); text-align:center; padding-top:40px;">Nenhuma remessa logística ativa ou pendente no momento.</div>
+                    <div th:each="s : ${shipments}" style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight:600; font-size:0.8rem; color:#fff;" th:text="${s.cargo} + ' (' + ${s.quantity} + ' ' + ${s.unit} + ')'">Cargo</span>
+                            <div style="font-size:0.7rem; color:var(--text-dim); margin-top:4px;">
+                                Rota: <strong th:text="${s.origin}">Origin</strong> ➔ <strong th:text="${s.destination}">Destination</strong>
+                            </div>
+                        </div>
+                        <div style="text-align:right;">
+                            <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px;" 
+                                  th:styleappend="${s.status.name() == 'IN_TRANSIT'} ? 'background:rgba(255,215,0,0.1); border:1px solid rgba(255,215,0,0.3); color:#ffd700;' : 'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88;'" 
+                                  th:text="${s.status}">STATUS</span>
+                            <div style="font-size:0.6rem; color:var(--text-dim); margin-top:4px;" th:if="${s.eta != null}">
+                                ETA: <span th:text="${#temporals.format(s.eta, 'yyyy-MM-dd HH:mm:ss')}">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Painel de Patentes Licenciáveis -->
+        <div class="civ-panel" style="margin-top: 20px;">
+            <h2 class="panel-title">PATENTES LICENCIADAS & COMPARTILHADAS</h2>
+            
+            <!-- Licenciadas Ativas -->
+            <div th:if="${!licensedTechs.isEmpty()}" style="margin-bottom: 15px;">
+                <h3 style="font-size: 0.75rem; color: #00ff88; margin-bottom: 8px;">Patentes Licenciadas Ativas:</h3>
+                <div class="tech-grid" style="margin-bottom: 15px;">
+                    <div class="tech-card tech-done" th:each="lt : ${licensedTechs}">
+                        <span class="tech-name" th:text="${lt.techName}">Licensed Tech</span>
+                        <span class="tech-status" style="color: #00ff88;">LICENCIADA ATIVA</span>
+                        <span class="tech-progress" th:text="'Royalty: ' + ${lt.feePerTick} + ' Coins/tick'">5.0 Coins/tick</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Licenciáveis Disponíveis -->
+            <div th:if="${!licensableTechs.isEmpty()}">
+                <h3 style="font-size: 0.75rem; color: var(--accent-cyan); margin-bottom: 8px;">Patentes Disponíveis de Outros Cortex:</h3>
+                <div class="tech-grid">
+                    <div class="tech-card tech-locked" th:each="lt : ${licensableTechs}">
+                        <span class="tech-name" th:text="${lt.name}">Licensable Tech</span>
+                        <span class="tech-status" th:text="'Custo: 5.0 Coins/tick'">Custo: 5.0 Coins/tick</span>
+                        <form style="margin-top: 8px; display: flex; gap: 4px;" onsubmit="return false;">
+                            <button type="button" th:onclick="'licenseTech(' + ${lt.id} + ', ' + ${civ.id} + ')'" style="background: rgba(0,242,255,0.2); border: 1px solid rgba(0,242,255,0.4); color: #00f2ff; font-size: 0.65rem; border-radius: 4px; padding: 4px 8px; cursor: pointer; font-family:\'Outfit\', sans-serif;">Licenciar Patente</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div th:if="${licensableTechs.isEmpty() && licensedTechs.isEmpty()}" style="font-size: 0.75rem; color: var(--text-dim); text-align: center; padding: 15px;">
+                Nenhuma patente licenciada ou disponível para esta civilização no momento.
+            </div>
         </div>
 
         <!-- Quick Links -->
@@ -119,14 +731,704 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="/js/auth.js"></script>
-    <script>
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const currentCivId = /*[[${civ.id}]]*/ null;
+        /*]]>*/
+
+        let ecosystemChart = null;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (currentCivId) {
+                initEcosystemChart();
+                loadCoopData();
+                loadWalletAndCandidates();
+                // Auto refresh every 8 seconds to keep data synchronized
+                setInterval(loadCoopData, 8000);
+                setInterval(loadWalletAndCandidates, 8000);
+            }
+        });
+
+        function switchCoopTab(tab) {
+            document.querySelectorAll('.coop-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.coop-tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.getElementById(`tab-btn-${tab}`).classList.add('active');
+            document.getElementById(`coop-content-${tab}`).classList.add('active');
+        }
+
+        function initEcosystemChart() {
+            const ctx = document.getElementById('ecosystemChart').getContext('2d');
+            ecosystemChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'População',
+                            data: [],
+                            borderColor: '#007aff',
+                            backgroundColor: 'rgba(0, 122, 255, 0.05)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2,
+                            pointRadius: 2,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Alimento',
+                            data: [],
+                            borderColor: '#00ff88',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 1.5,
+                            pointRadius: 1,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Água',
+                            data: [],
+                            borderColor: '#00f2ff',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 1.5,
+                            pointRadius: 1,
+                            yAxisID: 'y1'
+                        },
+                        {
+                            label: 'Energia',
+                            data: [],
+                            borderColor: '#ffd700',
+                            backgroundColor: 'transparent',
+                            fill: false,
+                            tension: 0.3,
+                            borderWidth: 1.5,
+                            pointRadius: 1,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.02)' },
+                            ticks: { color: '#8599a8', font: { size: 8 } }
+                        },
+                        y: {
+                            position: 'left',
+                            title: { display: true, text: 'População', color: '#007aff', font: { size: 9, weight: 'bold' } },
+                            grid: { color: 'rgba(255, 255, 255, 0.02)' },
+                            ticks: { color: '#8599a8', font: { size: 8 } }
+                        },
+                        y1: {
+                            position: 'right',
+                            title: { display: true, text: 'Recursos', color: '#00ff88', font: { size: 9, weight: 'bold' } },
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: '#8599a8', font: { size: 8 } },
+                            min: 0,
+                            max: 200
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#fff',
+                                boxWidth: 10,
+                                font: { size: 8, family: 'Outfit' }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadCoopData() {
+            if (!currentCivId) return;
+            try {
+                const [rulesRes, projectsRes, incidentsRes, civRes, electionsRes, treatiesRes] = await Promise.all([
+                    fetch(`/api/v1/civilizations/${currentCivId}/rules`),
+                    fetch(`/api/v1/civilizations/${currentCivId}/projects`),
+                    fetch(`/api/v1/civilizations/${currentCivId}/incidents`),
+                    fetch(`/api/v1/civilizations/${currentCivId}`),
+                    fetch(`/api/v1/civilizations/${currentCivId}/elections`),
+                    fetch(`/api/v1/civilizations/${currentCivId}/treaties`)
+                ]);
+
+                if (rulesRes.ok) {
+                    const rules = await rulesRes.json();
+                    renderRules(rules);
+                }
+                if (projectsRes.ok) {
+                    const projects = await projectsRes.json();
+                    renderProjects(projects);
+                }
+                if (incidentsRes.ok) {
+                    const incidents = await incidentsRes.json();
+                    renderIncidents(incidents);
+                }
+                if (civRes.ok) {
+                    const civData = await civRes.json();
+                    updateChartAndAutomation(civData);
+                }
+                if (electionsRes.ok) {
+                    const elections = await electionsRes.json();
+                    renderElections(elections);
+                }
+                if (treatiesRes.ok) {
+                    const treaties = await treatiesRes.json();
+                    renderTreaties(treaties);
+                }
+            } catch (err) {
+                console.error('Failed to load cooperative data:', err);
+            }
+        }
+
+        function updateChartAndAutomation(civ) {
+            let history = [];
+            try {
+                history = typeof civ.resourceHistory === 'string' ? 
+                    JSON.parse(civ.resourceHistory || '[]') : (civ.resourceHistory || []);
+            } catch (e) {
+                console.error('Failed to parse resource history:', e);
+            }
+
+            if (!history || history.length === 0) {
+                return;
+            }
+
+            // 1. Atualizar dados do gráfico
+            const ticks = history.map(h => `T${h.tick}`);
+            const pops = history.map(h => h.pop);
+            const foods = history.map(h => h.food);
+            const waters = history.map(h => h.water);
+            const energies = history.map(h => h.energy);
+
+            if (ecosystemChart) {
+                ecosystemChart.data.labels = ticks;
+                ecosystemChart.data.datasets[0].data = pops;
+                ecosystemChart.data.datasets[1].data = foods;
+                ecosystemChart.data.datasets[2].data = waters;
+                ecosystemChart.data.datasets[3].data = energies;
+                
+                // Auto ajustar o eixo y1
+                const maxVal = Math.max(...foods, ...waters, ...energies, 100);
+                ecosystemChart.options.scales.y1.max = Math.ceil((maxVal + 20) / 50) * 50;
+                
+                ecosystemChart.update();
+            }
+
+            // 2. Atualizar contagem de robôs
+            const lastTick = history[history.length - 1];
+            document.getElementById('agribot-count').innerText = lastTick.agriBots || 0;
+            document.getElementById('aquabot-count').innerText = lastTick.aquaBots || 0;
+            document.getElementById('utilitybot-count').innerText = lastTick.utilityBots || 0;
+            document.getElementById('explorerbot-count').innerText = lastTick.exploreBots || 0;
+            if (document.getElementById('spybot-count')) {
+                document.getElementById('spybot-count').innerText = lastTick.spyBots || 0;
+            }
+
+            // 3. Atualizar logs de automação
+            const logsContainer = document.getElementById('automation-logs-container');
+            if (logsContainer) {
+                let allLogs = [];
+                history.forEach(h => {
+                    if (h.logs && h.logs.length > 0) {
+                        h.logs.forEach(logLine => {
+                            allLogs.push(`[Tick ${h.tick}] ${logLine}`);
+                        });
+                    }
+                });
+
+                if (allLogs.length === 0) {
+                    logsContainer.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding-top:40px;">Nenhuma operação autônoma registrada pelo Cortex ainda...</div>`;
+                } else {
+                    logsContainer.innerHTML = allLogs.reverse().map(logLine => {
+                        let color = '#8599a8';
+                        if (logLine.includes('[Alerta') || logLine.includes('Critico') || logLine.includes('ESCASSEZ')) color = '#ff3b30';
+                        else if (logLine.includes('[Remediação') || logLine.includes('Birth Control')) color = '#ffd700';
+                        else if (logLine.includes('[Comércio') || logLine.includes('Negociação')) color = '#00ff88';
+                        else if (logLine.includes('[Automação') || logLine.includes('Sistemas Robóticos')) color = '#00f2ff';
+                        return `<div style="margin-bottom:6px; color:${color}; line-height:1.4;">${logLine}</div>`;
+                    }).join('');
+                }
+            }
+
+            // 4. Indicador de estabilidade populacional
+            const indicator = document.getElementById('chart-tick-indicator');
+            if (indicator) {
+                const currentFood = civ.food || 100;
+                const currentWater = civ.water || 100;
+                if (currentFood <= 5 || currentWater <= 5) {
+                    indicator.innerText = 'CORTEX STATUS: RISCO DE COLAPSO DEMOGRÁFICO';
+                    indicator.style.color = '#ff3b30';
+                } else if (currentFood < 35 || currentWater < 35) {
+                    indicator.innerText = 'CORTEX STATUS: REMEDIAÇÃO CRÍTICA EM ANDAMENTO';
+                    indicator.style.color = '#ff9500';
+                } else {
+                    indicator.innerText = 'CORTEX STATUS: MESH DEMOGRÁFICO EQUILIBRADO';
+                    indicator.style.color = '#00ff88';
+                }
+            }
+        }
+
+        function renderRules(rules) {
+            const container = document.getElementById('rules-list-container');
+            if (!container) return;
+            if (!rules || rules.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim);font-size:0.75rem;padding:15px;text-align:center;">No rules found. Propose the first constitutional rule!</div>`;
+                return;
+            }
+            container.innerHTML = rules.map(r => {
+                const isActive = r.status === 'ACTIVE';
+                const badgeStyle = isActive ? 
+                    'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88;' : 
+                    'background:rgba(255,107,53,0.1); border:1px solid rgba(255,107,53,0.3); color:#ff6b35;';
+                const voteBtn = isActive ? '' : 
+                    `<button class="btn-small" onclick="handleVote(${r.id})" style="border-color:#ffd700; color:#ffd700; background:rgba(255,215,0,0.05); padding:2px 8px; font-size:0.65rem; font-weight:600;">VOTE (${r.votesCount || 0}/10)</button>`;
+                
+                return `
+                    <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <span style="font-weight:600; font-size:0.8rem; color:#fff;">${r.title}</span>
+                                <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px; ${badgeStyle}">${r.status}</span>
+                            </div>
+                            <p style="font-size:0.7rem; color:var(--text-dim); margin:0; line-height:1.3;">${r.description}</p>
+                            <code style="font-size:0.55rem; color:var(--accent-cyan); display:block; margin-top:4px; font-family:monospace;">Logic: ${r.logicCode}</code>
+                        </div>
+                        <div>${voteBtn}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderProjects(projects) {
+            const container = document.getElementById('projects-list-container');
+            if (!container) return;
+            if (!projects || projects.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim);font-size:0.75rem;padding:15px;text-align:center;">No active projects. Initialize one on the right panel!</div>`;
+                return;
+            }
+            container.innerHTML = projects.map(p => {
+                const isCompleted = p.status === 'COMPLETED';
+                const badgeStyle = isCompleted ? 
+                    'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88;' : 
+                    'background:rgba(0,242,255,0.1); border:1px solid rgba(0,242,255,0.3); color:#00f2ff;';
+                const contributeBtn = isCompleted ? '' : 
+                    `<button class="btn-small" onclick="handleContribute(${p.id})" style="border-color:#00f2ff; color:#00f2ff; background:rgba(0,242,255,0.05); padding:2px 8px; font-size:0.65rem; font-weight:600;">CONTRIBUTE</button>`;
+                
+                return `
+                    <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <span style="font-weight:600; font-size:0.8rem; color:#fff;">${p.title}</span>
+                                <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px; ${badgeStyle}">${p.status}</span>
+                            </div>
+                            <p style="font-size:0.7rem; color:var(--text-dim); margin:0; line-height:1.3;">${p.description}</p>
+                            <div style="display:flex; gap:4px; margin-top:4px;">
+                                <span style="font-size:0.6rem; color:#00f2ff; background:rgba(0,242,255,0.05); padding:1px 5px; border-radius:3px;">Category: ${p.category}</span>
+                            </div>
+                        </div>
+                        <div>${contributeBtn}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderIncidents(incidents) {
+            const container = document.getElementById('incidents-list-container');
+            if (!container) return;
+            const activeIncidents = incidents.filter(i => i.status !== 'RESOLVED');
+            if (activeIncidents.length === 0) {
+                container.innerHTML = `<div style="color:#00ff88;font-size:0.75rem;padding:20px;text-align:center;font-weight:600;background:rgba(0,255,136,0.03);border:1px dashed rgba(0,255,136,0.2);border-radius:6px;">✓ Society is perfectly stable. No active anomalies detected.</div>`;
+                return;
+            }
+            container.innerHTML = activeIncidents.map(i => {
+                const isCritical = i.riskLevel === 'CRITICAL' || i.riskLevel === 'HIGH';
+                const riskColor = isCritical ? '#ff3b30' : '#ff9500';
+                const severity = i.severity !== undefined && i.severity !== null ? i.severity : 100;
+                const severityPct = Math.max(0, Math.min(100, severity));
+                const severityColor = severityPct > 70 ? '#ff3b30' : severityPct > 35 ? '#ff9500' : '#00ff88';
+                const assignedEco = i.assignedEcoBots || 0;
+                const assignedSec = i.assignedSecurityBots || 0;
+
+                return `
+                    <div style="background:rgba(255,59,48,0.01); border:1px solid rgba(${isCritical ? '255,59,48' : '255,149,0'},0.15); padding:12px; border-radius:6px; gap:12px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span style="font-weight:600; font-size:0.8rem; color:#fff;">${i.type} at ${i.location}</span>
+                                <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px; background:rgba(${isCritical ? '255,59,48' : '255,149,0'},0.1); border:1px solid ${riskColor}; color:${riskColor};">${i.riskLevel}</span>
+                            </div>
+                            <button class="btn-small" onclick="handleMediate(${i.id})" style="border-color:#ff9500; color:#ff9500; background:rgba(255,149,0,0.05); padding:2px 8px; font-size:0.65rem; font-weight:600;">MEDIATE</button>
+                        </div>
+                        <p style="font-size:0.7rem; color:var(--text-dim); margin:0 0 8px 0; line-height:1.3;">${i.description}</p>
+                        <!-- Severity Bar -->
+                        <div style="margin-bottom:8px;">
+                            <div style="display:flex; justify-content:space-between; margin-bottom:3px;">
+                                <span style="font-size:0.6rem; color:var(--text-dim);">⚠ Severidade</span>
+                                <span style="font-size:0.6rem; color:${severityColor}; font-weight:700;">${severityPct.toFixed(1)}%</span>
+                            </div>
+                            <div style="width:100%; height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden;">
+                                <div style="width:${severityPct}%; height:100%; background:${severityColor}; border-radius:3px; transition:width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <!-- Assigned Bots Display -->
+                        <div style="display:flex; gap:8px; margin-bottom:8px; flex-wrap:wrap;">
+                            <span style="font-size:0.6rem; background:rgba(0,180,100,0.1); border:1px solid rgba(0,180,100,0.25); color:#00ff88; padding:1px 7px; border-radius:4px;">🌿 Eco-Bots: ${assignedEco}</span>
+                            <span style="font-size:0.6rem; background:rgba(0,100,220,0.1); border:1px solid rgba(0,100,220,0.25); color:#4af; padding:1px 7px; border-radius:4px;">🛡 Security-Bots: ${assignedSec}</span>
+                        </div>
+                        <!-- Assign Bots Controls -->
+                        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <label style="font-size:0.55rem; color:var(--text-dim);">Eco-Bots:</label>
+                                <input type="number" id="eco-bots-input-${i.id}" min="0" max="20" value="${assignedEco}"
+                                    style="width:48px; font-size:0.65rem; padding:2px 4px; background:rgba(0,0,0,0.3); border:1px solid rgba(0,255,136,0.2); border-radius:4px; color:#00ff88; text-align:center;">
+                            </div>
+                            <div style="display:flex; align-items:center; gap:4px;">
+                                <label style="font-size:0.55rem; color:var(--text-dim);">Security-Bots:</label>
+                                <input type="number" id="sec-bots-input-${i.id}" min="0" max="20" value="${assignedSec}"
+                                    style="width:48px; font-size:0.65rem; padding:2px 4px; background:rgba(0,0,0,0.3); border:1px solid rgba(68,170,255,0.2); border-radius:4px; color:#4af; text-align:center;">
+                            </div>
+                            <button onclick="handleAssignBots(${i.id})" style="font-size:0.6rem; padding:2px 10px; border:1px solid rgba(255,215,0,0.3); background:rgba(255,215,0,0.05); color:#ffd700; border-radius:4px; cursor:pointer; font-weight:600;">⚡ DESIGNAR DRONES</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderElections(elections) {
+            const container = document.getElementById('elections-list-container');
+            if (!container) return;
+            if (elections.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding-top:40px;">No elections held yet. Elections open automatically.</div>`;
+                return;
+            }
+            container.innerHTML = elections.map(e => {
+                const isOpen = e.status === 'OPEN';
+                const statusColor = isOpen ? '#00ff88' : 'var(--text-dim)';
+                return `
+                    <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <span style="font-weight:600; font-size:0.8rem; color:#fff;">Election #${e.id}</span>
+                                <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px; background:rgba(${isOpen?'0,255,136':'255,255,255'},0.05); border:1px solid ${statusColor}; color:${statusColor};">${e.status}</span>
+                            </div>
+                            <p style="font-size:0.7rem; color:var(--text-dim); margin:0;">
+                                ${isOpen ? `⏳ Ticks remaining: <strong>${e.ticksRemaining}</strong>` : `🏆 Winner: <strong style="color:#ffd700;">${e.winnerName || 'No votes cast'}</strong>`}
+                            </p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderTreaties(treaties) {
+            const container = document.getElementById('treaties-list-container');
+            if (!container) return;
+            if (treaties.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim); text-align:center; padding-top:40px;">No treaties proposed yet. Propose a treaty to cooperate.</div>`;
+                return;
+            }
+            container.innerHTML = treaties.map(t => {
+                const isActive = t.status === 'ACTIVE';
+                const statusColor = isActive ? '#00ff88' : '#ffd700';
+                
+                let invites = [];
+                let signatories = [];
+                try {
+                    invites = typeof t.invitedCivIds === 'string' ? JSON.parse(t.invitedCivIds || '[]') : (t.invitedCivIds || []);
+                    signatories = typeof t.signatoryCivIds === 'string' ? JSON.parse(t.signatoryCivIds || '[]') : (t.signatoryCivIds || []);
+                } catch(err) {
+                    console.error("Failed to parse treaty ids", err);
+                }
+                
+                const isInvited = invites.includes(currentCivId);
+                const hasSigned = signatories.includes(currentCivId) || t.proposerCivId === currentCivId;
+                
+                let actionBtn = '';
+                if (t.status === 'PROPOSED' && isInvited && !hasSigned) {
+                    actionBtn = `<button class="btn-small" onclick="handleSignTreaty(${t.id})" style="border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05); padding:2px 8px; font-size:0.65rem; font-weight:600;">SIGN</button>`;
+                }
+
+                return `
+                    <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:12px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                                <span style="font-weight:600; font-size:0.8rem; color:#fff;">${t.title}</span>
+                                <span style="font-size:0.55rem; padding:1px 6px; border-radius:4px; background:rgba(${isActive?'0,255,136':'255,215,0'},0.05); border:1px solid ${statusColor}; color:${statusColor};">${t.status}</span>
+                            </div>
+                            <p style="font-size:0.7rem; color:var(--text-dim); margin:0 0 4px 0; line-height:1.3;">Type: <strong>${t.type}</strong></p>
+                            <p style="font-size:0.6rem; color:var(--text-dim); margin:0;">Signatories: <span style="color:#fff;">${signatories.join(', ')}</span> (Invited: ${invites.join(', ')})</p>
+                        </div>
+                        <div>${actionBtn}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function handleCastVote(e) {
+            e.preventDefault();
+            const electionId = document.getElementById('vote-election-id').value;
+            const candidate = document.getElementById('vote-candidate-name').value;
+            const voter = localStorage.getItem('civos_clientId') || 'anonymous';
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/elections/${electionId}/vote?voter=${voter}&candidate=${candidate}`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    alert('Consensus vote cast successfully!');
+                    loadCoopData();
+                } else {
+                    const err = await res.text();
+                    alert('Consensus vote failed: ' + err);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleProposeTreaty(e) {
+            e.preventDefault();
+            const title = document.getElementById('treaty-title-input').value;
+            const type = document.getElementById('treaty-type-input').value;
+            const invitedInput = document.getElementById('treaty-invited-input').value;
+            const invited = invitedInput.split(',').map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+            
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/treaties/propose`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, type, invitedCivIds: invited })
+                });
+                if (res.ok) {
+                    alert('Treaty proposed successfully!');
+                    document.getElementById('proposeTreatyForm').reset();
+                    loadCoopData();
+                } else {
+                    alert('Failed to propose treaty.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleSignTreaty(treatyId) {
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/treaties/${treatyId}/sign`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    alert('Treaty signed successfully!');
+                    loadCoopData();
+                } else {
+                    alert('Failed to sign treaty.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+
+        let ruleInputMode = 'visual';
+
+        function switchRuleInputMode(mode) {
+            ruleInputMode = mode;
+            if (mode === 'visual') {
+                document.getElementById('rule-input-vis-container').style.display = 'block';
+                document.getElementById('rule-input-adv-container').style.display = 'none';
+                document.getElementById('rule-mode-vis').style.color = '#00f2ff';
+                document.getElementById('rule-mode-vis').style.fontWeight = '600';
+                document.getElementById('rule-mode-adv').style.color = 'var(--text-dim)';
+                document.getElementById('rule-mode-adv').style.fontWeight = 'normal';
+            } else {
+                document.getElementById('rule-input-vis-container').style.display = 'none';
+                document.getElementById('rule-input-adv-container').style.display = 'block';
+                document.getElementById('rule-mode-vis').style.color = 'var(--text-dim)';
+                document.getElementById('rule-mode-vis').style.fontWeight = 'normal';
+                document.getElementById('rule-mode-adv').style.color = '#00f2ff';
+                document.getElementById('rule-mode-adv').style.fontWeight = '600';
+            }
+        }
+
+        async function handleProposeRule(e) {
+            e.preventDefault();
+            const title = document.getElementById('rule-title-input').value;
+            const description = document.getElementById('rule-desc-input').value;
+            
+            let logicCode = '';
+            if (ruleInputMode === 'visual') {
+                const metric = document.getElementById('rule-logic-vis-metric').value;
+                const action = document.getElementById('rule-logic-vis-action').value;
+                logicCode = JSON.stringify({ type: 'THRESHOLD_TRIGGER', metric: metric, action: action });
+            } else {
+                logicCode = document.getElementById('rule-logic-adv-code').value;
+                if (!logicCode.trim()) {
+                    alert('Please provide JSON Logic code.');
+                    return;
+                }
+            }
+
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/rules/propose`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, logicCode })
+                });
+                if (res.ok) {
+                    document.getElementById('rule-title-input').value = '';
+                    document.getElementById('rule-desc-input').value = '';
+                    document.getElementById('rule-logic-adv-code').value = '';
+                    loadCoopData();
+                } else {
+                    alert('Failed to propose rule');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleProposeProject(e) {
+            e.preventDefault();
+            const title = document.getElementById('proj-title-input').value;
+            const description = document.getElementById('proj-desc-input').value;
+            const category = document.getElementById('proj-cat-input').value;
+
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/projects/propose`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, description, category, impactArea: 'RESOURCE_EFFICIENCY' })
+                });
+                if (res.ok) {
+                    document.getElementById('proj-title-input').value = '';
+                    document.getElementById('proj-desc-input').value = '';
+                    loadCoopData();
+                } else {
+                    alert('Failed to initialize project');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleVote(ruleId) {
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/rules/${ruleId}/vote`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    loadCoopData();
+                    setTimeout(() => location.reload(), 1000);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleContribute(projectId) {
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/projects/${projectId}/contribute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ citizenId: 'CIT-LOCAL-01', role: 'Engineering Collaborator' })
+                });
+                if (res.ok) {
+                    loadCoopData();
+                    setTimeout(() => location.reload(), 1000);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleMediate(incidentId) {
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/incidents/${incidentId}/mediate`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    loadCoopData();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleAssignBots(incidentId) {
+            const ecoInput = document.getElementById(`eco-bots-input-${incidentId}`);
+            const secInput = document.getElementById(`sec-bots-input-${incidentId}`);
+            const ecoBots = ecoInput ? parseInt(ecoInput.value) || 0 : 0;
+            const secBots = secInput ? parseInt(secInput.value) || 0 : 0;
+            try {
+                const res = await fetch(
+                    `/api/v1/civilizations/${currentCivId}/incidents/${incidentId}/assign-bots?ecoBots=${ecoBots}&securityBots=${secBots}`,
+                    { method: 'POST' }
+                );
+                if (res.ok) {
+                    loadCoopData();
+                } else {
+                    const err = await res.text();
+                    alert('Erro ao designar drones: ' + err);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function triggerTestIncident() {
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/incidents/propose`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        type: 'CONFLICT',
+                        description: 'Resource priority dispute between local vertical farms regarding power grid load sharing.',
+                        riskLevel: 'HIGH'
+                    })
+                });
+                if (res.ok) {
+                    loadCoopData();
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function handleLaunchEspionage(e) {
+            e.preventDefault();
+            const targetId = document.getElementById('esp-target-input').value;
+            const type = document.getElementById('esp-type-input').value;
+            const botsCount = document.getElementById('esp-bots-input').value;
+
+            try {
+                const res = await fetch(`/api/v1/espionage/launch?initiatorId=${currentCivId}&targetId=${targetId}&type=${type}&spyBotsCount=${botsCount}`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    alert('Operação clandestina de infiltração iniciada com sucesso!');
+                    loadCoopData();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const txt = await res.text();
+                    alert('Falha ao lançar operação: ' + (txt || 'Recursos insuficientes.'));
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
         function showAddNodeModal(civId) {
             const modal = document.createElement('div');
             modal.className = 'modal-overlay';
             modal.innerHTML = `
                 <div class="modal-content glass-morphism">
-                    <h2>DEPLOY VOXTEX NODE</h2>
+                    <h2>DEPLOY nexus NODE</h2>
                     <form id="nodeForm">
                         <div class="form-group">
                             <label>Node Name</label>
@@ -158,7 +1460,7 @@
             document.getElementById('nodeForm').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const form = e.target;
-                const res = await fetch('/api/v1/voxtex/nodes', {
+                const res = await fetch('/api/v1/nexus/nodes', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -176,6 +1478,448 @@
                 }
             });
         }
+
+        async function loadWalletAndCandidates() {
+            let token = localStorage.getItem('civos_token');
+            if (!token) return;
+
+            try {
+                // Load wallet & role
+                const meResp = await fetch('/api/v1/civilizations/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (meResp.ok) {
+                    const citizen = await meResp.json();
+                    window.currentCitizen = citizen; // Salva globalmente o cidadão autenticado
+                    document.getElementById('personalWalletRole').innerText = citizen.role ? citizen.role : 'VISITOR';
+                    if (citizen.wallet) {
+                        document.getElementById('walletFood').innerText = citizen.wallet.food.toFixed(1);
+                        document.getElementById('walletWater').innerText = citizen.wallet.water.toFixed(1);
+                        document.getElementById('walletMinerals').innerText = citizen.wallet.minerals.toFixed(1);
+                        document.getElementById('walletEnergy').innerText = citizen.wallet.energy.toFixed(1);
+                    }
+                }
+
+                // Load candidates
+                const candResp = await fetch(`/api/v1/civilizations/${currentCivId}/delegates/candidates`);
+                if (candResp.ok) {
+                    const candidates = await candResp.json();
+                    const sector = document.getElementById('electionSector').value;
+                    renderCandidates(candidates, sector);
+                }
+
+                // Aplica a perspectiva baseada na cidadania e cargo real
+                applyPerspective();
+            } catch (err) {
+                console.error('Failed to load wallet or candidates:', err);
+            }
+        }
+
+        function renderCandidates(candidates, sector) {
+            const container = document.getElementById('candidatesList');
+            if (!container) return;
+            
+            // Filter candidates who are NOT the founder
+            const filtered = candidates.filter(c => c.role !== 'FOUNDER');
+
+            if (!filtered || filtered.length === 0) {
+                container.innerHTML = `<div style="color:var(--text-dim); text-align:center; font-size:0.75rem; padding:10px;">No candidates eligible. Gain reputation to qualify!</div>`;
+                return;
+            }
+            container.innerHTML = filtered.map(c => {
+                const badgeStyle = 'background:rgba(0,255,136,0.1); border:1px solid rgba(0,255,136,0.3); color:#00ff88; font-size:0.55rem; padding:1px 4px; border-radius:3px;';
+                const roleText = c.role ? c.role : 'CITIZEN';
+                return `
+                    <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <span style="font-weight:600; font-size:0.75rem; color:#fff;">${c.name}</span>
+                            <span style="${badgeStyle}">${roleText}</span>
+                            <span style="color:#ffd700; font-size:0.65rem; margin-left:6px;">★ ${c.reputationScore.toFixed(0)}</span>
+                        </div>
+                        <button class="btn-small" onclick="voteDelegate('${c.citizenId}')" style="border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05); padding:2px 6px; font-size:0.6rem; font-weight:600;">VOTAR</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        async function donateResource(type, amount) {
+            let token = localStorage.getItem('civos_token');
+            if (!token) return;
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/donate`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ resourceType: type, amount: amount })
+                });
+                if (res.ok) {
+                    loadWalletAndCandidates();
+                    loadCoopData();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    const errText = await res.text();
+                    alert(errText || 'Insufficient resources in wallet or donation failed.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function voteDelegate(candidateId) {
+            let token = localStorage.getItem('civos_token');
+            if (!token) return;
+            const sector = document.getElementById('electionSector').value;
+            try {
+                const res = await fetch(`/api/v1/civilizations/${currentCivId}/delegates/vote`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ candidateCitizenId: candidateId, sector: sector })
+                });
+                if (res.ok) {
+                    alert('Vote registered successfully!');
+                    loadWalletAndCandidates();
+                } else {
+                    alert('Failed to register vote. Ensure you are a member of this civilization.');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+        
+        function loadCandidates() {
+            loadWalletAndCandidates();
+        }
+
+        // --- Robot fleet controls ---
+        function updatePriorityLabels() {
+            const agri = document.getElementById('range-agri').value;
+            const aqua = document.getElementById('range-aqua').value;
+            const explore = document.getElementById('range-explore').value;
+            const utility = document.getElementById('range-utility').value;
+            const eco = document.getElementById('range-eco').value;
+            const science = document.getElementById('range-science').value;
+            const security = document.getElementById('range-security').value;
+            const spy = document.getElementById('range-spy').value;
+
+            document.getElementById('val-agri').innerText = agri;
+            document.getElementById('val-aqua').innerText = aqua;
+            document.getElementById('val-explore').innerText = explore;
+            document.getElementById('val-utility').innerText = utility;
+            document.getElementById('val-eco').innerText = eco;
+            document.getElementById('val-science').innerText = science;
+            document.getElementById('val-security').innerText = security;
+            document.getElementById('val-spy').innerText = spy;
+        }
+
+        async function saveRobotPriorities() {
+            const indicator = document.getElementById('robotSaveIndicator');
+            indicator.innerText = 'Salvando...';
+            indicator.style.borderColor = 'rgba(255,215,0,0.5)';
+
+            const agri = parseInt(document.getElementById('range-agri').value);
+            const aqua = parseInt(document.getElementById('range-aqua').value);
+            const explore = parseInt(document.getElementById('range-explore').value);
+            const utility = parseInt(document.getElementById('range-utility').value);
+            const eco = parseInt(document.getElementById('range-eco').value);
+            const science = parseInt(document.getElementById('range-science').value);
+            const security = parseInt(document.getElementById('range-security').value);
+            const spy = parseInt(document.getElementById('range-spy').value);
+
+            try {
+                const res = await fetch(`/api/v1/nexus/civilizations/${currentCivId}/robot-priorities`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ agri, aqua, explore, utility, eco, science, security, spy })
+                });
+                if (res.ok) {
+                    indicator.innerText = 'Salvo';
+                    indicator.style.borderColor = 'rgba(0,255,136,0.3)';
+                    indicator.style.color = '#00ff88';
+                    setTimeout(() => {
+                        indicator.style.borderColor = 'rgba(255,215,0,0.3)';
+                        indicator.style.color = '#ffd700';
+                    }, 1000);
+                } else {
+                    const txt = await res.text();
+                    indicator.innerText = 'Erro';
+                    indicator.style.borderColor = 'rgba(255,0,0,0.5)';
+                    alert('Erro ao salvar: ' + txt);
+                }
+            } catch (err) {
+                console.error(err);
+                indicator.innerText = 'Erro';
+                indicator.style.borderColor = 'rgba(255,0,0,0.5)';
+            }
+        }
+
+        // --- Migration flow controls ---
+        async function submitMigrationRequest() {
+            const targetCivId = document.getElementById('migTargetCiv').value;
+            const reason = document.getElementById('migReason').value;
+            let token = localStorage.getItem('civos_token');
+
+            if (!targetCivId) {
+                alert('Por favor, selecione um Cortex de destino.');
+                return;
+            }
+
+            try {
+                const meResp = await fetch('/api/v1/civilizations/me', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                if (!meResp.ok) {
+                    alert('Faça login ou registre-se como agente para solicitar trânsito.');
+                    return;
+                }
+                const citizen = await meResp.json();
+
+                const res = await fetch('/api/v1/migrations/apply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        citizenName: citizen.name,
+                        fromCivilizationId: currentCivId,
+                        toCivilizationId: parseInt(targetCivId),
+                        reason: reason
+                    })
+                });
+
+                if (res.ok) {
+                    alert('Solicitação de migração enviada e aguardando aprovação dos delegados!');
+                    document.getElementById('migReason').value = '';
+                    document.getElementById('migTargetCiv').value = '';
+                } else {
+                    const txt = await res.text();
+                    alert('Erro ao solicitar trânsito: ' + txt);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadPendingMigrations() {
+            const listContainer = document.getElementById('pendingMigrationsList');
+            if (!listContainer) return;
+
+            try {
+                const res = await fetch(`/api/v1/migrations/pending/${currentCivId}`);
+                if (res.ok) {
+                    const requests = await res.json();
+                    if (!requests || requests.length === 0) {
+                        listContainer.innerHTML = `<div style="color:var(--text-dim); text-align:center; font-size:0.65rem; padding:8px;">Nenhuma solicitação de imigração.</div>`;
+                        return;
+                    }
+                    listContainer.innerHTML = requests.map(r => `
+                        <div style="background:rgba(255,255,255,0.01); border:1px solid rgba(255,255,255,0.04); padding:6px; border-radius:4px; font-size:0.7rem; display:flex; flex-direction:column; gap:4px;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <strong style="color:#ff6b35;">${r.citizenName}</strong>
+                                <span style="font-size:0.6rem; color:var(--text-dim);">Origem: ${r.fromCivilization.name}</span>
+                            </div>
+                            <div style="font-size:0.65rem; color:#fff; font-style:italic;">Motivo: ${r.reason || 'Não informado'}</div>
+                            <div style="display:flex; gap:6px; margin-top:4px;">
+                                <button class="btn-small" onclick="processMigration(${r.id}, 'approve')" style="flex:1; padding:2px 4px; font-size:0.6rem; border-color:#00ff88; color:#00ff88; background:rgba(0,255,136,0.05);">Aceitar</button>
+                                <button class="btn-small" onclick="processMigration(${r.id}, 'reject')" style="flex:1; padding:2px 4px; font-size:0.6rem; border-color:#ff4444; color:#ff4444; background:rgba(255,68,68,0.05);">Rejeitar</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function processMigration(id, action) {
+            try {
+                const res = await fetch(`/api/v1/migrations/${id}/${action}`, {
+                    method: 'POST'
+                });
+                if (res.ok) {
+                    alert(action === 'approve' ? 'Migração aceita com sucesso!' : 'Migração rejeitada.');
+                    loadPendingMigrations();
+                    loadWalletAndCandidates();
+                    loadCoopData();
+                } else {
+                    const txt = await res.text();
+                    alert('Erro ao processar: ' + txt);
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        // --- SISTEMA DE VISUALIZAÇÃO POR RESPONSABILIDADE & PERSPECTIVAS ---
+        let currentPerspective = 'auto';
+
+        function setPerspective(perspective) {
+            currentPerspective = perspective;
+            applyPerspective();
+        }
+
+        function toggleLockOverlay(panelId, isLocked, message, overlayId) {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
+            
+            // Remove o overlay anterior se existir
+            const existing = document.getElementById(overlayId);
+            if (existing) existing.remove();
+            
+            if (isLocked) {
+                panel.style.position = 'relative';
+                const overlay = document.createElement('div');
+                overlay.id = overlayId;
+                overlay.className = 'restricted-lock-overlay';
+                overlay.innerHTML = `
+                    <div style="font-size: 1.3rem; margin-bottom: 8px;">🔒</div>
+                    <div style="font-weight: bold; font-size: 0.7rem; letter-spacing: 0.5px; text-transform: uppercase; color: #ff6b35; margin-bottom: 4px;">Acesso Restrito</div>
+                    <div style="font-size: 0.65rem; color: var(--text-dim); max-width: 85%; line-height: 1.4; font-family: 'Outfit', sans-serif;">${message}</div>
+                `;
+                panel.appendChild(overlay);
+            }
+        }
+
+        function applyPerspective() {
+            let active = currentPerspective;
+            if (active === 'auto') {
+                if (!window.currentCitizen) {
+                    active = 'visitor';
+                } else {
+                    const hasCiv = window.currentCitizen.civilization && 
+                                   window.currentCitizen.civilization.id === currentCivId;
+                    if (!hasCiv) {
+                        active = 'visitor';
+                    } else {
+                        const role = window.currentCitizen.role;
+                        if (role === 'FOUNDER' || role === 'NEXUS_COORDINATOR') {
+                            active = 'founder';
+                        } else if (role === 'SECTOR_DELEGATE') {
+                            active = 'delegate';
+                        } else {
+                            active = 'citizen';
+                        }
+                    }
+                }
+            }
+
+            // Atualiza o texto do status da perspectiva
+            const statusEl = document.getElementById('perspective-status-msg');
+            if (statusEl) {
+                const labelMap = {
+                    visitor: '🌐 PÚBLICO (VISITANTE - SOMENTE LEITURA)',
+                    citizen: '🎒 CIDADÃO DA COMUNIDADE',
+                    delegate: '🎖️ DELEGADO DE SETOR',
+                    founder: '👑 COORDENADOR GLOBAL (ADMIN - FULL)'
+                };
+                statusEl.innerText = `PERSPECTIVA ATIVA: ${labelMap[active] || active.toUpperCase()}`;
+                
+                if (active === 'visitor') statusEl.style.color = '#00f2ff';
+                else if (active === 'citizen') statusEl.style.color = '#00ff88';
+                else if (active === 'delegate') statusEl.style.color = '#ff6b35';
+                else if (active === 'founder') statusEl.style.color = '#ffd700';
+            }
+
+            // Destaca o botão ativo no seletor
+            document.querySelectorAll('.perspective-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`perspective-${currentPerspective}`).classList.add('active');
+
+            // Aplica os overlays de bloqueio dependendo da perspectiva ativa
+            const isVisitor = (active === 'visitor');
+            const isCitizen = (active === 'citizen');
+            const isDelegate = (active === 'delegate');
+            const isFounder = (active === 'founder');
+
+            // 1. Inventário Pessoal (Cidadão+)
+            toggleLockOverlay('personalWalletPanel', isVisitor, 
+                'Este inventário pertence a cidadãos integrados. Associe seu agente a esta comunidade no painel de Imigração abaixo.', 
+                'wallet-lock');
+
+            // 2. Eleições de Delegados (Cidadão+)
+            toggleLockOverlay('sectorElectionsPanel', isVisitor, 
+                'Apenas cidadãos registrados e residentes podem participar e votar nas eleições de delegados setoriais.', 
+                'elections-lock');
+
+            // 3. Controle de frotas de robôs (Delegado+)
+            toggleLockOverlay('robotFleetPanel', isVisitor || isCitizen, 
+                'O remanejamento e priorização de frotas de robôs é reservado a Delegados de Setor eleitos.', 
+                'fleet-lock');
+
+            // 4. Proposta de Regras Constitucionais (Cidadão+)
+            toggleLockOverlay('ruleProposalPanel', isVisitor, 
+                'Apenas cidadãos residentes podem propor regras constitucionais para a comunidade.', 
+                'rule-proposal-lock');
+
+            // 5. Inicialização de Projetos (Cidadão+)
+            toggleLockOverlay('projectProposalPanel', isVisitor, 
+                'Apenas cidadãos residentes podem inicializar e propor novos projetos de engenharia.', 
+                'project-proposal-lock');
+
+            // 6. Deploy de Nós Nexus (Fundador apenas)
+            toggleLockOverlay('nexusNodesPanel', !isFounder, 
+                'O provisionamento e deploy de novos nós de rede mesh no nexus são exclusivos a Coordenadores Globais.', 
+                'nexus-nodes-lock');
+
+            // 7. Simulação de Incidentes (Fundador apenas)
+            toggleLockOverlay('incidentSimulationPanel', !isFounder, 
+                'A simulação controlada de anomalias ecológicas ou sociais é restrita a Coordenadores Globais.', 
+                'incidents-lock');
+
+            // 8. Espionage Form Lock (Citizen+)
+            toggleLockOverlay('launchEspionagePanel', isVisitor, 
+                'Apenas cidadãos residentes podem lançar operações clandestinas contra outras comunidades.', 
+                'espionage-lock');
+        }
+
+        function submitContribution(techId, civId) {
+            const input = document.querySelector(`#contrib-form-${techId} input[name="coins"]`);
+            const coins = parseFloat(input.value);
+            if (isNaN(coins) || coins <= 0) return;
+            
+            fetch(`/api/v1/tech-tree/${techId}/contribute`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ civilizationId: civId, coins: coins })
+            })
+            .then(r => {
+                if (r.ok) {
+                    window.location.reload();
+                } else {
+                    r.json().then(data => alert('Erro: ' + (data.message || 'Falha na contribuição')));
+                }
+            })
+            .catch(e => console.error(e));
+        }
+
+        function licenseTech(techId, civId) {
+            fetch(`/api/v1/tech-tree/${techId}/license`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ licenseeId: civId, feePerTick: 5.0 })
+            })
+            .then(r => {
+                if (r.ok) {
+                    window.location.reload();
+                } else {
+                    r.json().then(data => alert('Erro: ' + (data.message || 'Falha ao licenciar')));
+                }
+            })
+            .catch(e => console.error(e));
+        }
+
+        // Initialize additions
+        document.addEventListener('DOMContentLoaded', () => {
+            updatePriorityLabels();
+            loadPendingMigrations();
+            setInterval(loadPendingMigrations, 10000);
+            
+            // Detecta e aplica a perspectiva inicial
+            applyPerspective();
+        });
     </script>
 
     <style>
@@ -198,15 +1942,15 @@
         .civ-res-fill { height: 100%; border-radius: 5px; transition: width 0.5s; }
         .civ-res-pct { width: 35px; font-size: 0.7rem; text-align: right; }
         .civ-grid-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .voxtex-nodes { display: flex; flex-direction: column; gap: 8px; }
-        .voxtex-node-item { display: flex; align-items: center; gap: 10px; padding: 8px;
+        .nexus-nodes { display: flex; flex-direction: column; gap: 8px; }
+        .nexus-node-item { display: flex; align-items: center; gap: 10px; padding: 8px;
             background: rgba(255,255,255,0.02); border-radius: 6px; font-size: 0.8rem; }
-        .voxtex-node-icon { font-size: 0.6rem; }
-        .voxtex-active { color: #00ff88; }
-        .voxtex-idle { color: var(--text-dim); }
-        .voxtex-node-name { flex: 1; }
-        .voxtex-node-type { color: var(--text-dim); font-size: 0.7rem; width: 70px; }
-        .voxtex-node-status { font-size: 0.7rem; width: 60px; text-align: right; }
+        .nexus-node-icon { font-size: 0.6rem; }
+        .nexus-active { color: #00ff88; }
+        .nexus-idle { color: var(--text-dim); }
+        .nexus-node-name { flex: 1; }
+        .nexus-node-type { color: var(--text-dim); font-size: 0.7rem; width: 70px; }
+        .nexus-node-status { font-size: 0.7rem; width: 60px; text-align: right; }
         .diplo-list { display: flex; flex-direction: column; gap: 6px; }
         .diplo-item { display: flex; align-items: center; gap: 8px; padding: 8px;
             background: rgba(255,255,255,0.02); border-radius: 4px; font-size: 0.75rem; }
@@ -241,5 +1985,19 @@
             border-radius: 6px; color: var(--accent-cyan); text-decoration: none; font-size: 0.75rem;
             letter-spacing: 1px; transition: background 0.3s; }
         .ql-link:hover { background: rgba(0,242,255,0.1); }
+
+        /* Cooperative Panel Custom Styles */
+        .coop-tabs { display: flex; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 10px; margin-bottom: 20px; }
+        .coop-tab-btn { background: none; border: none; padding: 8px 16px; color: var(--text-dim); font-family: 'Outfit', sans-serif; font-size: 0.75rem; letter-spacing: 1px; cursor: pointer; border-radius: 4px; transition: all 0.3s; }
+        .coop-tab-btn:hover { color: #fff; background: rgba(255,255,255,0.02); }
+        .coop-tab-btn.active { color: #00f2ff; background: rgba(0,242,255,0.05); font-weight: 600; border: 1px solid rgba(0,242,255,0.15); }
+        .coop-tab-content { display: none; }
+        .coop-tab-content.active { display: block; animation: fadeIn 0.4s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .scroll-list::-webkit-scrollbar { width: 4px; }
+        .scroll-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        .scroll-list::-webkit-scrollbar-thumb { background: rgba(0,242,255,0.2); border-radius: 2px; }
+        .scroll-list::-webkit-scrollbar-thumb:hover { background: rgba(0,242,255,0.4); }
     </style>
 </div>
+

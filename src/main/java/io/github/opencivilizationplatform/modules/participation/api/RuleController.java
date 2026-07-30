@@ -4,6 +4,7 @@ import io.github.opencivilizationplatform.modules.participation.application.Rule
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -27,14 +28,28 @@ public class RuleController {
     }
 
     @PostMapping("/{id}/vote")
-    @Operation(summary = "Vote on a rule", description = "Records a vote for a rule by ID")
-    public Rule voteRule(@PathVariable Long id) {
-        return ruleService.voteRule(id);
+    @Operation(summary = "Vote on a rule (weighted by role & sector)",
+               description = "Delegate on matching sector = 5pts, Founder = 3pts, Coordinator = 4pts, Citizen = 1pt. Rule activates at 10pts.")
+    public Rule voteRule(@PathVariable Long id, HttpServletRequest request) {
+        String citizenId = resolveCitizenId(request);
+        return ruleService.voteRule(id, citizenId);
     }
 
     @PostMapping
     @Operation(summary = "Propose a rule", description = "Creates a new rule proposal")
     public Rule proposeRule(@Valid @RequestBody Rule rule) {
         return ruleService.proposeRule(rule);
+    }
+
+    private String resolveCitizenId(HttpServletRequest request) {
+        String clientId = (String) request.getAttribute("X-Client-Id");
+        if (clientId != null) return clientId;
+        String token = request.getHeader("X-Client-Token");
+        if (token != null && !token.isBlank()) return token;
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        return request.getRemoteAddr() + ":" + request.getRemotePort();
     }
 }

@@ -14,9 +14,11 @@ import io.github.opencivilizationplatform.modules.contribution.application.Contr
 import io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService;
 import io.github.opencivilizationplatform.modules.execution.application.AutomationUnitService;
 import io.github.opencivilizationplatform.modules.social.application.SocialStabilityService;
-import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
+import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
 import io.github.opencivilizationplatform.modules.technology.application.TechnologyService;
 import io.github.opencivilizationplatform.modules.technology.domain.TechnologyStatus;
+import io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository;
+import io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -44,8 +46,10 @@ public class PageController {
     private final AutomationUnitService automationService;
     private final CivilizationService civilizationService;
     private final ResourceRegionService regionService;
-    private final VoxtexMeshService voxtexService;
+    private final NexusMeshService nexusService;
     private final TechnologyService technologyService;
+    private final MeshTradeRepository meshTradeRepository;
+    private final EspionageRepository espionageRepository;
 
     public PageController(BiosphereMetricService biosphereService,
                           NeedService needService,
@@ -61,8 +65,10 @@ public class PageController {
                           AutomationUnitService automationService,
                           CivilizationService civilizationService,
                           ResourceRegionService regionService,
-                          VoxtexMeshService voxtexService,
-                          TechnologyService technologyService) {
+                          NexusMeshService nexusService,
+                          TechnologyService technologyService,
+                          MeshTradeRepository meshTradeRepository,
+                          EspionageRepository espionageRepository) {
         this.biosphereService = biosphereService;
         this.needService = needService;
         this.resourceService = resourceService;
@@ -77,8 +83,10 @@ public class PageController {
         this.automationService = automationService;
         this.civilizationService = civilizationService;
         this.regionService = regionService;
-        this.voxtexService = voxtexService;
+        this.nexusService = nexusService;
         this.technologyService = technologyService;
+        this.meshTradeRepository = meshTradeRepository;
+        this.espionageRepository = espionageRepository;
     }
 
     private String render(Model model, String viewName, String pageTitle, String currentPage) {
@@ -99,6 +107,7 @@ public class PageController {
     @GetMapping("/biosphere")
     public String biosphere(Model model) {
         model.addAttribute("metrics", biosphereService.getAllMetrics(Pageable.unpaged()).getContent());
+        model.addAttribute("regions", regionService.getAllRegions());
         return render(model, "biosphere", "Biosphere", "biosphere");
     }
 
@@ -164,6 +173,8 @@ public class PageController {
         model.addAttribute("status", simulationEngineService.getStatus());
         model.addAttribute("balance", balanceService.getBalanceReport());
         model.addAttribute("automations", automationService.getAllUnits(Pageable.unpaged()).getContent());
+        model.addAttribute("civilizations", civilizationService.getAllCivilizationsList());
+        model.addAttribute("meshTrades", meshTradeRepository.findAllByOrderByCreatedAtDesc());
         return render(model, "simulation", "Cortex Engine", "simulation");
     }
 
@@ -172,6 +183,8 @@ public class PageController {
         model.addAttribute("status", simulationEngineService.getStatus());
         model.addAttribute("balance", balanceService.getBalanceReport());
         model.addAttribute("automations", automationService.getAllUnits(Pageable.unpaged()).getContent());
+        model.addAttribute("civilizations", civilizationService.getAllCivilizationsList());
+        model.addAttribute("meshTrades", meshTradeRepository.findAllByOrderByCreatedAtDesc());
         return "simulation :: cortex-telemetry";
     }
 
@@ -212,15 +225,16 @@ public class PageController {
             return "redirect:/play";
         }
         model.addAttribute("civ", civ);
+        model.addAttribute("allCivilizations", civilizationService.getAllCivilizationsList());
 
         var region = civ.getHomeRegion();
         model.addAttribute("region", region);
 
-        var nodes = voxtexService.getNodesForCivilization(id);
+        var nodes = nexusService.getNodesForCivilization(id);
         model.addAttribute("nodes", nodes);
 
         var messages = nodes.isEmpty() ? List.of() :
-            voxtexService.getConversation(nodes.get(0).getId(),
+            nexusService.getConversation(nodes.get(0).getId(),
                 nodes.size() > 1 ? nodes.get(1).getId() : nodes.get(0).getId());
         model.addAttribute("messages", messages);
 
@@ -228,6 +242,9 @@ public class PageController {
         model.addAttribute("techTree", techTree);
         model.addAttribute("techCount", techTree.stream()
             .filter(t -> t.getStatus() == TechnologyStatus.COMPLETED).count());
+        model.addAttribute("shipments", shipmentService.getAllShipments(org.springframework.data.domain.Pageable.unpaged()).getContent());
+        model.addAttribute("licensedTechs", technologyService.getLicensedTechnologies(id));
+        model.addAttribute("licensableTechs", technologyService.getLicensableTechnologies(id));
 
         // Build resource list from region
         if (region != null) {
@@ -242,6 +259,8 @@ public class PageController {
             model.addAttribute("resourceList", List.of());
         }
 
+        model.addAttribute("espionageOperations", espionageRepository.findByInitiatorIdOrTargetId(id, id));
+
         return render(model, "civilization", "Civilization: " + civ.getName(), "civilization");
     }
 
@@ -250,21 +269,21 @@ public class PageController {
         return "leaderboard";
     }
 
-    @GetMapping("/voxtex")
-    public String voxtex(Model model) {
-        model.addAttribute("status", voxtexService.getNetworkStatus());
-        model.addAttribute("nodes", voxtexService.getAllNodes());
-        model.addAttribute("connections", voxtexService.getAllConnections());
+    @GetMapping("/nexus")
+    public String nexus(Model model) {
+        model.addAttribute("status", nexusService.getNetworkStatus());
+        model.addAttribute("nodes", nexusService.getAllNodes());
+        model.addAttribute("connections", nexusService.getAllConnections());
         model.addAttribute("recentMessages",
-            voxtexService.getAllNodes().isEmpty() ? List.of() :
-            voxtexService.getConversation(
-                voxtexService.getAllNodes().get(0).getId(),
-                voxtexService.getAllNodes().size() > 1 ?
-                    voxtexService.getAllNodes().get(1).getId() :
-                    voxtexService.getAllNodes().get(0).getId()
+            nexusService.getAllNodes().isEmpty() ? List.of() :
+            nexusService.getConversation(
+                nexusService.getAllNodes().get(0).getId(),
+                nexusService.getAllNodes().size() > 1 ?
+                    nexusService.getAllNodes().get(1).getId() :
+                    nexusService.getAllNodes().get(0).getId()
             )
         );
-        return render(model, "voxtex", "Voxtex Mesh", "voxtex");
+        return render(model, "nexus", "Nexus Mesh", "nexus");
     }
 
     @GetMapping("/trade")
@@ -286,4 +305,15 @@ public class PageController {
     public String civilizations(Model model) {
         return render(model, "civilizations", "Civilizations", "civilizations");
     }
+
+    @GetMapping("/network-map")
+    public String networkMap(Model model) {
+        return render(model, "network-map", "Network Map", "network-map");
+    }
+
+    @GetMapping("/network")
+    public String globalDashboard(Model model) {
+        return render(model, "network", "Global Dashboard", "network");
+    }
 }
+

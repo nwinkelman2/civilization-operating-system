@@ -24,11 +24,13 @@ class TradeControllerTest {
 
     private MockMvc mockMvc;
     private TradeService tradeService;
+    private io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService;
 
     @BeforeEach
     void setUp() {
         tradeService = mock(TradeService.class);
-        mockMvc = standaloneSetup(new TradeController(tradeService)).build();
+        marketPriceService = mock(io.github.opencivilizationplatform.modules.trade.application.MarketPriceService.class);
+        mockMvc = standaloneSetup(new TradeController(tradeService, marketPriceService)).build();
     }
 
     @Test

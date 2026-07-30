@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface ProjectRepository extends JpaRepository<Project, Long> {
     List<Project> findByStatus(ProjectStatus status);
+    List<Project> findByCivilizationId(Long civilizationId);
+    List<Project> findByCivilizationIdAndStatus(Long civilizationId, ProjectStatus status);
 }

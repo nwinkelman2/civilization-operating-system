@@ -1,54 +1,367 @@
 <div th:fragment="content">
+    <style>
+        .market-board {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .market-card {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(0, 242, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .market-card:hover, .market-card.selected {
+            background: rgba(0, 242, 255, 0.03);
+            border-color: rgba(0, 242, 255, 0.4);
+            box-shadow: 0 0 12px rgba(0, 242, 255, 0.15);
+        }
+        .market-card-title {
+            font-size: 0.65rem;
+            color: var(--text-dim);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .market-card-price {
+            font-size: 1.6rem;
+            color: #fff;
+            font-weight: 700;
+            font-family: 'Outfit', sans-serif;
+            margin: 6px 0;
+            display: flex;
+            align-items: baseline;
+            gap: 6px;
+        }
+        .market-card-delta {
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+        .delta-up { color: #00ff88; }
+        .delta-down { color: #ff6b6b; }
+        
+        .market-chart-section {
+            background: rgba(255,255,255,0.01);
+            border: 1px solid rgba(255,255,255,0.05);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+        }
+        .chart-container {
+            position: relative;
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 10px;
+            height: 220px;
+        }
+        #priceChart {
+            width: 100%;
+            height: 100%;
+        }
+        .market-legend {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+            font-size: 0.75rem;
+        }
+        .market-legend-item {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            padding-bottom: 6px;
+        }
+
+        .trade-layout { display: grid; grid-template-columns: 1fr 1.5fr; gap: 24px; }
+        .trade-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.1);
+            border-radius: 8px; padding: 20px; }
+        .trade-section h2 { color: var(--accent-cyan); font-family: 'Outfit', sans-serif;
+            font-size: 0.9rem; letter-spacing: 2px; margin-bottom: 20px; }
+        .form-row { display: flex; gap: 12px; }
+        .form-row .form-group { flex: 1; }
+        .trade-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 6px; padding: 14px; margin-bottom: 10px; }
+        .trade-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .trade-id { color: var(--text-dim); font-size: 0.75rem; }
+        .trade-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; }
+        .status-proposed { background: rgba(255,215,0,0.15); color: #ffd700; }
+        .status-active { background: rgba(0,255,136,0.15); color: #00ff88; }
+        .status-completed { background: rgba(0,242,255,0.15); color: #00f2ff; }
+        .status-cancelled, .status-rejected { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+        .trade-details { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 10px; }
+        .trade-resource { color: var(--accent-cyan); font-weight: bold; }
+        .trade-actions { display: flex; gap: 6px; }
+        .btn-sm { padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer;
+            font-family: 'Outfit', sans-serif; font-size: 0.7rem; letter-spacing: 1px; }
+        .btn-accept { background: rgba(0,255,136,0.2); color: #00ff88; }
+        .btn-reject { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+        .btn-complete { background: rgba(0,242,255,0.2); color: #00f2ff; }
+        .btn-cancel { background: rgba(255,255,255,0.1); color: var(--text-dim); }
+        .loading-text, .empty-text, .error-text { text-align: center; padding: 40px; color: var(--text-dim); }
+        .error-text { color: #ff6b6b; }
+        @media (max-width: 992px) {
+            .market-chart-section { grid-template-columns: 1fr; }
+            .trade-layout { grid-template-columns: 1fr; }
+        }
+    </style>
+
     <header class="page-header">
-        <h1 class="glitch-text" data-text="TRADE NETWORK">
-            <span class="glitch-scan">⟐</span> TRADE NETWORK <span class="glitch-scan">⟐</span>
+        <h1 class="glitch-text" data-text="MERCADO E COMÉRCIO">
+            <span class="glitch-scan">⟐</span> MERCADO E COMÉRCIO <span class="glitch-scan">⟐</span>
         </h1>
-        <p class="subtitle">Propose and manage trade agreements between civilizations</p>
+        <p class="subtitle">Mesh barter exchange dynamic index & shared trade channels</p>
     </header>
 
+    <!-- Dynamic Market Price board -->
+    <div class="market-board" id="marketBoard">
+        <!-- Renders dynamically -->
+        <div class="market-card" onclick="selectResource('FOOD')">
+            <span class="market-card-title">Food (Alimento)</span>
+            <div class="market-card-price" id="price-FOOD">10.00 <span class="market-card-delta delta-up">▲ 0.0%</span></div>
+        </div>
+        <div class="market-card" onclick="selectResource('WATER')">
+            <span class="market-card-title">Water (Água)</span>
+            <div class="market-card-price" id="price-WATER">10.00 <span class="market-card-delta delta-down">▼ 0.0%</span></div>
+        </div>
+        <div class="market-card" onclick="selectResource('MINERAL')">
+            <span class="market-card-title">Minerals (Minérios)</span>
+            <div class="market-card-price" id="price-MINERAL">10.00 <span class="market-card-delta delta-up">▲ 0.0%</span></div>
+        </div>
+        <div class="market-card" onclick="selectResource('ENERGY')">
+            <span class="market-card-title">Energy (Energia)</span>
+            <div class="market-card-price" id="price-ENERGY">10.00 <span class="market-card-delta delta-up">▲ 0.0%</span></div>
+        </div>
+        <div class="market-card" onclick="selectResource('HOUSING')">
+            <span class="market-card-title">Housing (Moradia)</span>
+            <div class="market-card-price" id="price-HOUSING">10.00 <span class="market-card-delta delta-up">▲ 0.0%</span></div>
+        </div>
+    </div>
+
+    <!-- Candlestick/Price chart -->
+    <div class="market-chart-section glass-morphism animate">
+        <div>
+            <h3 style="font-size:0.75rem; letter-spacing:1.5px; color:#fff; text-transform:uppercase; margin:0 0 12px 0;">
+                Gráfico de Tendência: <span id="selectedResourceLabel" style="color:#00f2ff;">FOOD</span>
+            </h3>
+            <div class="chart-container">
+                <canvas id="priceChart"></canvas>
+            </div>
+        </div>
+        <div class="market-legend">
+            <h4 style="margin:0 0 8px 0; color:#fff; font-size:0.8rem;">Parâmetros de Cotação</h4>
+            <div class="market-legend-item">
+                <span>Preço Base:</span>
+                <strong style="color:var(--text-dim);">10.00 créditos</strong>
+            </div>
+            <div class="market-legend-item">
+                <span>Fator de Escassez:</span>
+                <strong style="color:#ff6b6b;">+2.00 por deficit regional</strong>
+            </div>
+            <div class="market-legend-item">
+                <span>Ajuste de Evento:</span>
+                <strong style="color:#ffd700;">+5.00 a +10.00 sob desastres</strong>
+            </div>
+            <div style="font-size:0.65rem; color:var(--text-dim); margin-top:8px; line-height:1.3;">
+                Os preços flutuam dinamicamente a cada ciclo da simulação com base na demanda de escassez coletada em tempo real das regiões ativas no cluster.
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Trades and Forms -->
     <div class="trade-layout">
-        <div class="trade-section">
-            <h2>Propose Trade</h2>
+        <div class="trade-section glass-morphism animate">
+            <h2>Propor Transação</h2>
             <form id="tradeForm" class="trade-form">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Your Civilization ID</label>
-                        <input type="number" name="fromCivId" class="form-input" required placeholder="e.g. 1">
+                        <label>Sua Civilização ID</label>
+                        <input type="number" name="fromCivId" class="form-input" required placeholder="Ex: 1">
                     </div>
                     <div class="form-group">
-                        <label>Target Civilization ID</label>
-                        <input type="number" name="toCivId" class="form-input" required placeholder="e.g. 2">
+                        <label>Destino ID</label>
+                        <input type="number" name="toCivId" class="form-input" required placeholder="Ex: 2">
                     </div>
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Resource Type</label>
+                        <label>Tipo de Recurso</label>
                         <select name="resourceType" class="form-input" required>
-                            <option value="FOOD">Food</option>
-                            <option value="WATER">Water</option>
-                            <option value="MINERALS">Minerals</option>
-                            <option value="ENERGY">Energy</option>
-                            <option value="HOUSING">Housing</option>
+                            <option value="FOOD">Food (Alimento)</option>
+                            <option value="WATER">Water (Água)</option>
+                            <option value="MINERALS">Minerals (Minérios)</option>
+                            <option value="ENERGY">Energy (Energia)</option>
+                            <option value="HOUSING">Housing (Moradia)</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>Quantity</label>
+                        <label>Quantidade</label>
                         <input type="number" name="quantity" class="form-input" required min="1" placeholder="100">
                     </div>
                 </div>
-                <button type="submit" class="btn-primary">PROPOSE TRADE</button>
+                <button type="submit" class="btn-primary" style="margin-top: 10px;">ENVIAR PROPOSTA</button>
             </form>
         </div>
 
-        <div class="trade-section">
-            <h2>Active Trades</h2>
+        <div class="trade-section glass-morphism animate">
+            <h2>Acordos Ativos de Comércio</h2>
             <div id="tradeList">
-                <p class="loading-text">Loading trades...</p>
+                <p class="loading-text">Carregando acordos comerciais...</p>
             </div>
         </div>
     </div>
 
     <script th:inline="javascript">
+        let currentSelectedResource = 'FOOD';
+        let chartInstance = null;
+
+        function selectResource(res) {
+            currentSelectedResource = res;
+            document.getElementById('selectedResourceLabel').innerText = res;
+            
+            // Mark selected card
+            document.querySelectorAll('.market-card').forEach(c => c.classList.remove('selected'));
+            const cards = document.querySelectorAll('.market-card');
+            if (res === 'FOOD') cards[0].classList.add('selected');
+            if (res === 'WATER') cards[1].classList.add('selected');
+            if (res === 'MINERAL') cards[2].classList.add('selected');
+            if (res === 'ENERGY') cards[3].classList.add('selected');
+            if (res === 'HOUSING') cards[4].classList.add('selected');
+
+            loadPriceHistory(res);
+        }
+
+        async function loadPrices() {
+            try {
+                const resp = await fetch('/api/v1/trade/prices');
+                if (!resp.ok) return;
+                const prices = await resp.json();
+                
+                for (const [res, price] of Object.entries(prices)) {
+                    const cell = document.getElementById(`price-${res}`);
+                    if (cell) {
+                        const delta = price >= 10.0 ? `▲ +${((price - 10.0)/10.0*100).toFixed(1)}%` : `▼ ${((price - 10.0)/10.0*100).toFixed(1)}%`;
+                        const deltaClass = price >= 10.0 ? 'delta-up' : 'delta-down';
+                        cell.innerHTML = `${price.toFixed(2)} <span class="market-card-delta ${deltaClass}">${delta}</span>`;
+                    }
+                }
+            } catch(e) {
+                console.error("Failed to load prices", e);
+            }
+        }
+
+        async function loadPriceHistory(resource) {
+            try {
+                const resp = await fetch(`/api/v1/trade/prices/${resource}/history`);
+                if (!resp.ok) return;
+                const history = await resp.json();
+                
+                const numericHistory = history.map(h => parseFloat(h));
+                renderChart(numericHistory);
+            } catch(e) {
+                console.error("Failed to load history", e);
+            }
+        }
+
+        function renderChart(data) {
+            const canvas = document.getElementById('priceChart');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            // Handle high DPI screens
+            const dpr = window.devicePixelRatio || 1;
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+
+            ctx.clearRect(0, 0, rect.width, rect.height);
+            
+            if (data.length === 0) {
+                // Seed some fake trend line for visual effect if list is fresh
+                data = [10, 11, 10, 9.5, 12, 14, 13.5, 15, 14.2];
+            }
+
+            const points = data.slice(-15);
+            const padding = 20;
+            const chartWidth = rect.width - padding * 2;
+            const chartHeight = rect.height - padding * 2;
+
+            const minVal = Math.min(...points) * 0.9;
+            const maxVal = Math.max(...points) * 1.1;
+            const valRange = maxVal - minVal;
+
+            // Draw grid
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = padding + (chartHeight / 4) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding, y);
+                ctx.lineTo(rect.width - padding, y);
+                ctx.stroke();
+
+                // Draw labels
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.font = '8px monospace';
+                const labelVal = maxVal - (valRange / 4) * i;
+                ctx.fillText(labelVal.toFixed(2), 2, y + 3);
+            }
+
+            // Draw line
+            ctx.beginPath();
+            ctx.strokeStyle = '#00f2ff';
+            ctx.lineWidth = 2;
+            
+            const step = chartWidth / (points.length - 1);
+            for (let i = 0; i < points.length; i++) {
+                const x = padding + i * step;
+                const y = padding + chartHeight - ((points[i] - minVal) / valRange) * chartHeight;
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+
+            // Gradient fill
+            const grad = ctx.createLinearGradient(0, padding, 0, padding + chartHeight);
+            grad.addColorStop(0, 'rgba(0, 242, 255, 0.15)');
+            grad.addColorStop(1, 'rgba(0, 242, 255, 0.0)');
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            for (let i = 0; i < points.length; i++) {
+                const x = padding + i * step;
+                const y = padding + chartHeight - ((points[i] - minVal) / valRange) * chartHeight;
+                if (i === 0) {
+                    ctx.moveTo(x, padding + chartHeight);
+                    ctx.lineTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.lineTo(padding + (points.length - 1) * step, padding + chartHeight);
+            ctx.closePath();
+            ctx.fill();
+
+            // Dots on points
+            ctx.fillStyle = '#00f2ff';
+            for (let i = 0; i < points.length; i++) {
+                const x = padding + i * step;
+                const y = padding + chartHeight - ((points[i] - minVal) / valRange) * chartHeight;
+                ctx.beginPath();
+                ctx.arc(x, y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
         async function loadTrades() {
             try {
                 const resp = await fetch('/api/v1/trade');
@@ -60,7 +373,7 @@
                 const container = document.getElementById('tradeList');
 
                 if (!trades || trades.length === 0) {
-                    container.innerHTML = '<p class="empty-text">No active trades. Propose one above!</p>';
+                    container.innerHTML = '<p class="empty-text">Sem acordos comerciais ativos. Envie uma proposta ao lado!</p>';
                     return;
                 }
 
@@ -76,18 +389,18 @@
                         </div>
                         <div class="trade-actions">
                             ${(t.status === 'PROPOSED' || t.status === 'PENDING') ? `
-                                <button class="btn-sm btn-accept" onclick="acceptTrade(${t.id})">Accept</button>
-                                <button class="btn-sm btn-reject" onclick="rejectTrade(${t.id})">Reject</button>
+                                <button class="btn-sm btn-accept" onclick="acceptTrade(${t.id})">Aceitar</button>
+                                <button class="btn-sm btn-reject" onclick="rejectTrade(${t.id})">Rejeitar</button>
                             ` : ''}
                             ${t.status === 'ACTIVE' ? `
-                                <button class="btn-sm btn-complete" onclick="completeTrade(${t.id})">Complete</button>
-                                <button class="btn-sm btn-cancel" onclick="cancelTrade(${t.id})">Cancel</button>
+                                <button class="btn-sm btn-complete" onclick="completeTrade(${t.id})">Concluir</button>
+                                <button class="btn-sm btn-cancel" onclick="cancelTrade(${t.id})">Cancelar</button>
                             ` : ''}
                         </div>
                     </div>
                 `).join('');
             } catch(e) {
-                document.getElementById('tradeList').innerHTML = '<p class="error-text">Failed to load trades. Is the server running?</p>';
+                document.getElementById('tradeList').innerHTML = '<p class="error-text">Falha ao ler acordos. O servidor está rodando?</p>';
             }
         }
 
@@ -124,48 +437,22 @@
                     e.target.reset();
                     loadTrades();
                 } else {
-                    alert('Failed to propose trade: ' + (await resp.text()));
+                    alert('Falha ao propor transação: ' + (await resp.text()));
                 }
             } catch(err) {
-                alert('Error: ' + err);
+                alert('Erro: ' + err);
             }
         });
 
+        // Initialize Page
+        selectResource('FOOD');
         loadTrades();
-        setInterval(loadTrades, 15000);
+        loadPrices();
+        
+        setInterval(() => {
+            loadTrades();
+            loadPrices();
+            loadPriceHistory(currentSelectedResource);
+        }, 10000);
     </script>
-
-    <style>
-        .trade-layout { display: grid; grid-template-columns: 1fr 2fr; gap: 24px; margin-top: 20px; }
-        .trade-section { background: rgba(255,255,255,0.02); border: 1px solid rgba(0,242,255,0.1);
-            border-radius: 8px; padding: 20px; }
-        .trade-section h2 { color: var(--accent-cyan); font-family: 'Outfit', sans-serif;
-            font-size: 0.9rem; letter-spacing: 2px; margin-bottom: 20px; }
-        .form-row { display: flex; gap: 12px; }
-        .form-row .form-group { flex: 1; }
-        .trade-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 6px; padding: 14px; margin-bottom: 10px; }
-        .trade-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .trade-id { color: var(--text-dim); font-size: 0.75rem; }
-        .trade-status { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; }
-        .status-proposed { background: rgba(255,215,0,0.15); color: #ffd700; }
-        .status-active { background: rgba(0,255,136,0.15); color: #00ff88; }
-        .status-completed { background: rgba(0,242,255,0.15); color: #00f2ff; }
-        .status-cancelled, .status-rejected { background: rgba(255,107,107,0.15); color: #ff6b6b; }
-        .trade-details { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 10px; }
-        .trade-resource { color: var(--accent-cyan); font-weight: bold; }
-        .trade-actions { display: flex; gap: 6px; }
-        .btn-sm { padding: 4px 12px; border: none; border-radius: 4px; cursor: pointer;
-            font-family: 'Outfit', sans-serif; font-size: 0.7rem; letter-spacing: 1px; }
-        .btn-accept { background: rgba(0,255,136,0.2); color: #00ff88; }
-        .btn-reject { background: rgba(255,107,107,0.2); color: #ff6b6b; }
-        .btn-complete { background: rgba(0,242,255,0.2); color: #00f2ff; }
-        .btn-cancel { background: rgba(255,255,255,0.1); color: var(--text-dim); }
-        .loading-text, .empty-text, .error-text { text-align: center; padding: 40px; color: var(--text-dim); }
-        .error-text { color: #ff6b6b; }
-        @media (max-width: 768px) {
-            .trade-layout { grid-template-columns: 1fr; }
-            .form-row { flex-direction: column; }
-        }
-    </style>
 </div>

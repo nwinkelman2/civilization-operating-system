@@ -1,9 +1,11 @@
 package io.github.opencivilizationplatform.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.io.Serializable;
 
 @Schema(description = "Balance report data")
-public class BalanceDTO {
+public class BalanceDTO implements Serializable {
+    private static final long serialVersionUID = 1L;
     @Schema(description = "Resource category name")
     private String category;
     @Schema(description = "Current supply amount")

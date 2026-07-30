@@ -17,9 +17,23 @@ import java.util.List;
 public class TradeController {
 
     private final TradeService service;
+    private final io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService;
 
-    public TradeController(TradeService service) {
+    public TradeController(TradeService service, io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService) {
         this.service = service;
+        this.marketPriceService = marketPriceService;
+    }
+
+    @GetMapping("/prices")
+    @Operation(summary = "Get current market resource prices")
+    public java.util.Map<String, Double> getPrices() {
+        return marketPriceService.getAllPrices();
+    }
+
+    @GetMapping("/prices/{resource}/history")
+    @Operation(summary = "Get price history for a resource type")
+    public List<String> getHistory(@PathVariable String resource) {
+        return marketPriceService.getPriceHistory(resource);
     }
 
     @PostMapping
@@ -58,6 +72,18 @@ public class TradeController {
     @Operation(summary = "Cancel a trade")
     public void cancel(@PathVariable Long tradeId) {
         service.cancelTrade(tradeId);
+    }
+
+    @GetMapping
+    @Operation(summary = "List all trade agreements")
+    public List<TradeAgreement> getAll() {
+        return service.getAllTrades();
+    }
+
+    @PostMapping("/{tradeId}/reject")
+    @Operation(summary = "Reject a trade proposal")
+    public TradeAgreement reject(@PathVariable Long tradeId) {
+        return service.rejectTrade(tradeId);
     }
 }
 

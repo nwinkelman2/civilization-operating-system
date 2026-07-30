@@ -41,7 +41,7 @@ Client  → RestController (JSON API)
 
 ## Cortex Engine
 
-The Cortex simulation engine is a `@Scheduled` service that runs every 15 seconds:
+The Cortex simulation engine is a `@Scheduled` service that runs every 30 seconds:
 
 ```
 RuleService.getValidatedRules()
@@ -50,7 +50,11 @@ BalanceService.getBalanceReport()
       ↓
 Rule evaluation (JSON logic)
       ↓
-Automated decisions
+Priority-Weighted Robot Fabrication (Agri, Aqua, Explore, Utility)
+      ↓
+Autonomous Mesh Trading (Deficit barters & Personnel transits)
+      ↓
+Automated decisions & System remediation
 ```
 
 It also listens for `BiosphereCriticalEvent` via `@EventListener` for real-time reactions.

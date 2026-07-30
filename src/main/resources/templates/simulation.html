@@ -6,40 +6,141 @@
         <p class="subtitle">Cortex Engine &bull; Automated Governance &bull; Real-Time Simulation</p>
     </header>
 
-    <!-- Top Stats Bar -->
-    <div class="sim-stats" th:fragment="cortex-telemetry" hx-get="/simulation/fragments/cortex-telemetry" hx-trigger="every 5s" hx-swap="outerHTML">
-        <div class="sim-stat-card">
-            <span class="sim-stat-icon">⏱</span>
-            <div>
-                <span class="sim-stat-label">TICK</span>
-                <span class="sim-stat-value" th:text="${status.tick}">0</span>
+    <!-- Top Stats Bar & Autonomous Operations Dashboard (Auto-refreshed via HTMX) -->
+    <div th:fragment="cortex-telemetry" hx-get="/simulation/fragments/cortex-telemetry" hx-trigger="every 5s" hx-swap="outerHTML">
+        
+        <!-- Stats Grid -->
+        <div class="sim-stats">
+            <div class="sim-stat-card">
+                <span class="sim-stat-icon">⏱</span>
+                <div>
+                    <span class="sim-stat-label">TICK</span>
+                    <span class="sim-stat-value" th:text="${status.tick}">0</span>
+                </div>
+            </div>
+            <div class="sim-stat-card">
+                <span class="sim-stat-icon">⚖</span>
+                <div>
+                    <span class="sim-stat-label">ACTIVE RULES</span>
+                    <span class="sim-stat-value" th:text="${status.activeRulesCount}">0</span>
+                </div>
+            </div>
+            <div class="sim-stat-card">
+                <span class="sim-stat-icon">🧠</span>
+                <div>
+                    <span class="sim-stat-label">ENGINE</span>
+                    <span class="sim-stat-value" style="font-size: 0.7rem;" th:text="${status.engine}">—</span>
+                </div>
+            </div>
+            <div class="sim-stat-card">
+                <span class="sim-stat-icon">📡</span>
+                <div>
+                    <span class="sim-stat-label">CATEGORIES</span>
+                    <span class="sim-stat-value" th:text="${status.monitoredCategories.size()}">0</span>
+                </div>
             </div>
         </div>
-        <div class="sim-stat-card">
-            <span class="sim-stat-icon">⚖</span>
-            <div>
-                <span class="sim-stat-label">ACTIVE RULES</span>
-                <span class="sim-stat-value" th:text="${status.activeRulesCount}">0</span>
-            </div>
-        </div>
-        <div class="sim-stat-card">
-            <span class="sim-stat-icon">🧠</span>
-            <div>
-                <span class="sim-stat-label">ENGINE</span>
-                <span class="sim-stat-value" style="font-size: 0.7rem;" th:text="${status.engine}">—</span>
-            </div>
-        </div>
-        <div class="sim-stat-card">
-            <span class="sim-stat-icon">📡</span>
-            <div>
-                <span class="sim-stat-label">CATEGORIES</span>
-                <span class="sim-stat-value" th:text="${status.monitoredCategories.size()}">0</span>
+
+        <!-- NEW: Autonomous Operations & Negotiations Panel -->
+        <div class="card glass-morphism animate" style="margin-top: 25px; border-color: rgba(0, 242, 255, 0.2); background: rgba(0, 5, 10, 0.3); padding: 20px;">
+            <h2 style="color: #00f2ff; margin-bottom: 15px; font-size: 0.85rem; display: flex; align-items: center; justify-content: space-between;">
+                <span><i data-lucide="cpu" style="width: 16px; vertical-align: middle; color: #00ff88; margin-right: 6px;"></i> PAINEL DE OPERAÇÕES AUTÔNOMAS & NEGOCIAÇÕES (CORTEX MESH)</span>
+                <span class="live-badge" style="font-size: 0.5rem; background: rgba(0,255,136,0.1); border: 1px solid rgba(0,255,136,0.3); color: #00ff88;">TELEMETRIA LIVE</span>
+            </h2>
+
+            <div class="sim-mid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 0;">
+                <!-- Left side: Robot Fleets & Regional Deficits -->
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <h3 style="font-size: 0.7rem; color: #fff; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;"><span style="color: #007aff;">🧠</span> Drones Operando & Disponibilidade Regional</h3>
+                    
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <div th:each="c : ${civilizations}" class="glass-morphism" style="padding: 12px; border-radius: 6px; border-color: rgba(0, 242, 255, 0.15); background: rgba(255,255,255,0.01);">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <strong style="color: #ffd700; font-size: 0.75rem;" th:text="${c.name}">Civilização</strong>
+                                <span style="font-size: 0.6rem; color: var(--text-dim);" th:text="'População: ' + ${c.population}">População: 100</span>
+                            </div>
+
+                            <!-- Lacking resources / Regional scarcity check -->
+                            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                                <span style="font-size: 0.6rem; color: var(--text-dim);">Recursos na Região:</span>
+                                <span th:if="${c.homeRegion != null}" style="display: flex; gap: 4px; flex-wrap: wrap;">
+                                    <span th:if="${c.homeRegion.foodAvailability < 15.0}" class="badge" style="border-color: #ff4444; color: #ff4444; background: rgba(255,68,68,0.1); font-size: 0.55rem; padding: 1px 4px;">FALTA NATURA: ALIMENTO</span>
+                                    <span th:if="${c.homeRegion.waterAvailability < 15.0}" class="badge" style="border-color: #ff4444; color: #ff4444; background: rgba(255,68,68,0.1); font-size: 0.55rem; padding: 1px 4px;">FALTA NATURA: ÁGUA</span>
+                                    <span th:if="${c.homeRegion.mineralAvailability < 15.0}" class="badge" style="border-color: #ff6b35; color: #ff6b35; background: rgba(255,107,53,0.1); font-size: 0.55rem; padding: 1px 4px;">FALTA NATURA: MINERAIS</span>
+                                    <span th:if="${c.homeRegion.energyAvailability < 15.0}" class="badge" style="border-color: #ff6b35; color: #ff6b35; background: rgba(255,107,53,0.1); font-size: 0.55rem; padding: 1px 4px;">FALTA NATURA: ENERGIA</span>
+                                    
+                                    <span th:if="${c.homeRegion.foodAvailability >= 15.0 and c.homeRegion.waterAvailability >= 15.0 and c.homeRegion.mineralAvailability >= 15.0 and c.homeRegion.energyAvailability >= 15.0}" class="badge" style="border-color: #00ff88; color: #00ff88; background: rgba(0,255,136,0.1); font-size: 0.55rem; padding: 1px 4px;">ESTÁVEL</span>
+                                </span>
+                                <span th:if="${c.homeRegion == null}" class="badge badge-unassigned" style="font-size: 0.55rem; padding: 1px 4px;">SEM REGIÃO</span>
+                            </div>
+
+                            <!-- Robot allocations -->
+                            <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center;">
+                                <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <div style="font-size: 0.5rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🌾 AGRI</div>
+                                    <strong style="color: #ffd700; font-size: 0.65rem;" th:text="${c.agriBotsPriority + '%'}">0</strong>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <div style="font-size: 0.5rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">💧 AQUA</div>
+                                    <strong style="color: #006aff; font-size: 0.65rem;" th:text="${c.aquaBotsPriority + '%'}">0</strong>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <div style="font-size: 0.5rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">⛏️ EXPL</div>
+                                    <strong style="color: #ff6b35; font-size: 0.65rem;" th:text="${c.exploreBotsPriority + '%'}">0</strong>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <div style="font-size: 0.5rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🛠️ UTIL</div>
+                                    <strong style="color: #00f2ff; font-size: 0.65rem;" th:text="${c.utilityBotsPriority + '%'}">0</strong>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <div style="font-size: 0.5rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🌱 ECO</div>
+                                    <strong style="color: #00ff88; font-size: 0.65rem;" th:text="${c.ecoBotsPriority + '%'}">0</strong>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <div style="font-size: 0.5rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🔬 SCI</div>
+                                    <strong style="color: #aa66ff; font-size: 0.65rem;" th:text="${c.scienceBotsPriority + '%'}">0</strong>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.02); padding: 4px; border-radius: 4px; border: 1px solid rgba(255,255,255,0.03);">
+                                    <div style="font-size: 0.5rem; color: var(--text-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">🛡️ SEC</div>
+                                    <strong style="color: #ff4444; font-size: 0.65rem;" th:text="${c.securityBotsPriority + '%'}">0</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right side: Mesh Transactions -->
+                <div style="display: flex; flex-direction: column; gap: 15px;">
+                    <h3 style="font-size: 0.7rem; color: #fff; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;"><span style="color: #00ff88;">📡</span> Escambos Autônomos (Mesh)</h3>
+                    
+                    <div class="scroll-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; padding-right: 4px;">
+                        <div th:each="t : ${meshTrades}" class="glass-morphism" style="padding: 8px; border-radius: 4px; font-size: 0.6rem; border-color: rgba(0, 242, 255, 0.1); background: rgba(0, 5, 10, 0.2);">
+                            <div style="display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 2px;">
+                                <span th:if="${t.tradeType == 'RESOURCE_BARTER'}" style="color: #00f2ff;">🔄 BARTER</span>
+                                <span th:if="${t.tradeType == 'PERSONNEL_EXCHANGE'}" style="color: #ffd700;">👥 PESSOAL</span>
+                                <span th:if="${t.tradeType == 'REGIONAL_AID'}" style="color: #00ff88;">🚑 AUXÍLIO</span>
+                                <span style="color: var(--text-dim);" th:text="${#temporals.format(t.createdAt, 'HH:mm:ss')}">00:00</span>
+                            </div>
+                            <div style="margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                <strong th:text="${t.sender.name}">Sender</strong> ➔ <strong th:text="${t.receiver.name}">Receiver</strong>
+                            </div>
+                            <div style="color: var(--text-secondary); font-size: 0.55rem;">
+                                <span>Importou: </span><strong style="color: #fff;" th:text="${t.requestedAmount + ' ' + t.requestedResource}">30 FOOD</strong><br/>
+                                <span th:if="${t.offeredResource != 'NONE'}">Ofereceu: <strong style="color: #fff;" th:text="${t.offeredAmount + ' ' + t.offeredResource}">30 MIN</strong></span>
+                                <span th:if="${t.offeredResource == 'NONE'}" style="color: var(--text-dim); font-style: italic;">Ajuda aprovada</span>
+                            </div>
+                        </div>
+                        <div th:if="${meshTrades == null or #lists.isEmpty(meshTrades)}" style="color: var(--text-dim); text-align: center; padding: 30px 0; font-size: 0.65rem;">
+                            Nenhuma transação no mesh.
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Middle Section: Gauges + Decision Log -->
-    <div class="sim-mid">
+    <div class="sim-mid" style="margin-top: 20px;">
         <!-- Resource Gauges -->
         <div class="sim-gauges">
             <h2 class="sim-section-title"><i data-lucide="activity" style="width: 16px;"></i> RESOURCE BALANCE</h2>
@@ -110,4 +211,8 @@
             </p>
         </div>
     </div>
+    
+    <script>
+        lucide.createIcons();
+    </script>
 </div>

@@ -5,13 +5,18 @@ spring:
   application:
     name: civilization-os
 
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:localhost}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+
   datasource:
     url: jdbc:postgresql://localhost:5432/openciv
     username: postgres
     password: postgres
 
   flyway:
-    enabled: false
+    enabled: true
 
   jpa:
     hibernate:

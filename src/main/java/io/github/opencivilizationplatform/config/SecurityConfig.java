@@ -45,9 +45,18 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(HttpMethod.GET, "/api/v1/simulation/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/civilizations/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/civilizations/*/join").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/civilizations/*/rules/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/civilizations/*/projects/**").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/v1/civilizations/*/incidents/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/leaderboard").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/v1/regions/**").permitAll()
-                .requestMatchers(HttpMethod.GET, "/api/v1/voxtex/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/nexus/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/shipments/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/tech-tree/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/events/**").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/v1/monitoring/**").permitAll()
+                .requestMatchers("/api/v1/trade/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/**").permitAll()
                 .requestMatchers("/api/v1/**").authenticated()
                 .anyRequest().permitAll()
@@ -84,3 +93,4 @@ public class SecurityConfig {
         return source;
     }
 }
+

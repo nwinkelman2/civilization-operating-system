@@ -183,3 +183,29 @@ Get the Cortex engine status.
   "monitoredCategories": ["ENERGY", "FOOD", "WATER"]
 }
 ```
+
+---
+
+## nexus Mesh Extensions
+
+### GET `/api/v1/nexus/trades`
+Returns a history log of autonomous cortex mesh resource and personnel trades.
+
+### POST `/api/v1/nexus/civilizations/{id}/robot-priorities`
+Update priority weights for robot fabrications (Agri, Aqua, Explore, Utility).
+
+---
+
+## Citizen Migrations
+
+### POST `/api/v1/migrations/apply`
+Submit a transfer transit request to relocate to another civilization.
+
+### GET `/api/v1/migrations/pending/{civId}`
+List pending incoming migration applications for a target civilization.
+
+### POST `/api/v1/migrations/{id}/approve`
+Approve migration application, shifting populations between target civilizations.
+
+### POST `/api/v1/migrations/{id}/reject`
+Reject migration application.
