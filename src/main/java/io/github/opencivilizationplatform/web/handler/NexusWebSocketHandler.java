@@ -30,8 +30,9 @@ public class NexusWebSocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
+        String clientId = (String) session.getAttributes().get("X-Client-Id");
         sessions.put(session.getId(), session);
-        log.info("WebSocket connected: {}", session.getId());
+        log.info("WebSocket connected: sessionId={}, clientId={}", session.getId(), clientId);
     }
 
     @Override
@@ -59,6 +60,10 @@ public class NexusWebSocketHandler extends TextWebSocketHandler {
         log.info("WebSocket disconnected: {}", session.getId());
     }
 
+    public int getActiveSessionCount() {
+        return (int) sessions.values().stream().filter(WebSocketSession::isOpen).count();
+    }
+
     public void broadcastMessageLocally(NexusMessage msg) {
         try {
             String json = objectMapper.writeValueAsString(Map.of(
@@ -80,4 +85,3 @@ public class NexusWebSocketHandler extends TextWebSocketHandler {
         }
     }
 }
-

@@ -1,7 +1,7 @@
 package io.github.opencivilizationplatform.modules.simulation.application;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
@@ -35,6 +35,7 @@ public class SimulationEngineService {
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
     private final AtomicInteger activeRulesCount = new AtomicInteger(0);
+    private final AtomicReference<LocalDateTime> lastTickTime = new AtomicReference<>(LocalDateTime.now());
     private final List<String> monitoredCategories = new ArrayList<>();
     private final LinkedList<String> decisionHistory = new LinkedList<>();
 
@@ -49,6 +50,8 @@ public class SimulationEngineService {
         int tick = tickCounter.incrementAndGet();
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         log.info("[CORTEX TICK {}] Simulation cycle starting...", tick);
+
+        lastTickTime.set(LocalDateTime.now());
 
         List<Rule> rules = ruleService.getValidatedRules();
         if (rules == null || rules.isEmpty()) {
@@ -83,7 +86,7 @@ public class SimulationEngineService {
                         .ifPresent(b -> {
                             double percentage = b.getPercentageMet();
                             if (percentage < 100) {
-                                String decision = String.format(java.util.Locale.ROOT, "[%s] DECISION: %s deficiency detected (%.1f%%). Rule '%s' fired.",
+                                String decision = String.format("[%s] DECISION: %s deficiency detected (%.1f%%). Rule '%s' fired.",
                                     timestamp, metricCat, percentage, rule.getTitle());
                                 pushDecision(decision);
                                 log.info(decision);
@@ -101,6 +104,10 @@ public class SimulationEngineService {
         }
 
         log.info("[CORTEX TICK {}] Cycle complete. {} rules evaluated.", tick, rules.size());
+    }
+
+    public LocalDateTime getLastTickTime() {
+        return lastTickTime.get();
     }
 
     @EventListener

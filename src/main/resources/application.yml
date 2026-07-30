@@ -21,6 +21,9 @@ spring:
   jpa:
     hibernate:
       ddl-auto: update
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+        implicit-strategy: org.hibernate.boot.model.naming.ImplicitNamingStrategyJpaCompliantImpl
     show-sql: true
     properties:
       hibernate:
@@ -30,6 +33,17 @@ spring:
     prefix: classpath:/templates/
     suffix: .html
     cache: false
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9093}
+    consumer:
+      group-id: civos-core
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 springdoc:
   api-docs:
@@ -51,6 +65,17 @@ game:
   cortex:
     engine:
       tick-rate-ms: ${CORTEX_TICK_RATE_MS:30000}
+
+civos:
+  eventbus:
+    type: ${CIVOS_EVENTBUS_TYPE:spring}
+  worker:
+    remote-url: ${CIVOS_WORKER_URL:}
+
+management:
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
 
 jwt:
   secret: ${JWT_SECRET:civos-dev-secret-key-change-in-production-123456}

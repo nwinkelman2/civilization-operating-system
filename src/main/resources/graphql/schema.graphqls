@@ -1,0 +1,153 @@
+type Query {
+    civilizations(page: Int, size: Int): CivilizationPage!
+    civilization(id: ID!): Civilization
+    voxtexNodes(civilizationId: ID): [VoxtexNode!]!
+    voxtexMessages(sourceNodeId: ID, targetNodeId: ID): [VoxtexMessage!]!
+    resources(region: String): [Resource!]!
+    regions(claimed: Boolean): [ResourceRegion!]!
+    events(civilizationId: ID!): [GameEvent!]!
+    leaderboard: [CivilizationScore!]!
+    simulationStatus: SimulationStatus!
+    balanceReport: [BalanceEntry!]!
+}
+
+type Mutation {
+    createCivilization(name: String!, scale: CivilizationScale, region: String): Civilization!
+    foundCivilization(name: String!, scale: CivilizationScale, regionId: ID!): Civilization!
+    sendVoxtexMessage(sourceNodeId: ID!, targetNodeId: ID!, messageType: VoxtexMessageType!, content: String!): VoxtexMessage!
+    registerVoxtexNode(name: String!, type: VoxtexNodeType!, region: String, civilizationId: ID!, knowledgeBase: String): VoxtexNode!
+    proposeTrade(fromCivId: ID!, toCivId: ID!, resourceType: String!, quantity: Float!): TradeAgreement!
+    createEvent(title: String!, description: String!, type: EventType!, severity: EventSeverity!, targetCivId: ID!): GameEvent!
+}
+
+enum CivilizationScale { LOCAL REGIONAL CONTINENTAL GLOBAL }
+enum CivilizationStatus { EMERGING ACTIVE DECLINING FALLEN }
+enum VoxtexNodeType { PRIMARY SECONDARY RELAY }
+enum VoxtexNodeStatus { BOOTING ACTIVE IDLE OFFLINE }
+enum VoxtexMessageType { DATA SIGNAL BROADCAST COMMAND }
+enum EventType { NATURAL_DISASTER DISCOVERY DIPLOMATIC_CRISIS TECH_BREAKTHROUGH RESOURCE_BOON TRADE_OPPORTUNITY BIOSPHERE_SHIFT SOCIAL_MOVEMENT }
+enum EventSeverity { MINOR MODERATE SEVERE CATASTROPHIC }
+
+type Civilization {
+    id: ID!
+    name: String!
+    scale: CivilizationScale!
+    region: String!
+    status: CivilizationStatus!
+    ownerToken: String!
+    createdAt: String!
+    reputationScore: Float
+    population: Int
+    homeRegion: ResourceRegion
+    resources: ResourceSummary!
+    voxtexNodes: [VoxtexNode!]!
+}
+
+type ResourceSummary {
+    food: Float!
+    water: Float!
+    minerals: Float!
+    energy: Float!
+    housing: Float!
+}
+
+type CivilizationPage {
+    content: [Civilization!]!
+    totalPages: Int!
+    totalElements: Long!
+    size: Int!
+    number: Int!
+}
+
+type VoxtexNode {
+    id: ID!
+    name: String!
+    type: VoxtexNodeType!
+    status: VoxtexNodeStatus!
+    region: String
+    civilizationId: ID!
+    knowledgeBase: String
+    lastActiveAt: String
+    messageCount: Int
+}
+
+type VoxtexMessage {
+    id: ID!
+    sourceNodeId: ID!
+    targetNodeId: ID!
+    messageType: VoxtexMessageType!
+    content: String!
+    sentAt: String!
+    delivered: Boolean!
+    hopCount: Int!
+}
+
+type Resource {
+    id: ID!
+    name: String!
+    type: String!
+    description: String
+    quantity: Float!
+    unit: String!
+    region: String
+}
+
+type ResourceRegion {
+    id: ID!
+    name: String!
+    description: String
+    scale: CivilizationScale!
+    foodAvailability: Float
+    waterAvailability: Float
+    mineralAvailability: Float
+    energyAvailability: Float
+    housingAvailability: Float
+    dominantResource: String
+    claimed: Boolean!
+    claimedByCivilizationId: ID
+}
+
+type GameEvent {
+    id: ID!
+    title: String!
+    description: String!
+    type: EventType!
+    severity: EventSeverity!
+    targetCivilizationId: ID!
+    createdAt: String!
+    resolved: Boolean!
+}
+
+type CivilizationScore {
+    civilizationId: ID!
+    name: String!
+    reputationScore: Float!
+    population: Int!
+    rank: Int!
+}
+
+type SimulationStatus {
+    engineName: String!
+    activeRules: Int!
+    lastDecision: String!
+    monitoredCategories: [String!]!
+    tickCount: Int!
+}
+
+type BalanceEntry {
+    category: String!
+    percentageMet: Float!
+    status: String!
+}
+
+type TradeAgreement {
+    id: ID!
+    fromCivilizationId: ID!
+    toCivilizationId: ID!
+    resourceType: String!
+    quantity: Float!
+    status: TradeStatus!
+    createdAt: String!
+}
+
+enum TradeStatus { PROPOSED ACTIVE COMPLETED CANCELLED }

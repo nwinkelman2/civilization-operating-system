@@ -1,5 +1,7 @@
 package io.github.opencivilizationplatform.modules.cortex.cortex;
 
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.ResourceTickProcessedEvent;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
@@ -27,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import io.github.opencivilizationplatform.modules.social.domain.EspionageOperation;
 import io.github.opencivilizationplatform.modules.social.infrastructure.EspionageRepository;
@@ -38,6 +41,7 @@ import io.github.opencivilizationplatform.modules.logistics.domain.ShipmentStatu
 import io.github.opencivilizationplatform.modules.technology.domain.LicensedTechnology;
 import java.time.LocalDateTime;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.ArrayList;
 
 @Service
@@ -45,8 +49,10 @@ public class CortexEngineService {
 
     private static final Logger log = LoggerFactory.getLogger(CortexEngineService.class);
 
+    private final AtomicReference<LocalDateTime> lastTickTime = new AtomicReference<>(LocalDateTime.now());
     private final CivilizationRepository civilizationRepository;
     private final ResourceRegionRepository resourceRegionRepository;
+    private final EventBus eventBus;
     private final RuleRepository ruleRepository;
     private final ObjectMapper objectMapper;
     private final io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository;
@@ -70,6 +76,7 @@ public class CortexEngineService {
 
     public CortexEngineService(CivilizationRepository civilizationRepository,
                                ResourceRegionRepository resourceRegionRepository,
+                               EventBus eventBus,
                                RuleRepository ruleRepository,
                                ObjectMapper objectMapper,
                                io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository,
@@ -87,6 +94,7 @@ public class CortexEngineService {
                                ShipmentRepository shipmentRepository) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
+        this.eventBus = eventBus;
         this.ruleRepository = ruleRepository;
         this.objectMapper = objectMapper;
         this.meshTradeRepository = meshTradeRepository;
@@ -104,7 +112,6 @@ public class CortexEngineService {
         this.shipmentRepository = shipmentRepository;
     }
 
-    @Scheduled(fixedRateString = "${cortex.engine.tick-rate-ms:30000}")
     @Transactional
     @SchedulerLock(name = "cortexEngineTick", lockAtMostFor = "25s", lockAtLeastFor = "10s")
     public void tick() {
@@ -189,6 +196,12 @@ public class CortexEngineService {
         for (Civilization civ : civilizations) {
             ResourceTick tick = computeTick(civ);
             applyTick(civ, tick);
+            eventBus.publish(new ResourceTickProcessedEvent(
+                "CortexEngineService", civ.getId(),
+                tick.foodDelta(), tick.waterDelta(), tick.mineralsDelta(),
+                tick.energyDelta(), tick.housingDelta(),
+                tick.populationDelta(), tick.reputationDelta()
+            ));
             if (meterRegistry != null && civ.getHomeRegion() != null) {
                 double soil = civ.getHomeRegion().getSoilFertility() != null ? civ.getHomeRegion().getSoilFertility() : 100.0;
                 meterRegistry.gauge("civos.simulation.biosphere.soil_fertility_" + civ.getId(), soil);
@@ -196,6 +209,7 @@ public class CortexEngineService {
         }
 
         civilizationRepository.saveAll(civilizations);
+        lastTickTime.set(LocalDateTime.now());
         log.debug("Cortex tick completed for {} civilizations", civilizations.size());
     }
 
@@ -1057,6 +1071,10 @@ public class CortexEngineService {
         trade.setOfferedAmount(offAmt);
         trade.setTradeType(type);
         meshTradeRepository.save(trade);
+    }
+
+    public LocalDateTime getLastTickTime() {
+        return lastTickTime.get();
     }
 
     private double clamp(double value, double min, double max) {

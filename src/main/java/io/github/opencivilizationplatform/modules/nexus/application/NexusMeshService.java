@@ -1,5 +1,9 @@
 package io.github.opencivilizationplatform.modules.nexus.application;
 
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.VoxtexMessageSentEvent;
+import io.github.opencivilizationplatform.modules.voxtex.domain.*;
+import io.github.opencivilizationplatform.modules.voxtex.infrastructure.*;
 import io.github.opencivilizationplatform.modules.nexus.domain.*;
 import io.github.opencivilizationplatform.modules.nexus.dto.NexusMessageSyncDTO;
 import io.github.opencivilizationplatform.modules.nexus.infrastructure.*;
@@ -27,6 +31,7 @@ public class NexusMeshService {
     private final NexusNodeRepository nodeRepository;
     private final NexusMessageRepository messageRepository;
     private final NexusConnectionRepository connectionRepository;
+    private final EventBus eventBus;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
 
@@ -36,11 +41,13 @@ public class NexusMeshService {
     public NexusMeshService(NexusNodeRepository nodeRepository,
                               NexusMessageRepository messageRepository,
                               NexusConnectionRepository connectionRepository,
+                              EventBus eventBus,
                               StringRedisTemplate redisTemplate,
                               ObjectMapper objectMapper) {
         this.nodeRepository = nodeRepository;
         this.messageRepository = messageRepository;
         this.connectionRepository = connectionRepository;
+        this.eventBus = eventBus;
         this.redisTemplate = redisTemplate;
         this.objectMapper = objectMapper;
     }
@@ -104,6 +111,11 @@ public class NexusMeshService {
 
         // Publish to Redis instead of notifying local listeners directly
         publishEventToRedis(msg);
+
+        eventBus.publish(new VoxtexMessageSentEvent(
+            "NexusMeshService", msg.getId(), msg.getSourceNode().getId(),
+            msg.getTargetNode().getId(), msg.getMessageType().name(), msg.getContent()
+        ));
 
         log.info("Nexus MESH: {} -> {} [{}]", source.getName(), target.getName(), messageType);
         return msg;
@@ -320,4 +332,3 @@ public class NexusMeshService {
         }
     }
 }
-

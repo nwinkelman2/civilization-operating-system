@@ -1,6 +1,8 @@
 package io.github.opencivilizationplatform.modules.civilization.application;
 
 import io.github.opencivilizationplatform.config.seed.CivilizationScale;
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.CivilizationCreatedEvent;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
@@ -23,15 +25,18 @@ import java.util.List;
 public class CivilizationService {
 
     private final CivilizationRepository repository;
+    private final EventBus eventBus;
     private final RuleRepository ruleRepository;
     private final CitizenRepository citizenRepository;
     private final CitizenWalletRepository citizenWalletRepository;
 
     public CivilizationService(CivilizationRepository repository,
+                               EventBus eventBus,
                                RuleRepository ruleRepository,
                                CitizenRepository citizenRepository,
                                CitizenWalletRepository citizenWalletRepository) {
         this.repository = repository;
+        this.eventBus = eventBus;
         this.ruleRepository = ruleRepository;
         this.citizenRepository = citizenRepository;
         this.citizenWalletRepository = citizenWalletRepository;
@@ -60,12 +65,16 @@ public class CivilizationService {
         civ.setRegion(region);
         civ.setOwnerToken(ownerToken);
         civ.setStatus(CivilizationStatus.EMERGING);
-        
+
         Civilization savedCiv = repository.save(civ);
-        
-        // Auto-create/link the founder citizen record
+
+        eventBus.publish(new CivilizationCreatedEvent(
+            "CivilizationService", savedCiv.getId(), savedCiv.getName(),
+            savedCiv.getRegion(), savedCiv.getScale(), savedCiv.getOwnerToken()
+        ));
+
         joinAsAgent(savedCiv.getId(), ownerToken);
-        
+
         return savedCiv;
     }
 
@@ -99,7 +108,6 @@ public class CivilizationService {
     public Civilization joinAsAgent(Long civilizationId, String citizenId) {
         Civilization civ = repository.findById(civilizationId).orElseThrow();
 
-        // Verificar se a regra "Agent Entry Cap" está ativa e moradia é crítica (< 15%)
         boolean isEntryCapActive = ruleRepository.findByCivilizationId(civilizationId).stream()
             .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
             .anyMatch(r -> r.getLogicCode().contains("LOCK_ENTRY"));
@@ -108,7 +116,6 @@ public class CivilizationService {
             throw new IllegalStateException("A admissão de novos agentes foi bloqueada temporariamente pelo Cortex devido a déficit crítico de moradia (< 15.0%).");
         }
 
-        // Find or create the citizen
         Citizen citizen = citizenRepository.findByCitizenId(citizenId)
             .orElseGet(() -> {
                 Citizen c = new Citizen();
@@ -118,19 +125,16 @@ public class CivilizationService {
                 return citizenRepository.save(c);
             });
 
-        // Set role (FOUNDER if they own the civ, otherwise CITIZEN if they don't have a role yet)
         if (citizenId.equals(civ.getOwnerToken())) {
             citizen.setRole(Role.FOUNDER);
         } else if (citizen.getRole() == null || citizen.getRole() == Role.FOUNDER) {
             citizen.setRole(Role.CITIZEN);
         }
 
-        // Link citizen to this civilization
         boolean isFirstTimeJoin = citizen.getCivilization() == null || !civilizationId.equals(citizen.getCivilization().getId());
         citizen.setCivilization(civ);
         citizenRepository.save(citizen);
 
-        // Initialize wallet if absent
         if (citizen.getWallet() == null) {
             CitizenWallet wallet = new CitizenWallet();
             wallet.setCitizen(citizen);
