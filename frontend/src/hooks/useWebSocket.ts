@@ -10,7 +10,7 @@ export function useWebSocket(token?: string) {
 
   function connect() {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${protocol}//${location.host}/ws/voxtex${token ? `?token=${token}` : ''}`
+    const url = `${protocol}//${location.host}/ws/nexus${token ? `?token=${token}` : ''}`
 
     ws.current = new WebSocket(url)
 

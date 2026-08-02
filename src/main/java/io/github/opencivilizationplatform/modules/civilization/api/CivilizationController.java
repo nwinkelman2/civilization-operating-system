@@ -75,8 +75,9 @@ public class CivilizationController {
 
     @GetMapping
     @Operation(summary = "List all civilizations")
-    public Page<Civilization> getAll(Pageable pageable) {
-        return service.getAllCivilizations(pageable);
+    public Page<Civilization> getAll(@RequestParam(defaultValue = "0") int page,
+                                     @RequestParam(defaultValue = "20") int size) {
+        return service.getAllCivilizations(org.springframework.data.domain.PageRequest.of(page, size));
     }
 
     @GetMapping("/mine")

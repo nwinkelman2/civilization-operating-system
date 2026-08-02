@@ -68,13 +68,13 @@ export default function CivilizationDetail() {
           </div>
         </div>
 
-        {civ.voxtexNodes?.length > 0 && (
+        {civ.nexusNodes?.length > 0 && (
           <div className="stat-card">
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
               <GitBranch size={18} color="#a78bfa" />
-              <span style={{ fontWeight: 600 }}>Voxtex Nodes ({civ.voxtexNodes.length})</span>
+              <span style={{ fontWeight: 600 }}>Nexus Nodes ({civ.nexusNodes.length})</span>
             </div>
-            {civ.voxtexNodes.map((node: any) => (
+            {civ.nexusNodes.map((node: any) => (
               <div key={node.id} style={{
                 display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0',
                 borderBottom: '1px solid #334155', fontSize: '0.85rem'

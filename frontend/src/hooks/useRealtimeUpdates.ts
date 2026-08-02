@@ -3,6 +3,7 @@ import { useEffect, useCallback, useRef } from 'react'
 interface RealtimeConfig {
   token?: string
   onResourceTick?: (data: any) => void
+  onNexusMessage?: (data: any) => void
   onVoxtexMessage?: (data: any) => void
   onCivilizationEvent?: (data: any) => void
   onSimulationTick?: (data: any) => void
@@ -12,6 +13,7 @@ interface RealtimeConfig {
 export function useRealtimeUpdates({
   token,
   onResourceTick,
+  onNexusMessage,
   onVoxtexMessage,
   onCivilizationEvent,
   onSimulationTick,
@@ -19,15 +21,16 @@ export function useRealtimeUpdates({
 }: RealtimeConfig) {
   const ws = useRef<WebSocket | null>(null)
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const handlers = useRef({ onResourceTick, onVoxtexMessage, onCivilizationEvent, onSimulationTick })
+  const nexusMsgHandler = onNexusMessage || onVoxtexMessage
+  const handlers = useRef({ onResourceTick, onNexusMessage: nexusMsgHandler, onCivilizationEvent, onSimulationTick })
 
   useEffect(() => {
-    handlers.current = { onResourceTick, onVoxtexMessage, onCivilizationEvent, onSimulationTick }
+    handlers.current = { onResourceTick, onNexusMessage: nexusMsgHandler, onCivilizationEvent, onSimulationTick }
   })
 
   const connect = useCallback(() => {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${protocol}//${location.host}/ws/voxtex${token ? `?token=${token}` : ''}`
+    const url = `${protocol}//${location.host}/ws/nexus${token ? `?token=${token}` : ''}`
 
     ws.current = new WebSocket(url)
 
@@ -49,9 +52,11 @@ export function useRealtimeUpdates({
           case 'resource_tick':
             handlers.current.onResourceTick?.(payload)
             break
+          case 'NEXUS_MESSAGE':
+          case 'nexus_message':
           case 'VOXTEX_MESSAGE':
           case 'voxtex_message':
-            handlers.current.onVoxtexMessage?.(payload)
+            handlers.current.onNexusMessage?.(payload)
             break
           case 'CIVILIZATION_EVENT':
           case 'civilization_event':

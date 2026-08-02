@@ -77,21 +77,21 @@ public class CortexEngineService {
     public CortexEngineService(CivilizationRepository civilizationRepository,
                                ResourceRegionRepository resourceRegionRepository,
                                EventBus eventBus,
-                               RuleRepository ruleRepository,
+                               @org.springframework.lang.Nullable RuleRepository ruleRepository,
                                ObjectMapper objectMapper,
-                               io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository,
-                               BiosphereMetricRepository biosphereMetricRepository,
+                               @org.springframework.lang.Nullable io.github.opencivilizationplatform.modules.nexus.infrastructure.MeshTradeRepository meshTradeRepository,
+                               @org.springframework.lang.Nullable BiosphereMetricRepository biosphereMetricRepository,
                                ApplicationEventPublisher eventPublisher,
-                               io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository,
-                               IncidentRepository incidentRepository,
-                               io.github.opencivilizationplatform.modules.events.application.GlobalEventService globalEventService,
-                               io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService,
-                               io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService,
-                               io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService,
-                               EspionageRepository espionageRepository,
-                               MeterRegistry meterRegistry,
-                               LicensedTechnologyRepository licensedTechnologyRepository,
-                               ShipmentRepository shipmentRepository) {
+                               @org.springframework.lang.Nullable io.github.opencivilizationplatform.modules.technology.infrastructure.TechnologyRepository technologyRepository,
+                               @org.springframework.lang.Nullable IncidentRepository incidentRepository,
+                               @org.springframework.lang.Nullable io.github.opencivilizationplatform.modules.events.application.GlobalEventService globalEventService,
+                               @org.springframework.lang.Nullable io.github.opencivilizationplatform.modules.nexus.application.TreatyService treatyService,
+                               @org.springframework.lang.Nullable io.github.opencivilizationplatform.modules.nexus.application.ElectionService electionService,
+                               @org.springframework.lang.Nullable io.github.opencivilizationplatform.modules.trade.application.MarketPriceService marketPriceService,
+                               @org.springframework.lang.Nullable EspionageRepository espionageRepository,
+                               @org.springframework.lang.Nullable MeterRegistry meterRegistry,
+                               @org.springframework.lang.Nullable LicensedTechnologyRepository licensedTechnologyRepository,
+                               @org.springframework.lang.Nullable ShipmentRepository shipmentRepository) {
         this.civilizationRepository = civilizationRepository;
         this.resourceRegionRepository = resourceRegionRepository;
         this.eventBus = eventBus;
@@ -165,24 +165,30 @@ public class CortexEngineService {
         if (civilizations.isEmpty()) return;
 
         // Every 20 ticks: maybe spawn a new global event
-        if (tickCount % 20 == 0) {
+        if (tickCount % 20 == 0 && globalEventService != null) {
             List<Long> civIds = civilizations.stream().map(Civilization::getId).toList();
             globalEventService.maybeGenerateEvent(civIds);
         }
         // Tick down active global events
-        globalEventService.tickEvents();
+        if (globalEventService != null) {
+            globalEventService.tickEvents();
+        }
 
         // Update resource market prices based on tick data
-        marketPriceService.updatePrices();
+        if (marketPriceService != null) {
+            marketPriceService.updatePrices();
+        }
 
         // Every 50 ticks: open elections in all civs that don't have one open
-        if (tickCount % 50 == 0) {
+        if (tickCount % 50 == 0 && electionService != null) {
             for (Civilization civ : civilizations) {
                 electionService.openElection(civ.getId());
             }
         }
         // Tick down open elections
-        electionService.tickElections();
+        if (electionService != null) {
+            electionService.tickElections();
+        }
 
         processEspionageOperations();
 
@@ -257,7 +263,7 @@ public class CortexEngineService {
         double[] resourceDelta = new double[]{0, 0, 0, 0, 0};
         double populationDelta = 0, reputationDelta = 0;
 
-        if (!disableDisasters && random.nextDouble() < 0.05) {
+        if (!disableDisasters && random.nextDouble() < 0.05 && incidentRepository != null) {
             boolean hasActiveDisaster = incidentRepository.findByCivilizationId(civ.getId()).stream()
                 .anyMatch(i -> i.getStatus() != IncidentStatus.RESOLVED && 
                     i.getType() == io.github.opencivilizationplatform.modules.social.domain.IncidentType.OTHER &&
@@ -278,9 +284,9 @@ public class CortexEngineService {
         }
 
         // 1. Carregar regras de governança ativas
-        List<Rule> activeRules = ruleRepository.findByCivilizationId(civ.getId()).stream()
+        List<Rule> activeRules = ruleRepository != null ? ruleRepository.findByCivilizationId(civ.getId()).stream()
             .filter(r -> r.getStatus() == RuleStatus.ACTIVE)
-            .toList();
+            .toList() : List.of();
 
         boolean isBirthControlActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("LIMIT_BIRTHS"));
         boolean isAgriPushActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("BOOST_AGRI"));
@@ -290,7 +296,7 @@ public class CortexEngineService {
         boolean isBoostProductionActive = activeRules.stream().anyMatch(r -> r.getLogicCode().contains("BOOST_PRODUCTION"));
 
         // 1.a Treaty modifiers: [scienceBonus, tradeMult, repDelta, scienceBotMult]
-        double[] treatyMods = treatyService.computeTreatyModifiers(civ.getId());
+        double[] treatyMods = treatyService != null ? treatyService.computeTreatyModifiers(civ.getId()) : new double[]{0, 1.0, 0, 1.0};
         double treatyScienceBonus = treatyMods[0];
         double treatyTradeMult = treatyMods[1];
         double treatyRepDelta = treatyMods[2];
@@ -303,9 +309,9 @@ public class CortexEngineService {
         // 1.b Global event modifiers: [foodMult, waterMult, popGrowthPenalty, tradeMult, repDelta, scienceBonus]
         double[] eventMods = new double[]{0, 0, 0, 0, 0, 0}; // additive deltas
         boolean robotsOffline = false;
-        List<io.github.opencivilizationplatform.modules.events.domain.GlobalEvent> activeEvents = globalEventService.getActiveEvents();
+        List<io.github.opencivilizationplatform.modules.events.domain.GlobalEvent> activeEvents = globalEventService != null ? globalEventService.getActiveEvents() : List.of();
         for (io.github.opencivilizationplatform.modules.events.domain.GlobalEvent evt : activeEvents) {
-            if (globalEventService.isAffected(evt, civ.getId())) {
+            if (globalEventService != null && globalEventService.isAffected(evt, civ.getId())) {
                 globalEventService.applyEventEffects(evt, civ, resourceDelta, eventMods);
                 cortexLogs.add("[🌍 Evento Global] " + evt.getType() + " ativo: " + evt.getDescription());
                 if (evt.getType() == io.github.opencivilizationplatform.modules.events.domain.GlobalEventType.SOLAR_STORM) {
@@ -318,9 +324,9 @@ public class CortexEngineService {
 
 
         // 1.1 Carregar incidentes ativos e mitigar via robôs designados
-        List<Incident> activeIncidents = incidentRepository.findByCivilizationId(civ.getId()).stream()
+        List<Incident> activeIncidents = incidentRepository != null ? incidentRepository.findByCivilizationId(civ.getId()).stream()
             .filter(i -> !IncidentStatus.RESOLVED.equals(i.getStatus()))
-            .toList();
+            .toList() : List.of();
 
         int totalAssignedEco = 0;
         int totalAssignedSecurity = 0;

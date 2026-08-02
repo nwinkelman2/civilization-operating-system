@@ -1,7 +1,7 @@
 package io.github.opencivilizationplatform.modules.simulation.application;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;

@@ -4,8 +4,9 @@ import io.github.opencivilizationplatform.modules.civilization.application.Civil
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 import io.github.opencivilizationplatform.modules.civilization.domain.CivilizationStatus;
 import io.github.opencivilizationplatform.modules.region.application.ResourceRegionService;
-import io.github.opencivilizationplatform.modules.voxtex.application.VoxtexMeshService;
-import io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeType;
+import io.github.opencivilizationplatform.modules.nexus.application.NexusMeshService;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusNodeType;
+import io.github.opencivilizationplatform.modules.nexus.domain.NexusNodeStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -16,14 +17,14 @@ public class FoundCivilizationSagaSteps {
     private static final Logger log = LoggerFactory.getLogger(FoundCivilizationSagaSteps.class);
     private final CivilizationService civilizationService;
     private final ResourceRegionService regionService;
-    private final VoxtexMeshService voxtexService;
+    private final NexusMeshService nexusService;
 
     public FoundCivilizationSagaSteps(CivilizationService civilizationService,
                                        ResourceRegionService regionService,
-                                       VoxtexMeshService voxtexService) {
+                                       NexusMeshService nexusService) {
         this.civilizationService = civilizationService;
         this.regionService = regionService;
-        this.voxtexService = voxtexService;
+        this.nexusService = nexusService;
     }
 
     public SagaStep<FoundCivilizationContext> createCivilization() {
@@ -79,9 +80,9 @@ public class FoundCivilizationSagaSteps {
             @Override
             public void execute(FoundCivilizationContext ctx) {
                 String regionName = regionService.getRegion(ctx.getRegionId()).getName();
-                voxtexService.registerNode(
+                nexusService.registerNode(
                     ctx.getCivilization().getName() + "-Primary",
-                    VoxtexNodeType.PRIMARY,
+                    NexusNodeType.PRIMARY,
                     regionName,
                     ctx.getCivilization().getId(),
                     "Primary neural node for " + ctx.getCivilization().getName()
@@ -93,10 +94,9 @@ public class FoundCivilizationSagaSteps {
             @Override
             public void compensate(FoundCivilizationContext ctx) {
                 if (ctx.isVoxtexNodeDeployed()) {
-                    var nodes = voxtexService.getNodesForCivilization(ctx.getCivilization().getId());
+                    var nodes = nexusService.getNodesForCivilization(ctx.getCivilization().getId());
                     nodes.forEach(node -> {
-                        voxtexService.updateNodeStatus(node.getId(),
-                            io.github.opencivilizationplatform.modules.voxtex.domain.VoxtexNodeStatus.OFFLINE);
+                        nexusService.updateNodeStatus(node.getId(), NexusNodeStatus.OFFLINE);
                     });
                     log.warn("SAGA compensate: voxtex nodes set to OFFLINE for civilization {}", ctx.getCivilization().getId());
                 }

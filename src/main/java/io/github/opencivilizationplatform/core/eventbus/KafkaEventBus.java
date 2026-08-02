@@ -1,8 +1,7 @@
 package io.github.opencivilizationplatform.core.eventbus;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
@@ -49,7 +48,7 @@ public class KafkaEventBus implements EventBus {
 
             kafkaTemplate.send(new ProducerRecord<>(topic, event.getEventId().toString(), json));
             log.debug("Published event to Kafka topic {}: {}", topic, event.getEventId());
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             log.error("Failed to serialize event {}: {}", event.getType(), e.getMessage());
         }
     }

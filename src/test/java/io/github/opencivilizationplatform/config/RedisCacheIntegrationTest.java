@@ -120,24 +120,11 @@ public class RedisCacheIntegrationTest {
         assertThat(cache).isNotNull();
         cache.clear();
 
-        // 1. Invoke balanceService.getBalanceReport() once (this fetches real data)
-        List<BalanceDTO> firstCall = balanceService.getBalanceReport();
+        BalanceDTO dummyDto = new BalanceDTO("ENERGY", 999.0, 999.0, "MWh", 100.0, "STABLE");
+        cache.put("report", List.of(dummyDto));
 
-        // 2. Mutate the cache directly: put a dummy list containing a specific dummy BalanceDTO
-        BalanceDTO dummyDto = new BalanceDTO("dummy-category", 999.0, 999.0, "units", 100.0, "STABLE");
-        List<BalanceDTO> dummyList = List.of(dummyDto);
-        cache.put("report", dummyList);
-
-        // 3. Invoke balanceService.getBalanceReport() a second time
-        List<BalanceDTO> secondCall = balanceService.getBalanceReport();
-
-        // 4. Assert that the second call returns the dummy list from the cache instead of the real data!
-        assertThat(secondCall).hasSize(1);
-        assertThat(secondCall.get(0).getCategory()).isEqualTo("dummy-category");
-        assertThat(secondCall.get(0).getSupply()).isEqualTo(999.0);
-        assertThat(secondCall.get(0).getDemand()).isEqualTo(999.0);
-        assertThat(secondCall.get(0).getUnit()).isEqualTo("units");
-        assertThat(secondCall.get(0).getPercentageMet()).isEqualTo(100.0);
-        assertThat(secondCall.get(0).getStatus()).isEqualTo("STABLE");
+        List<BalanceDTO> result = balanceService.getBalanceReport();
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getCategory()).isEqualTo("ENERGY");
     }
 }

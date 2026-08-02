@@ -15,12 +15,12 @@ public class NexusMessage {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "source_node_id", nullable = false)
     @NotNull
     private NexusNode sourceNode;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "target_node_id", nullable = false)
     @NotNull
     private NexusNode targetNode;

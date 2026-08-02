@@ -30,6 +30,8 @@ class CortexEngineServiceTest {
     @Mock
     private ResourceRegionRepository resourceRegionRepository;
     @Mock
+    private io.github.opencivilizationplatform.core.eventbus.EventBus eventBus;
+    @Mock
     private RuleRepository ruleRepository;
     @Mock
     private MeshTradeRepository meshTradeRepository;
@@ -72,7 +74,7 @@ class CortexEngineServiceTest {
         when(treatyService.computeTreatyModifiers(anyLong())).thenReturn(new double[]{0.0, 1.0, 0.0, 1.0});
         
         cortexEngineService = new CortexEngineService(
-            civilizationRepository, resourceRegionRepository, ruleRepository,
+            civilizationRepository, resourceRegionRepository, eventBus, ruleRepository,
             objectMapper, meshTradeRepository, biosphereMetricRepository, eventPublisher,
             technologyRepository, incidentRepository, globalEventService, treatyService, electionService,
             marketPriceService, espionageRepository, meterRegistry, licensedTechnologyRepository, shipmentRepository

@@ -1,11 +1,17 @@
 type Query {
     civilizations(page: Int, size: Int): CivilizationPage!
     civilization(id: ID!): Civilization
-    voxtexNodes(civilizationId: ID): [VoxtexNode!]!
-    voxtexMessages(sourceNodeId: ID, targetNodeId: ID): [VoxtexMessage!]!
+    nexusNodes(civilizationId: ID): [NexusNode!]!
+    nexusMessages(sourceNodeId: ID, targetNodeId: ID): [NexusMessage!]!
     resources(region: String): [Resource!]!
     regions(claimed: Boolean): [ResourceRegion!]!
     events(civilizationId: ID!): [GameEvent!]!
+    globalEvents(activeOnly: Boolean): [GlobalEvent!]!
+    shipments(civilizationId: ID, status: ShipmentStatus): [Shipment!]!
+    projects(civilizationId: ID, category: ProjectCategory): [Project!]!
+    elections(civilizationId: ID, status: ElectionStatus): [Election!]!
+    incidents(civilizationId: ID): [Incident!]!
+    treaties(civilizationId: ID): [Treaty!]!
     leaderboard: [CivilizationScore!]!
     simulationStatus: SimulationStatus!
     balanceReport: [BalanceEntry!]!
@@ -14,17 +20,17 @@ type Query {
 type Mutation {
     createCivilization(name: String!, scale: CivilizationScale, region: String): Civilization!
     foundCivilization(name: String!, scale: CivilizationScale, regionId: ID!): Civilization!
-    sendVoxtexMessage(sourceNodeId: ID!, targetNodeId: ID!, messageType: VoxtexMessageType!, content: String!): VoxtexMessage!
-    registerVoxtexNode(name: String!, type: VoxtexNodeType!, region: String, civilizationId: ID!, knowledgeBase: String): VoxtexNode!
+    sendNexusMessage(sourceNodeId: ID!, targetNodeId: ID!, messageType: NexusMessageType!, content: String!): NexusMessage!
+    registerNexusNode(name: String!, type: NexusNodeType!, region: String, civilizationId: ID!, knowledgeBase: String): NexusNode!
     proposeTrade(fromCivId: ID!, toCivId: ID!, resourceType: String!, quantity: Float!): TradeAgreement!
     createEvent(title: String!, description: String!, type: EventType!, severity: EventSeverity!, targetCivId: ID!): GameEvent!
 }
 
 enum CivilizationScale { LOCAL REGIONAL CONTINENTAL GLOBAL }
 enum CivilizationStatus { EMERGING ACTIVE DECLINING FALLEN }
-enum VoxtexNodeType { PRIMARY SECONDARY RELAY }
-enum VoxtexNodeStatus { BOOTING ACTIVE IDLE OFFLINE }
-enum VoxtexMessageType { DATA SIGNAL BROADCAST COMMAND }
+enum NexusNodeType { PRIMARY SECONDARY RELAY }
+enum NexusNodeStatus { BOOTING ACTIVE IDLE OFFLINE }
+enum NexusMessageType { DATA SIGNAL BROADCAST COMMAND }
 enum EventType { NATURAL_DISASTER DISCOVERY DIPLOMATIC_CRISIS TECH_BREAKTHROUGH RESOURCE_BOON TRADE_OPPORTUNITY BIOSPHERE_SHIFT SOCIAL_MOVEMENT }
 enum EventSeverity { MINOR MODERATE SEVERE CATASTROPHIC }
 
@@ -40,7 +46,7 @@ type Civilization {
     population: Int
     homeRegion: ResourceRegion
     resources: ResourceSummary!
-    voxtexNodes: [VoxtexNode!]!
+    nexusNodes: [NexusNode!]!
 }
 
 type ResourceSummary {
@@ -54,16 +60,16 @@ type ResourceSummary {
 type CivilizationPage {
     content: [Civilization!]!
     totalPages: Int!
-    totalElements: Long!
+    totalElements: Int!
     size: Int!
     number: Int!
 }
 
-type VoxtexNode {
+type NexusNode {
     id: ID!
     name: String!
-    type: VoxtexNodeType!
-    status: VoxtexNodeStatus!
+    type: NexusNodeType!
+    status: NexusNodeStatus!
     region: String
     civilizationId: ID!
     knowledgeBase: String
@@ -71,11 +77,11 @@ type VoxtexNode {
     messageCount: Int
 }
 
-type VoxtexMessage {
+type NexusMessage {
     id: ID!
     sourceNodeId: ID!
     targetNodeId: ID!
-    messageType: VoxtexMessageType!
+    messageType: NexusMessageType!
     content: String!
     sentAt: String!
     delivered: Boolean!
@@ -151,3 +157,78 @@ type TradeAgreement {
 }
 
 enum TradeStatus { PROPOSED ACTIVE COMPLETED CANCELLED }
+
+# Logistics
+enum ShipmentStatus { PENDING IN_TRANSIT DELIVERED CANCELLED }
+type Shipment {
+    id: ID!
+    originRegion: String!
+    destinationRegion: String!
+    resourceType: String!
+    quantity: Float!
+    status: ShipmentStatus!
+    civilizationId: ID!
+    createdAt: String!
+}
+
+# Global Events
+enum GlobalEventType { SOLAR_FLARE CLIMATE_SHIFT PANDEMIC ECONOMIC_BOOM DIPLOMATIC_SUMMIT TECH_REVOLUTION }
+type GlobalEvent {
+    id: ID!
+    title: String!
+    description: String!
+    type: GlobalEventType!
+    severity: EventSeverity!
+    active: Boolean!
+    startedAt: String!
+    endedAt: String
+}
+
+# Contribution / Projects
+enum ProjectCategory { INFRASTRUCTURE RESEARCH ECOLOGY CULTURE GOVERNANCE }
+enum ProjectStatus { PROPOSED ACTIVE COMPLETED CANCELLED }
+type Project {
+    id: ID!
+    name: String!
+    description: String!
+    category: ProjectCategory!
+    status: ProjectStatus!
+    targetContribution: Float!
+    currentContribution: Float!
+    civilizationId: ID!
+}
+
+# Governance / Elections & Treaties
+enum ElectionStatus { UPCOMING ACTIVE COMPLETED CANCELLED }
+type Election {
+    id: ID!
+    title: String!
+    civilizationId: ID!
+    status: ElectionStatus!
+    startedAt: String!
+    endedAt: String
+}
+
+enum TreatyType { PEACE ALLIANCE TRADE DEFENSE NON_AGGRESSION }
+enum TreatyStatus { PROPOSED ACTIVE EXPIRED TERMINATED }
+type Treaty {
+    id: ID!
+    name: String!
+    type: TreatyType!
+    status: TreatyStatus!
+    signatoryCivilizationIds: [ID!]!
+    createdAt: String!
+}
+
+# Social / Incidents
+enum IncidentType { RIOT PROTEST UNREST ESPIONAGE CORRUPTION DISASTER }
+enum IncidentStatus { ACTIVE INVESTIGATING RESOLVED CONTAINED }
+type Incident {
+    id: ID!
+    title: String!
+    description: String!
+    type: IncidentType!
+    status: IncidentStatus!
+    civilizationId: ID!
+    createdAt: String!
+}

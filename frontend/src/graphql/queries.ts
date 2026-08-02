@@ -41,7 +41,7 @@ export const GET_CIVILIZATION = gql`
         energy
         housing
       }
-      voxtexNodes {
+      nexusNodes {
         id
         name
         type
@@ -51,9 +51,9 @@ export const GET_CIVILIZATION = gql`
   }
 `
 
-export const GET_VOXTEX_NODES = gql`
-  query GetVoxtexNodes($civilizationId: ID) {
-    voxtexNodes(civilizationId: $civilizationId) {
+export const GET_NEXUS_NODES = gql`
+  query GetNexusNodes($civilizationId: ID) {
+    nexusNodes(civilizationId: $civilizationId) {
       id
       name
       type

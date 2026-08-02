@@ -1,7 +1,7 @@
 package io.github.opencivilizationplatform.config;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.eventbus.events.CivilizationCreatedEvent;
 import io.github.opencivilizationplatform.core.eventbus.events.ResourceTickProcessedEvent;
 import io.github.opencivilizationplatform.core.eventbus.events.VoxtexMessageSentEvent;
