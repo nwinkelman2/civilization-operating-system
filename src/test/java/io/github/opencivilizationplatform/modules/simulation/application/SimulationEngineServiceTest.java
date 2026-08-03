@@ -6,10 +6,13 @@ import io.github.opencivilizationplatform.dto.BalanceDTO;
 import io.github.opencivilizationplatform.modules.diplomacy.application.DiplomacyEngineService;
 import io.github.opencivilizationplatform.modules.life.application.AgentMetabolismService;
 import io.github.opencivilizationplatform.modules.life.application.AgentMortalityService;
+import io.github.opencivilizationplatform.modules.life.application.HealthDiseaseService;
 import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
 import io.github.opencivilizationplatform.modules.participation.application.LawExecutionEngine;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
+import io.github.opencivilizationplatform.modules.physics.application.ClimateDisasterService;
+import io.github.opencivilizationplatform.modules.production.application.ComplexGoodsProductionService;
 import io.github.opencivilizationplatform.modules.region.application.TerritoryControlService;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.social.application.ImmigrationService;
@@ -61,6 +64,15 @@ class SimulationEngineServiceTest {
     @Mock
     private ImmigrationService immigrationService;
 
+    @Mock
+    private HealthDiseaseService healthDiseaseService;
+
+    @Mock
+    private ClimateDisasterService climateDisasterService;
+
+    @Mock
+    private ComplexGoodsProductionService complexGoodsProductionService;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -110,6 +122,9 @@ class SimulationEngineServiceTest {
         verify(diplomacyEngineService, times(1)).processDiplomacyCycle();
         verify(agentMortalityService, times(1)).processLifecycleTick(100, 0.02, 0.01);
         verify(immigrationService, times(1)).processMigrationCycle(75.0, 50.0, 100);
+        verify(healthDiseaseService, times(1)).processHealthTick(100, 45.0, 50.0, 2);
+        verify(climateDisasterService, times(1)).processClimateCycle(22.0);
+        verify(complexGoodsProductionService, times(1)).processProductionCycle(any());
     }
 
     @Test

@@ -4,6 +4,9 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
+import io.github.opencivilizationplatform.modules.life.application.HealthDiseaseService;
+import io.github.opencivilizationplatform.modules.physics.application.ClimateDisasterService;
+import io.github.opencivilizationplatform.modules.production.application.ComplexGoodsProductionService;
 import io.github.opencivilizationplatform.modules.diplomacy.application.DiplomacyEngineService;
 import io.github.opencivilizationplatform.modules.life.application.AgentMetabolismService;
 import io.github.opencivilizationplatform.modules.life.application.AgentMortalityService;
@@ -27,6 +30,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -47,6 +51,9 @@ public class SimulationEngineService {
     private final DiplomacyEngineService diplomacyEngineService;
     private final AgentMortalityService agentMortalityService;
     private final ImmigrationService immigrationService;
+    private final HealthDiseaseService healthDiseaseService;
+    private final ClimateDisasterService climateDisasterService;
+    private final ComplexGoodsProductionService complexGoodsProductionService;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -66,7 +73,10 @@ public class SimulationEngineService {
                                    LawExecutionEngine lawExecutionEngine,
                                    DiplomacyEngineService diplomacyEngineService,
                                    AgentMortalityService agentMortalityService,
-                                   ImmigrationService immigrationService) {
+                                   ImmigrationService immigrationService,
+                                   HealthDiseaseService healthDiseaseService,
+                                   ClimateDisasterService climateDisasterService,
+                                   ComplexGoodsProductionService complexGoodsProductionService) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
@@ -78,6 +88,9 @@ public class SimulationEngineService {
         this.diplomacyEngineService = diplomacyEngineService;
         this.agentMortalityService = agentMortalityService;
         this.immigrationService = immigrationService;
+        this.healthDiseaseService = healthDiseaseService;
+        this.climateDisasterService = climateDisasterService;
+        this.complexGoodsProductionService = complexGoodsProductionService;
     }
 
     public SimulationEngineService(RuleService ruleService,
@@ -90,7 +103,7 @@ public class SimulationEngineService {
                                    LawExecutionEngine lawExecutionEngine) {
         this(ruleService, balanceService, objectMapper, universeService, physicsEngineService,
              agentMetabolismService, territoryControlService, lawExecutionEngine,
-             null, null, null);
+             null, null, null, null, null, null);
     }
 
     public UniverseService getUniverseService() {
@@ -123,6 +136,18 @@ public class SimulationEngineService {
 
     public ImmigrationService getImmigrationService() {
         return immigrationService;
+    }
+
+    public HealthDiseaseService getHealthDiseaseService() {
+        return healthDiseaseService;
+    }
+
+    public ClimateDisasterService getClimateDisasterService() {
+        return climateDisasterService;
+    }
+
+    public ComplexGoodsProductionService getComplexGoodsProductionService() {
+        return complexGoodsProductionService;
     }
 
     @Scheduled(fixedRate = 15000)
@@ -167,6 +192,20 @@ public class SimulationEngineService {
         }
         if (immigrationService != null) {
             immigrationService.processMigrationCycle(75.0, 50.0, 100);
+        }
+        if (healthDiseaseService != null) {
+            healthDiseaseService.processHealthTick(100, 45.0, 50.0, 2);
+        }
+        if (climateDisasterService != null) {
+            climateDisasterService.processClimateCycle(22.0);
+        }
+        if (complexGoodsProductionService != null) {
+            complexGoodsProductionService.processProductionCycle(Map.of(
+                "IRON_ORE", 10.0,
+                "COAL", 5.0,
+                "SILICON", 2.0,
+                "COPPER", 2.0
+            ));
         }
 
         for (Rule rule : rules) {
