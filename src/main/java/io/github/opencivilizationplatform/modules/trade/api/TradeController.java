@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/trade")
+@RequestMapping({"/api/v1/trade", "/api/v1/trade/agreements"})
 @Tag(name = "Trade", description = "Cross-civilization trade agreements")
 public class TradeController {
 

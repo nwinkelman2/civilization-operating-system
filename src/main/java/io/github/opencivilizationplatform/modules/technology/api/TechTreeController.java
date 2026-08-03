@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/v1/tech-tree")
+@RequestMapping({"/api/v1/tech-tree", "/api/v1/technologies"})
 @Tag(name = "Tech Tree", description = "Technology tree endpoints")
 public class TechTreeController {
 
@@ -19,6 +19,12 @@ public class TechTreeController {
 
     public TechTreeController(TechnologyService service) {
         this.service = service;
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all technologies")
+    public List<Technology> getAllTechnologies() {
+        return service.getAllTechnologies();
     }
 
     @GetMapping("/{civilizationId}")

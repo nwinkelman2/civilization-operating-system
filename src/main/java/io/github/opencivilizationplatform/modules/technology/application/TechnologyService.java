@@ -181,4 +181,9 @@ public class TechnologyService {
             .filter(t -> !t.getCivilizationId().equals(civilizationId) && t.getStatus() == TechnologyStatus.COMPLETED)
             .toList();
     }
+
+    @Transactional(readOnly = true)
+    public List<Technology> getAllTechnologies() {
+        return repository.findAll();
+    }
 }

@@ -112,3 +112,106 @@ export const FOUND_CIVILIZATION = gql`
     }
   }
 `
+
+export const GET_REGIONS = gql`
+  query GetRegions($claimed: Boolean) {
+    regions(claimed: $claimed) {
+      id
+      name
+      description
+      scale
+      foodAvailability
+      waterAvailability
+      mineralAvailability
+      energyAvailability
+      housingAvailability
+      dominantResource
+      claimed
+      claimedByCivilizationId
+    }
+  }
+`
+
+export const GET_RESOURCES = gql`
+  query GetResources($region: String) {
+    resources(region: $region) {
+      id
+      name
+      type
+      description
+      quantity
+      unit
+      region
+    }
+  }
+`
+
+export const GET_SHIPMENTS = gql`
+  query GetShipments($civilizationId: ID, $status: ShipmentStatus) {
+    shipments(civilizationId: $civilizationId, status: $status) {
+      id
+      originRegion
+      destinationRegion
+      resourceType
+      quantity
+      status
+      civilizationId
+      createdAt
+    }
+  }
+`
+
+export const GET_GLOBAL_EVENTS = gql`
+  query GetGlobalEvents($activeOnly: Boolean) {
+    globalEvents(activeOnly: $activeOnly) {
+      id
+      title
+      description
+      type
+      severity
+      active
+      startedAt
+      endedAt
+    }
+  }
+`
+
+export const GET_PROJECTS = gql`
+  query GetProjects($civilizationId: ID, $category: ProjectCategory) {
+    projects(civilizationId: $civilizationId, category: $category) {
+      id
+      name
+      description
+      category
+      status
+      targetContribution
+      currentContribution
+      civilizationId
+    }
+  }
+`
+
+export const GET_INCIDENTS = gql`
+  query GetIncidents($civilizationId: ID) {
+    incidents(civilizationId: $civilizationId) {
+      id
+      title
+      description
+      type
+      status
+      civilizationId
+      createdAt
+    }
+  }
+`
+
+export const GET_BALANCE_REPORT = gql`
+  query GetBalanceReport {
+    balanceReport {
+      category
+      percentageMet
+      status
+    }
+  }
+`
+

@@ -10,7 +10,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/v1/facilities")
+@RequestMapping({"/api/v1/facilities", "/api/v1/production/facilities"})
 @Tag(name = "Facilities", description = "Facility management endpoints")
 public class FacilityController {
 

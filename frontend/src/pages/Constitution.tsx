@@ -1,15 +1,7 @@
-import { useState } from 'react'
-import { ScrollText, Plus, Pencil } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { ScrollText, Plus, Pencil, Loader2, AlertCircle, Inbox } from 'lucide-react'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
-
-const mockRules = [
-  { id: 1, category: 'RESOURCE', name: 'Resource Cap', description: 'Maximum resource storage per tier', enabled: true },
-  { id: 2, category: 'SOCIAL', name: 'Population Growth', description: 'Population growth rate modifier', enabled: true },
-  { id: 3, category: 'MILITARY', name: 'War Declaration', description: 'Requires council approval for war', enabled: false },
-  { id: 4, category: 'DIPLOMACY', name: 'Trade Embargo', description: 'Auto-embargo on hostile civilizations', enabled: true },
-  { id: 5, category: 'ECONOMY', name: 'Market Tax', description: 'Base tax rate on marketplace trades', enabled: true },
-]
 
 const mockCommittees = [
   { id: 1, name: 'High Council', members: 7, focus: 'Strategic decisions, war, diplomacy' },
@@ -19,6 +11,50 @@ const mockCommittees = [
 
 export default function Constitution() {
   const [activeTab, setActiveTab] = useState<'rules' | 'committees'>('rules')
+  const [rules, setRules] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    setLoading(true)
+    fetch('/api/v1/rules')
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`)
+        return res.json()
+      })
+      .then(data => {
+        setRules(Array.isArray(data) ? data : (data.content || []))
+        setError(null)
+      })
+      .catch(err => {
+        setError(err.message || 'Failed to fetch rules')
+      })
+      .finally(() => setLoading(false))
+  }, [])
+
+  if (loading && activeTab === 'rules') {
+    return (
+      <Layout icon={<ScrollText size={24} color="#f59e0b" />} title="Governance" subtitle="Constitution, rules, and committees">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1rem', color: '#94a3b8' }}>
+          <Loader2 size={36} style={{ animation: 'spin 1s linear infinite' }} />
+          <span>Loading constitutional rules...</span>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (error && activeTab === 'rules') {
+    return (
+      <Layout icon={<ScrollText size={24} color="#f59e0b" />} title="Governance" subtitle="Constitution, rules, and committees">
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1rem', color: '#ef4444' }}>
+          <AlertCircle size={36} />
+          <span>Failed to load constitutional rules: {error}</span>
+        </div>
+      </Layout>
+    )
+  }
+
+  const enabledCount = rules.filter(r => r.status === 'ACTIVE' || r.status === 'PASSED' || r.enabled === true).length
 
   return (
     <Layout
@@ -45,43 +81,53 @@ export default function Constitution() {
               icon={<ScrollText size={18} color="#f59e0b" />}
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', color: '#64748b' }}>
-                <span>Enabled: {mockRules.filter(r => r.enabled).length}</span>
-                <span>Total: {mockRules.length}</span>
+                <span>Active / Passed: {enabledCount}</span>
+                <span>Total: {rules.length}</span>
               </div>
             </StatCard>
           </div>
 
-          {mockRules.map(rule => (
-            <div key={rule.id} style={{
-              background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem',
-              padding: '1rem', marginBottom: '0.75rem',
-              display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-            }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                  <span style={{
-                    padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.7rem',
-                    background: '#334155', color: '#0ea5e9'
-                  }}>{rule.category}</span>
-                  <span style={{ fontWeight: 600 }}>{rule.name}</span>
-                </div>
-                <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{rule.description}</div>
-              </div>
-              <label style={{ position: 'relative', display: 'inline-block', width: 40, height: 22, cursor: 'pointer' }}>
-                <input type="checkbox" checked={rule.enabled} readOnly style={{ opacity: 0, width: 0, height: 0 }} />
-                <span style={{
-                  position: 'absolute', inset: 0, borderRadius: 22, transition: '0.3s',
-                  background: rule.enabled ? '#22c55e' : '#475569'
-                }}>
-                  <span style={{
-                    position: 'absolute', height: 18, width: 18, borderRadius: '50%',
-                    background: 'white', top: 2, transition: '0.3s',
-                    left: rule.enabled ? 20 : 2
-                  }} />
-                </span>
-              </label>
+          {rules.length === 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem', background: '#1e293b', borderRadius: '0.75rem', color: '#94a3b8', gap: '0.5rem' }}>
+              <Inbox size={32} />
+              <span>No constitutional rules found</span>
             </div>
-          ))}
+          ) : (
+            rules.map(rule => {
+              const isActive = rule.status === 'ACTIVE' || rule.status === 'PASSED' || rule.enabled === true
+              return (
+                <div key={rule.id} style={{
+                  background: '#1e293b', border: '1px solid #334155', borderRadius: '0.75rem',
+                  padding: '1rem', marginBottom: '0.75rem',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      <span style={{
+                        padding: '0.1rem 0.4rem', borderRadius: '0.25rem', fontSize: '0.7rem',
+                        background: '#334155', color: '#0ea5e9'
+                      }}>{rule.sector || rule.category || 'GENERAL'}</span>
+                      <span style={{ fontWeight: 600 }}>{rule.title || rule.name}</span>
+                    </div>
+                    <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{rule.description}</div>
+                  </div>
+                  <label style={{ position: 'relative', display: 'inline-block', width: 40, height: 22, cursor: 'pointer' }}>
+                    <input type="checkbox" checked={isActive} readOnly style={{ opacity: 0, width: 0, height: 0 }} />
+                    <span style={{
+                      position: 'absolute', inset: 0, borderRadius: 22, transition: '0.3s',
+                      background: isActive ? '#22c55e' : '#475569'
+                    }}>
+                      <span style={{
+                        position: 'absolute', height: 18, width: 18, borderRadius: '50%',
+                        background: 'white', top: 2, transition: '0.3s',
+                        left: isActive ? 20 : 2
+                      }} />
+                    </span>
+                  </label>
+                </div>
+              )
+            })
+          )}
         </>
       )}
 
