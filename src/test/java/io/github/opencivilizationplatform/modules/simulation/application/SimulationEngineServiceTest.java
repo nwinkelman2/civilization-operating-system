@@ -8,6 +8,8 @@ import io.github.opencivilizationplatform.modules.participation.application.Rule
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
+import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
+import io.github.opencivilizationplatform.modules.physics.application.PhysicsEngineService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -28,6 +30,12 @@ class SimulationEngineServiceTest {
 
     @Mock
     private BalanceService balanceService;
+
+    @Mock
+    private UniverseService universeService;
+
+    @Mock
+    private PhysicsEngineService physicsEngineService;
 
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();

@@ -8,6 +8,8 @@ import io.github.opencivilizationplatform.modules.participation.application.Rule
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
+import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
+import io.github.opencivilizationplatform.modules.physics.application.PhysicsEngineService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -31,6 +33,8 @@ public class SimulationEngineService {
     private final RuleService ruleService;
     private final BalanceService balanceService;
     private final ObjectMapper objectMapper;
+    private final UniverseService universeService;
+    private final PhysicsEngineService physicsEngineService;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -39,10 +43,24 @@ public class SimulationEngineService {
     private final List<String> monitoredCategories = new ArrayList<>();
     private final LinkedList<String> decisionHistory = new LinkedList<>();
 
-    public SimulationEngineService(RuleService ruleService, BalanceService balanceService, ObjectMapper objectMapper) {
+    public SimulationEngineService(RuleService ruleService,
+                                   BalanceService balanceService,
+                                   ObjectMapper objectMapper,
+                                   UniverseService universeService,
+                                   PhysicsEngineService physicsEngineService) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
+        this.universeService = universeService;
+        this.physicsEngineService = physicsEngineService;
+    }
+
+    public UniverseService getUniverseService() {
+        return universeService;
+    }
+
+    public PhysicsEngineService getPhysicsEngineService() {
+        return physicsEngineService;
     }
 
     @Scheduled(fixedRate = 15000)
