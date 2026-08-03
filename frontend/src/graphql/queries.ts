@@ -215,3 +215,16 @@ export const GET_BALANCE_REPORT = gql`
   }
 `
 
+export const GET_EMERGENT_ARCHETYPES = gql`
+  query GetEmergentArchetypes {
+    emergentArchetypes {
+      archetype
+      civilizationId
+      civilizationName
+      emergenceScore
+      keyFeature
+    }
+  }
+`
+
+

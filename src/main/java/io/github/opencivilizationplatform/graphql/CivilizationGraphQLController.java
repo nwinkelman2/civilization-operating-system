@@ -36,6 +36,8 @@ import io.github.opencivilizationplatform.modules.resources.domain.Resource;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
+import io.github.opencivilizationplatform.modules.strategy.application.EmergentCivilizationSearchService;
+import io.github.opencivilizationplatform.modules.strategy.domain.EmergentArchetypeReport;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -59,6 +61,7 @@ public class CivilizationGraphQLController {
     private final LeaderboardService leaderboardService;
     private final SimulationEngineService simulationEngineService;
     private final BalanceService balanceService;
+    private final EmergentCivilizationSearchService emergentCivilizationSearchService;
 
     public CivilizationGraphQLController(CivilizationService civilizationService,
                                           ResourceRegionService regionService,
@@ -72,7 +75,8 @@ public class CivilizationGraphQLController {
                                           TreatyService treatyService,
                                           LeaderboardService leaderboardService,
                                           SimulationEngineService simulationEngineService,
-                                          BalanceService balanceService) {
+                                          BalanceService balanceService,
+                                          EmergentCivilizationSearchService emergentCivilizationSearchService) {
         this.civilizationService = civilizationService;
         this.regionService = regionService;
         this.resourceService = resourceService;
@@ -86,6 +90,12 @@ public class CivilizationGraphQLController {
         this.leaderboardService = leaderboardService;
         this.simulationEngineService = simulationEngineService;
         this.balanceService = balanceService;
+        this.emergentCivilizationSearchService = emergentCivilizationSearchService;
+    }
+
+    @QueryMapping
+    public List<EmergentArchetypeReport> emergentArchetypes() {
+        return emergentCivilizationSearchService.evaluateEmergentArchetypes();
     }
 
     @QueryMapping

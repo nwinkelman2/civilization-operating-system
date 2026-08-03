@@ -1,8 +1,8 @@
 import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
-import { GET_CIVILIZATIONS, GET_LEADERBOARD, GET_SIMULATION_STATUS } from '../graphql/queries'
-import { BarChart3, BarChart, Activity, Users, Trophy, Plus, Wifi, WifiOff } from 'lucide-react'
+import { GET_CIVILIZATIONS, GET_LEADERBOARD, GET_SIMULATION_STATUS, GET_EMERGENT_ARCHETYPES } from '../graphql/queries'
+import { BarChart3, BarChart, Activity, Users, Trophy, Plus, Wifi, WifiOff, Sparkles } from 'lucide-react'
 import CreateCivilizationForm from '../components/CreateCivilizationForm'
 import { useRealtimeUpdates } from '../hooks/useRealtimeUpdates'
 import Layout from '../components/Layout'
@@ -13,6 +13,7 @@ export default function Dashboard() {
   const { data: civData, refetch: refetchCivs } = useQuery(GET_CIVILIZATIONS, { variables: { page: 0, size: 5 } })
   const { data: leaderData, refetch: refetchLeader } = useQuery(GET_LEADERBOARD)
   const { data: simData, refetch: refetchSim } = useQuery(GET_SIMULATION_STATUS)
+  const { data: emergentData } = useQuery(GET_EMERGENT_ARCHETYPES)
 
   const onResourceTick = useCallback(() => { refetchCivs(); refetchLeader() }, [refetchCivs, refetchLeader])
   const onSimulationTick = useCallback(() => { refetchSim() }, [refetchSim])
@@ -27,6 +28,7 @@ export default function Dashboard() {
   const civs = civData?.civilizations?.content || []
   const leaderboard = leaderData?.leaderboard || []
   const sim = simData?.simulationStatus
+  const emergentArchetypes = emergentData?.emergentArchetypes || []
 
   const totalResources = civs.reduce((acc: any, civ: any) => {
     if (civ.resources) {
@@ -163,7 +165,30 @@ export default function Dashboard() {
             <div style={{ color: '#64748b' }}>Found your first civilization to get started</div>
           )}
         </div>
+
+        <div className="stat-card" id="emergent-archetypes-card">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+            <Sparkles size={20} color="#ec4899" />
+            <span style={{ fontWeight: 600 }}>Emergent Archetypes</span>
+          </div>
+          {emergentArchetypes.map((report: any) => (
+            <div key={report.civilizationId} style={{
+              padding: '0.5rem 0', borderBottom: '1px solid #334155', fontSize: '0.85rem'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <span style={{ fontWeight: 600, color: '#f472b6' }}>{report.archetype}</span>
+                <span style={{ color: '#22c55e', fontWeight: 700 }}>{report.emergenceScore}%</span>
+              </div>
+              <div style={{ color: '#e2e8f0', fontWeight: 500 }}>{report.civilizationName}</div>
+              <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>{report.keyFeature}</div>
+            </div>
+          ))}
+          {emergentArchetypes.length === 0 && (
+            <div style={{ color: '#64748b' }}>No emergent archetypes detected</div>
+          )}
+        </div>
       </div>
     </Layout>
   )
 }
+

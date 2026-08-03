@@ -60,7 +60,7 @@ describe('App responsive navigation', () => {
 
   it('renders all primary nav items with touch-friendly (44px) targets', () => {
     renderApp()
-    const dashboardLink = screen.getByText('Dashboard').closest('a')
+    const dashboardLink = screen.getByRole('link', { name: /Dashboard/i })
     expect(dashboardLink).toHaveStyle({ minHeight: '44px' })
   })
 

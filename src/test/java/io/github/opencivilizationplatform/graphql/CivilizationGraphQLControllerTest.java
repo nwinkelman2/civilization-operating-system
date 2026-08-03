@@ -68,6 +68,8 @@ class CivilizationGraphQLControllerTest {
     private io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService simulationEngineService;
     @Mock
     private io.github.opencivilizationplatform.modules.strategy.application.BalanceService balanceService;
+    @Mock
+    private io.github.opencivilizationplatform.modules.strategy.application.EmergentCivilizationSearchService emergentCivilizationSearchService;
 
     private CivilizationGraphQLController controller;
 
@@ -86,8 +88,23 @@ class CivilizationGraphQLControllerTest {
             treatyService,
             leaderboardService,
             simulationEngineService,
-            balanceService
+            balanceService,
+            emergentCivilizationSearchService
         );
+    }
+
+    @Test
+    void testEmergentArchetypesQuery() {
+        io.github.opencivilizationplatform.modules.strategy.domain.EmergentArchetypeReport report =
+            new io.github.opencivilizationplatform.modules.strategy.domain.EmergentArchetypeReport(
+                "TECHNOCRATIC_MESH", 1L, "Solaria", 85.0, "High Mesh Connectivity & Autonomous Nodes"
+            );
+        when(emergentCivilizationSearchService.evaluateEmergentArchetypes()).thenReturn(List.of(report));
+
+        List<io.github.opencivilizationplatform.modules.strategy.domain.EmergentArchetypeReport> result = controller.emergentArchetypes();
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("TECHNOCRATIC_MESH", result.get(0).archetype());
     }
 
     @Test
