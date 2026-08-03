@@ -2,9 +2,10 @@ import { useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@apollo/client'
 import { GET_CIVILIZATIONS, GET_LEADERBOARD, GET_SIMULATION_STATUS } from '../graphql/queries'
-import { BarChart, Activity, Users, Trophy, Plus, Wifi, WifiOff } from 'lucide-react'
+import { BarChart3, BarChart, Activity, Users, Trophy, Plus, Wifi, WifiOff } from 'lucide-react'
 import CreateCivilizationForm from '../components/CreateCivilizationForm'
 import { useRealtimeUpdates } from '../hooks/useRealtimeUpdates'
+import Layout from '../components/Layout'
 
 export default function Dashboard() {
   const [showForm, setShowForm] = useState(false)
@@ -37,8 +38,11 @@ export default function Dashboard() {
   }, {})
 
   return (
-    <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+    <Layout
+      icon={<BarChart3 size={24} color="#0ea5e9" />}
+      title="Dashboard"
+      subtitle="Executive overview and real-time simulation"
+      actions={
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.75rem', color: wsConnected ? '#22c55e' : '#ef4444' }}>
             {wsConnected ? <Wifi size={14} /> : <WifiOff size={14} />}
@@ -52,7 +56,8 @@ export default function Dashboard() {
             <Plus size={18} /> Found Civilization
           </button>
         </div>
-      </div>
+      }
+    >
 
       {showForm && <CreateCivilizationForm onClose={() => { setShowForm(false); refetchCivs() }} />}
 
@@ -159,6 +164,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-    </div>
+    </Layout>
   )
 }

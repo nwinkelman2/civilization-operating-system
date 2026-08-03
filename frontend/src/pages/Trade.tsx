@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ArrowLeftRight, Plus, Loader2, AlertCircle } from 'lucide-react'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
 import StatusBadge from '../components/StatusBadge'
 import DataTable from '../components/DataTable'
+import TradeProposalModal from '../components/TradeProposalModal'
 
 export default function Trade() {
   const [agreements, setAgreements] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [filter, setFilter] = useState('ALL')
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  useEffect(() => {
+  const fetchAgreements = useCallback(() => {
     setLoading(true)
     fetch('/api/v1/trade/agreements')
       .then(res => {
@@ -28,7 +30,11 @@ export default function Trade() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) {
+  useEffect(() => {
+    fetchAgreements()
+  }, [fetchAgreements])
+
+  if (loading && agreements.length === 0) {
     return (
       <Layout icon={<ArrowLeftRight size={24} color="#0ea5e9" />} title="Trade Agreements" subtitle="Inter-civilization trade and diplomacy">
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1rem', color: '#94a3b8' }}>
@@ -39,7 +45,7 @@ export default function Trade() {
     )
   }
 
-  if (error) {
+  if (error && agreements.length === 0) {
     return (
       <Layout icon={<ArrowLeftRight size={24} color="#0ea5e9" />} title="Trade Agreements" subtitle="Inter-civilization trade and diplomacy">
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1rem', color: '#ef4444' }}>
@@ -60,11 +66,14 @@ export default function Trade() {
       title="Trade Agreements"
       subtitle="Inter-civilization trade and diplomacy"
       actions={
-        <button style={{
-          display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.8rem',
-          borderRadius: '0.5rem', border: 'none', background: '#0ea5e9', color: 'white',
-          cursor: 'pointer', fontSize: '0.85rem'
-        }}>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.8rem',
+            borderRadius: '0.5rem', border: 'none', background: '#0ea5e9', color: 'white',
+            cursor: 'pointer', fontSize: '0.85rem'
+          }}
+        >
           <Plus size={16} /> New Agreement
         </button>
       }
@@ -106,6 +115,12 @@ export default function Trade() {
         ]}
         data={filtered}
         emptyMessage="No trade agreements found"
+      />
+
+      <TradeProposalModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchAgreements}
       />
     </Layout>
   )

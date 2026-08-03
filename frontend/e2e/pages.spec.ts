@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test'
 test.describe('Frontend Pages & Backend Communication E2E Tests', () => {
   test('Dashboard loads without error and connects to WebSocket/GraphQL', async ({ page }) => {
     await page.goto('http://localhost:3000/')
-    await expect(page.locator('h1, h2, header')).toBeVisible()
+    await expect(page.getByText('Global Resources')).toBeVisible()
     await expect(page.getByText('Error loading')).not.toBeVisible()
   })
 
@@ -13,16 +13,34 @@ test.describe('Frontend Pages & Backend Communication E2E Tests', () => {
     await expect(page.getByText(/Nexus|Node/i).first()).toBeVisible()
   })
 
-  test('Trade page loads trade agreements', async ({ page }) => {
+  test('Trade page loads trade agreements and opens trade proposal modal', async ({ page }) => {
     await page.goto('http://localhost:3000/trade')
     await expect(page.getByText('Error loading trade agreements')).not.toBeVisible()
     await expect(page.getByRole('heading', { name: 'Trade Agreements' })).toBeVisible()
+
+    const newBtn = page.getByRole('button', { name: /New Agreement/i })
+    await expect(newBtn).toBeVisible()
+    await newBtn.click()
+    await expect(page.getByText('Propose Trade Agreement')).toBeVisible()
   })
 
-  test('Constitution page loads rules', async ({ page }) => {
+  test('Constitution page loads rules and opens rule proposal modal', async ({ page }) => {
     await page.goto('http://localhost:3000/constitution')
     await expect(page.getByText('Error loading rules')).not.toBeVisible()
-    await expect(page.getByText(/Constitution|Rules/i).first()).toBeVisible()
+    await expect(page.getByText(/Constitution|Rules|Governance/i).first()).toBeVisible()
+
+    const proposeBtn = page.getByRole('button', { name: /Propose Rule/i })
+    await expect(proposeBtn).toBeVisible()
+    await proposeBtn.click()
+    await expect(page.getByText('Propose Constitutional Rule')).toBeVisible()
+    await expect(page.getByText('Scientific Validation Meter')).toBeVisible()
+  })
+
+  test('Civilization Detail page loads civilization info', async ({ page }) => {
+    await page.goto('http://localhost:3000/civilizations/1')
+    await expect(page.getByText('Error loading')).not.toBeVisible()
+    await expect(page.getByText('Population Needs')).toBeVisible()
+    await expect(page.getByText('Territory & Home Region')).toBeVisible()
   })
 
   test('Tech Tree page loads technologies', async ({ page }) => {

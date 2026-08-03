@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react'
-import { ScrollText, Plus, Pencil, Loader2, AlertCircle, Inbox } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { ScrollText, Plus, Loader2, AlertCircle, Inbox } from 'lucide-react'
 import Layout from '../components/Layout'
 import StatCard from '../components/StatCard'
+import RuleProposalModal from '../components/RuleProposalModal'
 
 const mockCommittees = [
   { id: 1, name: 'High Council', members: 7, focus: 'Strategic decisions, war, diplomacy' },
@@ -14,8 +15,9 @@ export default function Constitution() {
   const [rules, setRules] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  useEffect(() => {
+  const fetchRules = useCallback(() => {
     setLoading(true)
     fetch('/api/v1/rules')
       .then(res => {
@@ -32,7 +34,11 @@ export default function Constitution() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading && activeTab === 'rules') {
+  useEffect(() => {
+    fetchRules()
+  }, [fetchRules])
+
+  if (loading && activeTab === 'rules' && rules.length === 0) {
     return (
       <Layout icon={<ScrollText size={24} color="#f59e0b" />} title="Governance" subtitle="Constitution, rules, and committees">
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1rem', color: '#94a3b8' }}>
@@ -43,13 +49,34 @@ export default function Constitution() {
     )
   }
 
-  if (error && activeTab === 'rules') {
+  if (error && activeTab === 'rules' && rules.length === 0) {
     return (
-      <Layout icon={<ScrollText size={24} color="#f59e0b" />} title="Governance" subtitle="Constitution, rules, and committees">
+      <Layout
+        icon={<ScrollText size={24} color="#f59e0b" />}
+        title="Governance"
+        subtitle="Constitution, rules, and committees"
+        actions={
+          <button
+            onClick={() => setIsModalOpen(true)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.8rem',
+              borderRadius: '0.5rem', border: 'none', background: '#f59e0b', color: '#0f172a',
+              cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600
+            }}
+          >
+            <Plus size={16} /> Propose Rule
+          </button>
+        }
+      >
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '300px', gap: '1rem', color: '#ef4444' }}>
           <AlertCircle size={36} />
           <span>Failed to load constitutional rules: {error}</span>
         </div>
+        <RuleProposalModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onSuccess={fetchRules}
+        />
       </Layout>
     )
   }
@@ -61,6 +88,18 @@ export default function Constitution() {
       icon={<ScrollText size={24} color="#f59e0b" />}
       title="Governance"
       subtitle="Constitution, rules, and committees"
+      actions={
+        <button
+          onClick={() => setIsModalOpen(true)}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.4rem 0.8rem',
+            borderRadius: '0.5rem', border: 'none', background: '#f59e0b', color: '#0f172a',
+            cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600
+          }}
+        >
+          <Plus size={16} /> Propose Rule
+        </button>
+      }
     >
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem' }}>
         {['rules', 'committees'].map(tab => (
@@ -143,6 +182,12 @@ export default function Constitution() {
           ))}
         </div>
       )}
+
+      <RuleProposalModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchRules}
+      />
     </Layout>
   )
 }

@@ -1,11 +1,12 @@
 import { useQuery } from '@apollo/client'
 import { GET_NEXUS_NODES } from '../graphql/queries'
 import { Network, Wifi, WifiOff } from 'lucide-react'
+import NexusMeshGraph from '../components/NexusMeshGraph'
 
 export default function NexusMesh() {
   const { data, loading } = useQuery(GET_NEXUS_NODES)
 
-  if (loading) return <div style={{ color: '#64748b' }}>Loading Nexus mesh...</div>
+  if (loading) return <div style={{ color: '#64748b', textAlign: 'center', padding: '3rem' }}>Loading Nexus mesh...</div>
 
   const nodes = data?.nexusNodes || []
 
@@ -17,6 +18,11 @@ export default function NexusMesh() {
       <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem' }}>
         <Network size={24} color="#a78bfa" />
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Nexus Neural Mesh</h1>
+      </div>
+
+      {/* SVG Topology Mesh Graph Component at Top */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <NexusMeshGraph nodes={nodes} />
       </div>
 
       <div className="dashboard-grid" style={{ marginBottom: '1.5rem' }}>
