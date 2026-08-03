@@ -48,4 +48,5 @@ VALUES ('Sustainable Agriculture', 'AGRICULTURE', 'Local food production techniq
 
 -- Seed Citizens
 INSERT INTO citizens (citizen_id, name, reputation_score, biographical_note)
-VALUES ('CIT-LOCAL-01', 'Local Pioneer', 50.0, 'Founding member of the local settlement.');
+VALUES ('CIT-LOCAL-01', 'Local Pioneer', 50.0, 'Founding member of the local settlement.')
+ON CONFLICT (citizen_id) DO NOTHING;
