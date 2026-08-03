@@ -17,6 +17,7 @@ spring:
 
   flyway:
     enabled: true
+    out-of-order: true
 
   jpa:
     hibernate:
