@@ -75,7 +75,7 @@ public class FoundCivilizationSagaSteps {
         };
     }
 
-    public SagaStep<FoundCivilizationContext> deployVoxtexNode() {
+    public SagaStep<FoundCivilizationContext> deployNexusNode() {
         return new SagaStep<>() {
             @Override
             public void execute(FoundCivilizationContext ctx) {
@@ -87,23 +87,23 @@ public class FoundCivilizationSagaSteps {
                     ctx.getCivilization().getId(),
                     "Primary neural node for " + ctx.getCivilization().getName()
                 );
-                ctx.setVoxtexNodeDeployed(true);
-                log.info("SAGA step: voxtex node deployed for civilization {}", ctx.getCivilization().getId());
+                ctx.setNexusNodeDeployed(true);
+                log.info("SAGA step: nexus node deployed for civilization {}", ctx.getCivilization().getId());
             }
 
             @Override
             public void compensate(FoundCivilizationContext ctx) {
-                if (ctx.isVoxtexNodeDeployed()) {
+                if (ctx.isNexusNodeDeployed()) {
                     var nodes = nexusService.getNodesForCivilization(ctx.getCivilization().getId());
                     nodes.forEach(node -> {
                         nexusService.updateNodeStatus(node.getId(), NexusNodeStatus.OFFLINE);
                     });
-                    log.warn("SAGA compensate: voxtex nodes set to OFFLINE for civilization {}", ctx.getCivilization().getId());
+                    log.warn("SAGA compensate: nexus nodes set to OFFLINE for civilization {}", ctx.getCivilization().getId());
                 }
             }
 
             @Override
-            public String getName() { return "DeployVoxtexNode"; }
+            public String getName() { return "DeployNexusNode"; }
         };
     }
 }

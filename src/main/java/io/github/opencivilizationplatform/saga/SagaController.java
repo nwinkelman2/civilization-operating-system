@@ -22,7 +22,7 @@ public class SagaController {
     }
 
     @PostMapping("/found-civilization")
-    @Operation(summary = "Execute FoundCivilization saga (create civ → claim region → deploy voxtex)")
+    @Operation(summary = "Execute FoundCivilization saga (create civ → claim region → deploy nexus)")
     public Map<String, Object> foundCivilization(@RequestBody FoundCivilizationRequest request) {
         FoundCivilizationContext ctx = new FoundCivilizationContext();
         ctx.setName(request.name());
@@ -33,7 +33,7 @@ public class SagaController {
         orchestrator.execute("FoundCivilization", ctx, List.of(
             foundSteps.createCivilization(),
             foundSteps.claimRegion(),
-            foundSteps.deployVoxtexNode()
+            foundSteps.deployNexusNode()
         ));
 
         return Map.of(

@@ -10,7 +10,7 @@
     "topic.prefix": "civos.cdc",
     "plugin.name": "pgoutput",
     "schemas.enable": false,
-    "table.include.list": "public.civilizations,public.voxtex_nodes,public.voxtex_messages,public.resources,public.resource_regions,public.trade_agreements,public.game_events",
+    "table.include.list": "public.civilizations,public.nexus_nodes,public.nexus_messages,public.resources,public.resource_regions,public.trade_agreements,public.game_events",
     "tombstones.on.delete": false,
     "decimal.handling.mode": "double",
     "heartbeat.interval.ms": "5000",

@@ -2,15 +2,18 @@ import { useEffect, useRef, useState } from 'react'
 
 type MessageHandler = (data: any) => void
 
-export function useWebSocket(token?: string) {
+export function useWebSocket(urlOrToken: string = '/ws/nexus', token?: string) {
   const ws = useRef<WebSocket | null>(null)
   const handlers = useRef<Map<string, MessageHandler[]>>(new Map())
   const [connected, setConnected] = useState(false)
   const reconnectTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
+  const path = urlOrToken.startsWith('/') ? urlOrToken : '/ws/nexus'
+  const authToken = urlOrToken.startsWith('/') ? token : urlOrToken
+
   function connect() {
     const protocol = location.protocol === 'https:' ? 'wss:' : 'ws:'
-    const url = `${protocol}//${location.host}/ws/nexus${token ? `?token=${token}` : ''}`
+    const url = `${protocol}//${location.host}${path}${authToken ? `?token=${authToken}` : ''}`
 
     ws.current = new WebSocket(url)
 
@@ -55,7 +58,7 @@ export function useWebSocket(token?: string) {
       clearTimeout(reconnectTimeout.current)
       ws.current?.close()
     }
-  }, [token])
+  }, [urlOrToken, token])
 
   return { connected, subscribe, send, ws: ws.current }
 }

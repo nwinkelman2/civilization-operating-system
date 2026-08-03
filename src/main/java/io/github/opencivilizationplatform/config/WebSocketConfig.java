@@ -20,7 +20,7 @@ public class WebSocketConfig implements WebSocketConfigurer {
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(nexusHandler, "/ws/nexus")
+        registry.addHandler(nexusHandler, "/ws/nexus", "/ws/voxtex")
             .setAllowedOrigins("*")
             .addInterceptors(authInterceptor);
     }

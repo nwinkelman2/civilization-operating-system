@@ -28,9 +28,9 @@ public class KafkaConsumerConfig {
         log.info("CDC Event - Civilization created: key={}, value={}", record.key(), record.value());
     }
 
-    @KafkaListener(topics = KafkaConfig.TOPIC_VOXTEX_MESSAGE_SENT, groupId = "civos-core")
-    public void onVoxtexMessageSent(ConsumerRecord<String, String> record) {
-        log.info("CDC Event - Voxtex message sent: key={}", record.key());
+    @KafkaListener(topics = KafkaConfig.TOPIC_NEXUS_MESSAGE_SENT, groupId = "civos-core")
+    public void onNexusMessageSent(ConsumerRecord<String, String> record) {
+        log.info("CDC Event - Nexus message sent: key={}", record.key());
     }
 
     @KafkaListener(topics = KafkaConfig.TOPIC_RESOURCE_TICK, groupId = "civos-core")
@@ -43,9 +43,9 @@ public class KafkaConsumerConfig {
         log.info("CDC DB change - Civilizations table: {}", record.value());
     }
 
-    @KafkaListener(topics = "civos.cdc.public.voxtex_nodes", groupId = "civos-cdc")
-    public void onCdcVoxtexNode(ConsumerRecord<String, String> record) {
-        log.debug("CDC DB change - Voxtex nodes: {}", record.value());
+    @KafkaListener(topics = "civos.cdc.public.nexus_nodes", groupId = "civos-cdc")
+    public void onCdcNexusNode(ConsumerRecord<String, String> record) {
+        log.debug("CDC DB change - Nexus nodes: {}", record.value());
     }
 
     @KafkaListener(topicPattern = "civos\\.cdc\\.public\\.(resources|resource_regions|trade_agreements|game_events)",

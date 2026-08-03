@@ -10,7 +10,7 @@ public class FoundCivilizationContext {
     private String ownerToken;
     private Civilization civilization;
     private boolean regionClaimed;
-    private boolean voxtexNodeDeployed;
+    private boolean nexusNodeDeployed;
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
@@ -24,6 +24,6 @@ public class FoundCivilizationContext {
     public void setCivilization(Civilization civilization) { this.civilization = civilization; }
     public boolean isRegionClaimed() { return regionClaimed; }
     public void setRegionClaimed(boolean regionClaimed) { this.regionClaimed = regionClaimed; }
-    public boolean isVoxtexNodeDeployed() { return voxtexNodeDeployed; }
-    public void setVoxtexNodeDeployed(boolean voxtexNodeDeployed) { this.voxtexNodeDeployed = voxtexNodeDeployed; }
+    public boolean isNexusNodeDeployed() { return nexusNodeDeployed; }
+    public void setNexusNodeDeployed(boolean nexusNodeDeployed) { this.nexusNodeDeployed = nexusNodeDeployed; }
 }
