@@ -28,6 +28,15 @@ import org.springframework.graphql.data.method.annotation.QueryMapping;
 import org.springframework.graphql.data.method.annotation.SchemaMapping;
 import org.springframework.stereotype.Controller;
 
+import io.github.opencivilizationplatform.dto.BalanceDTO;
+import io.github.opencivilizationplatform.modules.leaderboard.application.LeaderboardService;
+import io.github.opencivilizationplatform.modules.leaderboard.domain.CivilizationScore;
+import io.github.opencivilizationplatform.modules.resources.application.ResourceService;
+import io.github.opencivilizationplatform.modules.resources.domain.Resource;
+import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
+import io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService;
+import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
+
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -39,6 +48,7 @@ public class CivilizationGraphQLController {
 
     private final CivilizationService civilizationService;
     private final ResourceRegionService regionService;
+    private final ResourceService resourceService;
     private final NexusMeshService nexusService;
     private final ShipmentService shipmentService;
     private final GlobalEventService globalEventService;
@@ -46,18 +56,26 @@ public class CivilizationGraphQLController {
     private final SocialStabilityService socialStabilityService;
     private final ElectionService electionService;
     private final TreatyService treatyService;
+    private final LeaderboardService leaderboardService;
+    private final SimulationEngineService simulationEngineService;
+    private final BalanceService balanceService;
 
     public CivilizationGraphQLController(CivilizationService civilizationService,
                                           ResourceRegionService regionService,
+                                          ResourceService resourceService,
                                           NexusMeshService nexusService,
                                           ShipmentService shipmentService,
                                           GlobalEventService globalEventService,
                                           ContributionService contributionService,
                                           SocialStabilityService socialStabilityService,
                                           ElectionService electionService,
-                                          TreatyService treatyService) {
+                                          TreatyService treatyService,
+                                          LeaderboardService leaderboardService,
+                                          SimulationEngineService simulationEngineService,
+                                          BalanceService balanceService) {
         this.civilizationService = civilizationService;
         this.regionService = regionService;
+        this.resourceService = resourceService;
         this.nexusService = nexusService;
         this.shipmentService = shipmentService;
         this.globalEventService = globalEventService;
@@ -65,6 +83,39 @@ public class CivilizationGraphQLController {
         this.socialStabilityService = socialStabilityService;
         this.electionService = electionService;
         this.treatyService = treatyService;
+        this.leaderboardService = leaderboardService;
+        this.simulationEngineService = simulationEngineService;
+        this.balanceService = balanceService;
+    }
+
+    @QueryMapping
+    public List<ResourceRegion> regions(@Argument Boolean claimed) {
+        if (Boolean.TRUE.equals(claimed)) {
+            return regionService.getAllRegions().stream().filter(r -> Boolean.TRUE.equals(r.getClaimed())).toList();
+        } else if (Boolean.FALSE.equals(claimed)) {
+            return regionService.getAvailableRegions();
+        }
+        return regionService.getAllRegions();
+    }
+
+    @QueryMapping
+    public List<Resource> resources(@Argument String region) {
+        return resourceService.getAllResources(PageRequest.of(0, 100)).getContent();
+    }
+
+    @QueryMapping
+    public List<CivilizationScore> leaderboard() {
+        return leaderboardService.getLeaderboard();
+    }
+
+    @QueryMapping
+    public SimulationStatusResponse simulationStatus() {
+        return simulationEngineService.getStatus();
+    }
+
+    @QueryMapping
+    public List<BalanceDTO> balanceReport() {
+        return balanceService.getBalanceReport();
     }
 
     @QueryMapping

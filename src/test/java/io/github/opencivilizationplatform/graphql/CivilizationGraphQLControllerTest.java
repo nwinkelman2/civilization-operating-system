@@ -21,6 +21,8 @@ import io.github.opencivilizationplatform.modules.region.domain.ResourceRegion;
 import io.github.opencivilizationplatform.modules.social.application.SocialStabilityService;
 import io.github.opencivilizationplatform.modules.social.domain.Incident;
 import io.github.opencivilizationplatform.modules.social.domain.IncidentType;
+import io.github.opencivilizationplatform.modules.resources.application.ResourceService;
+import io.github.opencivilizationplatform.modules.leaderboard.application.LeaderboardService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -45,6 +47,8 @@ class CivilizationGraphQLControllerTest {
     @Mock
     private ResourceRegionService regionService;
     @Mock
+    private ResourceService resourceService;
+    @Mock
     private NexusMeshService nexusService;
     @Mock
     private ShipmentService shipmentService;
@@ -58,6 +62,12 @@ class CivilizationGraphQLControllerTest {
     private ElectionService electionService;
     @Mock
     private TreatyService treatyService;
+    @Mock
+    private LeaderboardService leaderboardService;
+    @Mock
+    private io.github.opencivilizationplatform.modules.simulation.application.SimulationEngineService simulationEngineService;
+    @Mock
+    private io.github.opencivilizationplatform.modules.strategy.application.BalanceService balanceService;
 
     private CivilizationGraphQLController controller;
 
@@ -66,13 +76,17 @@ class CivilizationGraphQLControllerTest {
         controller = new CivilizationGraphQLController(
             civilizationService,
             regionService,
+            resourceService,
             nexusService,
             shipmentService,
             globalEventService,
             contributionService,
             socialStabilityService,
             electionService,
-            treatyService
+            treatyService,
+            leaderboardService,
+            simulationEngineService,
+            balanceService
         );
     }
 
