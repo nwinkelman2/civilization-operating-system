@@ -7,6 +7,8 @@ import io.github.opencivilizationplatform.modules.social.domain.IncidentStatus;
 import io.github.opencivilizationplatform.modules.social.infrastructure.BehaviorAssessmentRepository;
 import io.github.opencivilizationplatform.modules.social.infrastructure.CaseRepository;
 import io.github.opencivilizationplatform.modules.social.infrastructure.IncidentRepository;
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.IncidentResolvedEvent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,13 +19,16 @@ public class SocialStabilityService {
     private final IncidentRepository incidentRepository;
     private final BehaviorAssessmentRepository assessmentRepository;
     private final CaseRepository caseRepository;
+    private final EventBus eventBus;
 
     public SocialStabilityService(IncidentRepository incidentRepository,
                                   BehaviorAssessmentRepository assessmentRepository,
-                                  CaseRepository caseRepository) {
+                                  CaseRepository caseRepository,
+                                  EventBus eventBus) {
         this.incidentRepository = incidentRepository;
         this.assessmentRepository = assessmentRepository;
         this.caseRepository = caseRepository;
+        this.eventBus = eventBus;
     }
 
     public Page<Incident> getAllIncidents(Pageable pageable) {
@@ -51,7 +56,15 @@ public class SocialStabilityService {
     public Incident mediateIncident(Long incidentId) {
         Incident inc = incidentRepository.findById(incidentId).orElseThrow(() -> new IllegalArgumentException("Incident not found: " + incidentId));
         inc.setStatus(IncidentStatus.RESOLVED);
-        return incidentRepository.save(inc);
+        Incident saved = incidentRepository.save(inc);
+
+        eventBus.publish(new IncidentResolvedEvent(
+            "SocialStabilityService",
+            saved.getId(),
+            saved.getCivilization() != null ? saved.getCivilization().getId() : null,
+            "Incident mediated and resolved"
+        ));
+        return saved;
     }
 
     @org.springframework.transaction.annotation.Transactional

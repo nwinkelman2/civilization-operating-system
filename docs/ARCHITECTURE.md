@@ -18,13 +18,23 @@ io.github.opencivilizationplatform
         └── infrastructure/ # Repositories (JpaRepository)
 ```
 
-## Module Communication
+## Event-Driven Architecture & Kafka Topic Conventions
 
-Modules communicate through:
+The platform uses `EventBus` (`SpringEventBus` for local Spring events and `KafkaEventBus` for distributed messaging) to publish domain events. All Kafka topics strictly follow the naming pattern:
 
-1. **Direct service injection** — Services can inject other services
-2. **Spring Events** — `BiosphereCriticalEvent` triggers cross-module reactions
-3. **Shared DTOs** — For API responses
+`civos.<module>.<event>`
+
+| Event Class | Module | Event Name | Kafka Topic |
+|---|---|---|---|
+| `CivilizationCreatedEvent` | `civilization` | `created` | `civos.civilization.created` |
+| `NexusMessageSentEvent` | `nexus` | `message_sent` | `civos.nexus.message_sent` |
+| `ResourceTickProcessedEvent` | `resources` | `tick_processed` | `civos.resources.tick_processed` |
+| `TradeAgreementCreatedEvent` | `trade` | `agreement_created` | `civos.trade.agreement_created` |
+| `ContributionSubmittedEvent` | `contribution` | `submitted` | `civos.contribution.submitted` |
+| `ElectionCompletedEvent` | `governance` | `election_completed` | `civos.governance.election_completed` |
+| `IncidentResolvedEvent` | `social` | `incident_resolved` | `civos.social.incident_resolved` |
+| `ShipmentDeliveredEvent` | `logistics` | `shipment_delivered` | `civos.logistics.shipment_delivered` |
+| `GlobalEventOccurredEvent` | `events` | `global_occurred` | `civos.events.global_occurred` |
 
 ## Data Flow
 

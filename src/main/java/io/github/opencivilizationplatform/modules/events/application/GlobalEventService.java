@@ -13,15 +13,20 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.GlobalEventOccurredEvent;
+
 @Service
 public class GlobalEventService {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(GlobalEventService.class);
     private final GlobalEventRepository globalEventRepository;
+    private final EventBus eventBus;
     private final Random random = new Random();
 
-    public GlobalEventService(GlobalEventRepository globalEventRepository) {
+    public GlobalEventService(GlobalEventRepository globalEventRepository, EventBus eventBus) {
         this.globalEventRepository = globalEventRepository;
+        this.eventBus = eventBus;
     }
 
     public List<GlobalEvent> getActiveEvents() {
@@ -66,6 +71,14 @@ public class GlobalEventService {
 
         event = globalEventRepository.save(event);
         log.info("[GlobalEvent] Novo evento mundial gerado: {} afetando civs {}", type, affectedJson);
+
+        eventBus.publish(new GlobalEventOccurredEvent(
+            "GlobalEventService",
+            event.getId(),
+            event.getDescription(),
+            event.getType() != null ? event.getType().name() : "UNKNOWN",
+            "HIGH"
+        ));
         return event;
     }
 

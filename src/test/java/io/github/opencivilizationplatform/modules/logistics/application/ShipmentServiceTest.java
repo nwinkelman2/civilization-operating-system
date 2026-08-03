@@ -22,6 +22,9 @@ class ShipmentServiceTest {
     @Mock
     private ShipmentRepository shipmentRepository;
 
+    @Mock
+    private io.github.opencivilizationplatform.core.eventbus.EventBus eventBus;
+
     @InjectMocks
     private ShipmentService shipmentService;
 
@@ -46,11 +49,13 @@ class ShipmentServiceTest {
     void testSaveShipment() {
         Shipment s = new Shipment();
         s.setCargo("Medical Supplies");
+        s.setStatus(io.github.opencivilizationplatform.modules.logistics.domain.ShipmentStatus.DELIVERED);
         when(shipmentRepository.save(any(Shipment.class))).thenReturn(s);
 
         Shipment saved = shipmentService.saveShipment(s);
 
         assertNotNull(saved);
         assertEquals("Medical Supplies", saved.getCargo());
+        verify(eventBus, times(1)).publish(any(io.github.opencivilizationplatform.core.eventbus.events.ShipmentDeliveredEvent.class));
     }
 }

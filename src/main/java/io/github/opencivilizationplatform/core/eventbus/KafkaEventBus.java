@@ -22,7 +22,6 @@ import java.util.function.Consumer;
 public class KafkaEventBus implements EventBus {
 
     private static final Logger log = LoggerFactory.getLogger(KafkaEventBus.class);
-    private static final String TOPIC_PREFIX = "civos.events.";
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
@@ -44,10 +43,11 @@ public class KafkaEventBus implements EventBus {
             wrapper.set("data", objectMapper.valueToTree(event));
 
             String json = objectMapper.writeValueAsString(wrapper);
-            String topic = TOPIC_PREFIX + event.getType().toLowerCase().replace(' ', '_');
+            String topic = "civos." + event.getModule() + "." + event.getEventName();
 
             kafkaTemplate.send(new ProducerRecord<>(topic, event.getEventId().toString(), json));
             log.debug("Published event to Kafka topic {}: {}", topic, event.getEventId());
+            notifyLocal(event);
         } catch (Exception e) {
             log.error("Failed to serialize event {}: {}", event.getType(), e.getMessage());
         }

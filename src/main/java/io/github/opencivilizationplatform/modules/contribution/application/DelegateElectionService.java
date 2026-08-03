@@ -6,6 +6,8 @@ import io.github.opencivilizationplatform.modules.contribution.domain.Role;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenRepository;
 import io.github.opencivilizationplatform.modules.contribution.infrastructure.DelegateVoteRepository;
 import io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository;
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.ElectionCompletedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,13 +25,16 @@ public class DelegateElectionService {
     private final CitizenRepository citizenRepository;
     private final DelegateVoteRepository voteRepository;
     private final CivilizationRepository civilizationRepository;
+    private final EventBus eventBus;
 
     public DelegateElectionService(CitizenRepository citizenRepository,
                                    DelegateVoteRepository voteRepository,
-                                   CivilizationRepository civilizationRepository) {
+                                   CivilizationRepository civilizationRepository,
+                                   EventBus eventBus) {
         this.citizenRepository = citizenRepository;
         this.voteRepository = voteRepository;
         this.civilizationRepository = civilizationRepository;
+        this.eventBus = eventBus;
     }
 
     @Transactional(readOnly = true)
@@ -115,6 +120,13 @@ public class DelegateElectionService {
 
             // Clear votes to start next cycle
             voteRepository.deleteByCivilizationIdAndSector(civilizationId, sector);
+
+            eventBus.publish(new ElectionCompletedEvent(
+                "DelegateElectionService",
+                votes.get(0).getId(),
+                civilizationId,
+                winner.getId()
+            ));
         }
     }
 

@@ -1,7 +1,7 @@
 package io.github.opencivilizationplatform.modules.nexus.application;
 
 import io.github.opencivilizationplatform.core.eventbus.EventBus;
-import io.github.opencivilizationplatform.core.eventbus.events.VoxtexMessageSentEvent;
+import io.github.opencivilizationplatform.core.eventbus.events.NexusMessageSentEvent;
 import io.github.opencivilizationplatform.modules.nexus.domain.*;
 import io.github.opencivilizationplatform.modules.nexus.dto.NexusMessageSyncDTO;
 import io.github.opencivilizationplatform.modules.nexus.infrastructure.*;
@@ -110,7 +110,7 @@ public class NexusMeshService {
         // Publish to Redis instead of notifying local listeners directly
         publishEventToRedis(msg);
 
-        eventBus.publish(new VoxtexMessageSentEvent(
+        eventBus.publish(new NexusMessageSentEvent(
             "NexusMeshService", msg.getId(), msg.getSourceNode().getId(),
             msg.getTargetNode().getId(), msg.getMessageType().name(), msg.getContent()
         ));

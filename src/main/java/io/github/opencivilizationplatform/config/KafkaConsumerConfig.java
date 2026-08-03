@@ -4,7 +4,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.eventbus.events.CivilizationCreatedEvent;
 import io.github.opencivilizationplatform.core.eventbus.events.ResourceTickProcessedEvent;
-import io.github.opencivilizationplatform.core.eventbus.events.VoxtexMessageSentEvent;
+import io.github.opencivilizationplatform.core.eventbus.events.NexusMessageSentEvent;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

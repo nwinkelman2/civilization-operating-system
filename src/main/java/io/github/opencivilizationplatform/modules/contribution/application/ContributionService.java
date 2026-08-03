@@ -10,6 +10,9 @@ import io.github.opencivilizationplatform.modules.contribution.infrastructure.Pr
 import io.github.opencivilizationplatform.modules.region.infrastructure.ResourceRegionRepository;
 import io.github.opencivilizationplatform.modules.civilization.domain.Civilization;
 
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.ContributionSubmittedEvent;
+
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -26,19 +29,22 @@ public class ContributionService {
     private final ResourceRegionRepository resourceRegionRepository;
     private final io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository;
     private final io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenWalletRepository citizenWalletRepository;
+    private final EventBus eventBus;
 
     public ContributionService(CitizenRepository citizenRepository,
                                ProjectRepository projectRepository,
                                ContributionRepository contributionRepository,
                                ResourceRegionRepository resourceRegionRepository,
                                io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository,
-                               io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenWalletRepository citizenWalletRepository) {
+                               io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenWalletRepository citizenWalletRepository,
+                               EventBus eventBus) {
         this.citizenRepository = citizenRepository;
         this.projectRepository = projectRepository;
         this.contributionRepository = contributionRepository;
         this.resourceRegionRepository = resourceRegionRepository;
         this.civilizationRepository = civilizationRepository;
         this.citizenWalletRepository = citizenWalletRepository;
+        this.eventBus = eventBus;
     }
 
     public Page<Citizen> getAllCitizens(Pageable pageable) {
@@ -58,6 +64,13 @@ public class ContributionService {
                 citizenRepository.save(citizen);
             });
         }
+        eventBus.publish(new ContributionSubmittedEvent(
+            "ContributionService",
+            saved.getId(),
+            saved.getProject() != null ? saved.getProject().getId() : null,
+            saved.getCitizen() != null ? saved.getCitizen().getId() : null,
+            saved.getImpactScore()
+        ));
         return saved;
     }
 
@@ -100,6 +113,14 @@ public class ContributionService {
         contr.setImpactScore(25.0);
 
         Contribution saved = contributionRepository.save(contr);
+
+        eventBus.publish(new ContributionSubmittedEvent(
+            "ContributionService",
+            saved.getId(),
+            saved.getProject() != null ? saved.getProject().getId() : null,
+            saved.getCitizen() != null ? saved.getCitizen().getId() : null,
+            saved.getImpactScore()
+        ));
 
         // Update citizen reputation
         cit.setReputationScore((cit.getReputationScore() == null ? 0 : cit.getReputationScore()) + contr.getImpactScore());

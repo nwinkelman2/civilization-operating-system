@@ -27,6 +27,9 @@ class SocialStabilityServiceTest {
     @Mock
     private CaseRepository caseRepository;
 
+    @Mock
+    private io.github.opencivilizationplatform.core.eventbus.EventBus eventBus;
+
     @InjectMocks
     private SocialStabilityService socialStabilityService;
 
@@ -57,5 +60,17 @@ class SocialStabilityServiceTest {
         Incident saved = socialStabilityService.reportIncident(i);
         assertNotNull(saved);
         assertEquals("Resource Distribution Lag", saved.getDescription());
+    }
+
+    @Test
+    void testMediateIncident() {
+        Incident i = new Incident();
+        i.setId(5L);
+        when(incidentRepository.findById(5L)).thenReturn(java.util.Optional.of(i));
+        when(incidentRepository.save(any(Incident.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        Incident mediated = socialStabilityService.mediateIncident(5L);
+        assertNotNull(mediated);
+        verify(eventBus, times(1)).publish(any(io.github.opencivilizationplatform.core.eventbus.events.IncidentResolvedEvent.class));
     }
 }

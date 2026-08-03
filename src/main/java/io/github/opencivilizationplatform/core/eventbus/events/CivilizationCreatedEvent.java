@@ -12,16 +12,13 @@ public class CivilizationCreatedEvent extends BaseDomainEvent {
 
     public CivilizationCreatedEvent(String source, Long civilizationId, String name,
                                      String region, CivilizationScale scale, String ownerToken) {
-        super(source);
+        super(source, "civilization", "created");
         this.civilizationId = civilizationId;
         this.name = name;
         this.region = region;
         this.scale = scale;
         this.ownerToken = ownerToken;
     }
-
-    @Override
-    public String getType() { return "CIVILIZATION_CREATED"; }
 
     public Long getCivilizationId() { return civilizationId; }
     public String getName() { return name; }

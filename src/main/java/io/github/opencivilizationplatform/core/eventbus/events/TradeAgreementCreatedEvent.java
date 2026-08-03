@@ -11,16 +11,13 @@ public class TradeAgreementCreatedEvent extends BaseDomainEvent {
 
     public TradeAgreementCreatedEvent(String source, Long tradeId, Long fromCivilizationId,
                                        Long toCivilizationId, String resourceType, double quantity) {
-        super(source);
+        super(source, "trade", "agreement_created");
         this.tradeId = tradeId;
         this.fromCivilizationId = fromCivilizationId;
         this.toCivilizationId = toCivilizationId;
         this.resourceType = resourceType;
         this.quantity = quantity;
     }
-
-    @Override
-    public String getType() { return "TRADE_AGREEMENT_CREATED"; }
 
     public Long getTradeId() { return tradeId; }
     public Long getFromCivilizationId() { return fromCivilizationId; }

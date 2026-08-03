@@ -27,6 +27,8 @@ class DelegateElectionServiceTest {
     private DelegateVoteRepository voteRepository;
     @Mock
     private CivilizationRepository civilizationRepository;
+    @Mock
+    private io.github.opencivilizationplatform.core.eventbus.EventBus eventBus;
 
     @InjectMocks
     private DelegateElectionService electionService;
@@ -116,5 +118,6 @@ class DelegateElectionServiceTest {
         assertEquals(Role.SECTOR_DELEGATE, winner.getRole());
         verify(citizenRepository, times(1)).save(winner);
         verify(voteRepository, times(1)).deleteByCivilizationIdAndSector(1L, "FOOD");
+        verify(eventBus, times(1)).publish(any(io.github.opencivilizationplatform.core.eventbus.events.ElectionCompletedEvent.class));
     }
 }

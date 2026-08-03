@@ -1,5 +1,7 @@
 package io.github.opencivilizationplatform.modules.trade.application;
 
+import io.github.opencivilizationplatform.core.eventbus.EventBus;
+import io.github.opencivilizationplatform.core.eventbus.events.TradeAgreementCreatedEvent;
 import io.github.opencivilizationplatform.modules.trade.domain.TradeAgreement;
 import io.github.opencivilizationplatform.modules.trade.domain.TradeStatus;
 import io.github.opencivilizationplatform.modules.trade.infrastructure.TradeRepository;
@@ -13,9 +15,11 @@ import java.util.List;
 public class TradeService {
 
     private final TradeRepository repository;
+    private final EventBus eventBus;
 
-    public TradeService(TradeRepository repository) {
+    public TradeService(TradeRepository repository, EventBus eventBus) {
         this.repository = repository;
+        this.eventBus = eventBus;
     }
 
     @Transactional
@@ -27,7 +31,17 @@ public class TradeService {
         trade.setQuantity(quantity);
         trade.setStatus(TradeStatus.PROPOSED);
         trade.setExpiresAt(LocalDateTime.now().plusDays(7));
-        return repository.save(trade);
+        TradeAgreement saved = repository.save(trade);
+
+        eventBus.publish(new TradeAgreementCreatedEvent(
+            "TradeService",
+            saved.getId(),
+            saved.getFromCivilizationId(),
+            saved.getToCivilizationId(),
+            saved.getResourceType(),
+            saved.getQuantity() != null ? saved.getQuantity() : 0.0
+        ));
+        return saved;
     }
 
     @Transactional

@@ -16,7 +16,7 @@ public class ResourceTickProcessedEvent extends BaseDomainEvent {
                                        double foodDelta, double waterDelta, double mineralsDelta,
                                        double energyDelta, double housingDelta,
                                        double populationDelta, double reputationDelta) {
-        super(source);
+        super(source, "resources", "tick_processed");
         this.civilizationId = civilizationId;
         this.foodDelta = foodDelta;
         this.waterDelta = waterDelta;
@@ -26,9 +26,6 @@ public class ResourceTickProcessedEvent extends BaseDomainEvent {
         this.populationDelta = populationDelta;
         this.reputationDelta = reputationDelta;
     }
-
-    @Override
-    public String getType() { return "RESOURCE_TICK_PROCESSED"; }
 
     public Long getCivilizationId() { return civilizationId; }
     public double getFoodDelta() { return foodDelta; }

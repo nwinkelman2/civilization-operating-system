@@ -34,6 +34,8 @@ class ContributionServiceTest {
     private io.github.opencivilizationplatform.modules.civilization.infrastructure.CivilizationRepository civilizationRepository;
     @Mock
     private io.github.opencivilizationplatform.modules.contribution.infrastructure.CitizenWalletRepository citizenWalletRepository;
+    @Mock
+    private io.github.opencivilizationplatform.core.eventbus.EventBus eventBus;
 
     @InjectMocks
     private ContributionService contributionService;
@@ -64,6 +66,7 @@ class ContributionServiceTest {
         c.setImpactScore(100.0);
         when(contributionRepository.save(c)).thenReturn(c);
         assertEquals(100.0, contributionService.recordContribution(c).getImpactScore());
+        verify(eventBus, times(1)).publish(any(io.github.opencivilizationplatform.core.eventbus.events.ContributionSubmittedEvent.class));
     }
 
     @Test

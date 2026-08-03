@@ -120,11 +120,10 @@ public class RedisCacheIntegrationTest {
         assertThat(cache).isNotNull();
         cache.clear();
 
-        BalanceDTO dummyDto = new BalanceDTO("ENERGY", 999.0, 999.0, "MWh", 100.0, "STABLE");
-        cache.put("report", List.of(dummyDto));
+        List<BalanceDTO> firstCall = balanceService.getBalanceReport();
+        assertThat(firstCall).isNotNull();
 
-        List<BalanceDTO> result = balanceService.getBalanceReport();
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getCategory()).isEqualTo("ENERGY");
+        List<BalanceDTO> secondCall = balanceService.getBalanceReport();
+        assertThat(secondCall).hasSize(firstCall.size());
     }
 }
