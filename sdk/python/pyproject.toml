@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cortex-sdk"
+version = "0.1.0"
+description = "Cortex Worker Python SDK for Civilization Operating System"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [
+    { name = "Open Civilization Platform Team" }
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
