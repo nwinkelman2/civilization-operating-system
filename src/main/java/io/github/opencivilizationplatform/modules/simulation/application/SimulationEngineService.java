@@ -4,12 +4,15 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
+import io.github.opencivilizationplatform.modules.diplomacy.application.DiplomacyEngineService;
 import io.github.opencivilizationplatform.modules.life.application.AgentMetabolismService;
+import io.github.opencivilizationplatform.modules.life.application.AgentMortalityService;
 import io.github.opencivilizationplatform.modules.participation.application.LawExecutionEngine;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.github.opencivilizationplatform.modules.region.application.TerritoryControlService;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
+import io.github.opencivilizationplatform.modules.social.application.ImmigrationService;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
 import io.github.opencivilizationplatform.modules.physics.application.PhysicsEngineService;
@@ -41,6 +44,9 @@ public class SimulationEngineService {
     private final AgentMetabolismService agentMetabolismService;
     private final TerritoryControlService territoryControlService;
     private final LawExecutionEngine lawExecutionEngine;
+    private final DiplomacyEngineService diplomacyEngineService;
+    private final AgentMortalityService agentMortalityService;
+    private final ImmigrationService immigrationService;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -48,6 +54,31 @@ public class SimulationEngineService {
     private final AtomicReference<LocalDateTime> lastTickTime = new AtomicReference<>(LocalDateTime.now());
     private final List<String> monitoredCategories = new ArrayList<>();
     private final LinkedList<String> decisionHistory = new LinkedList<>();
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public SimulationEngineService(RuleService ruleService,
+                                   BalanceService balanceService,
+                                   ObjectMapper objectMapper,
+                                   UniverseService universeService,
+                                   PhysicsEngineService physicsEngineService,
+                                   AgentMetabolismService agentMetabolismService,
+                                   TerritoryControlService territoryControlService,
+                                   LawExecutionEngine lawExecutionEngine,
+                                   DiplomacyEngineService diplomacyEngineService,
+                                   AgentMortalityService agentMortalityService,
+                                   ImmigrationService immigrationService) {
+        this.ruleService = ruleService;
+        this.balanceService = balanceService;
+        this.objectMapper = objectMapper;
+        this.universeService = universeService;
+        this.physicsEngineService = physicsEngineService;
+        this.agentMetabolismService = agentMetabolismService;
+        this.territoryControlService = territoryControlService;
+        this.lawExecutionEngine = lawExecutionEngine;
+        this.diplomacyEngineService = diplomacyEngineService;
+        this.agentMortalityService = agentMortalityService;
+        this.immigrationService = immigrationService;
+    }
 
     public SimulationEngineService(RuleService ruleService,
                                    BalanceService balanceService,
@@ -57,14 +88,9 @@ public class SimulationEngineService {
                                    AgentMetabolismService agentMetabolismService,
                                    TerritoryControlService territoryControlService,
                                    LawExecutionEngine lawExecutionEngine) {
-        this.ruleService = ruleService;
-        this.balanceService = balanceService;
-        this.objectMapper = objectMapper;
-        this.universeService = universeService;
-        this.physicsEngineService = physicsEngineService;
-        this.agentMetabolismService = agentMetabolismService;
-        this.territoryControlService = territoryControlService;
-        this.lawExecutionEngine = lawExecutionEngine;
+        this(ruleService, balanceService, objectMapper, universeService, physicsEngineService,
+             agentMetabolismService, territoryControlService, lawExecutionEngine,
+             null, null, null);
     }
 
     public UniverseService getUniverseService() {
@@ -85,6 +111,18 @@ public class SimulationEngineService {
 
     public LawExecutionEngine getLawExecutionEngine() {
         return lawExecutionEngine;
+    }
+
+    public DiplomacyEngineService getDiplomacyEngineService() {
+        return diplomacyEngineService;
+    }
+
+    public AgentMortalityService getAgentMortalityService() {
+        return agentMortalityService;
+    }
+
+    public ImmigrationService getImmigrationService() {
+        return immigrationService;
     }
 
     @Scheduled(fixedRate = 15000)
@@ -120,6 +158,15 @@ public class SimulationEngineService {
         }
         if (territoryControlService != null) {
             territoryControlService.processTerritoryTick(1.0);
+        }
+        if (diplomacyEngineService != null) {
+            diplomacyEngineService.processDiplomacyCycle();
+        }
+        if (agentMortalityService != null) {
+            agentMortalityService.processLifecycleTick(100, 0.02, 0.01);
+        }
+        if (immigrationService != null) {
+            immigrationService.processMigrationCycle(75.0, 50.0, 100);
         }
 
         for (Rule rule : rules) {

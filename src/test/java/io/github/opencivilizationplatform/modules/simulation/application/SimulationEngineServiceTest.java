@@ -3,13 +3,16 @@ package io.github.opencivilizationplatform.modules.simulation.application;
 import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
+import io.github.opencivilizationplatform.modules.diplomacy.application.DiplomacyEngineService;
 import io.github.opencivilizationplatform.modules.life.application.AgentMetabolismService;
+import io.github.opencivilizationplatform.modules.life.application.AgentMortalityService;
 import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
 import io.github.opencivilizationplatform.modules.participation.application.LawExecutionEngine;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.github.opencivilizationplatform.modules.region.application.TerritoryControlService;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
+import io.github.opencivilizationplatform.modules.social.application.ImmigrationService;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
 import io.github.opencivilizationplatform.modules.physics.application.PhysicsEngineService;
@@ -48,6 +51,15 @@ class SimulationEngineServiceTest {
 
     @Mock
     private LawExecutionEngine lawExecutionEngine;
+
+    @Mock
+    private DiplomacyEngineService diplomacyEngineService;
+
+    @Mock
+    private AgentMortalityService agentMortalityService;
+
+    @Mock
+    private ImmigrationService immigrationService;
 
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
@@ -95,6 +107,9 @@ class SimulationEngineServiceTest {
         verify(lawExecutionEngine, times(1)).evaluateAndApplyLaws(rules, balance);
         verify(agentMetabolismService, times(1)).processMetabolism(100, 100.0, 150.0);
         verify(territoryControlService, times(1)).processTerritoryTick(1.0);
+        verify(diplomacyEngineService, times(1)).processDiplomacyCycle();
+        verify(agentMortalityService, times(1)).processLifecycleTick(100, 0.02, 0.01);
+        verify(immigrationService, times(1)).processMigrationCycle(75.0, 50.0, 100);
     }
 
     @Test
