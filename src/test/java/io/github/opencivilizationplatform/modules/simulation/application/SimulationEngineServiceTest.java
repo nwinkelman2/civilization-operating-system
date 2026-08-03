@@ -3,9 +3,12 @@ package io.github.opencivilizationplatform.modules.simulation.application;
 import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
+import io.github.opencivilizationplatform.modules.life.application.AgentMetabolismService;
 import io.github.opencivilizationplatform.modules.monitoring.domain.BiosphereMetric;
+import io.github.opencivilizationplatform.modules.participation.application.LawExecutionEngine;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
+import io.github.opencivilizationplatform.modules.region.application.TerritoryControlService;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
@@ -37,6 +40,15 @@ class SimulationEngineServiceTest {
     @Mock
     private PhysicsEngineService physicsEngineService;
 
+    @Mock
+    private AgentMetabolismService agentMetabolismService;
+
+    @Mock
+    private TerritoryControlService territoryControlService;
+
+    @Mock
+    private LawExecutionEngine lawExecutionEngine;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -57,6 +69,7 @@ class SimulationEngineServiceTest {
         SimulationStatusResponse status = simulationEngineService.getStatus();
         assertEquals(0, status.getActiveRulesCount());
         verify(balanceService, never()).getBalanceReport();
+        verify(lawExecutionEngine, never()).evaluateAndApplyLaws(any(), any());
     }
 
     @Test
@@ -78,6 +91,10 @@ class SimulationEngineServiceTest {
         SimulationStatusResponse status = simulationEngineService.getStatus();
         assertEquals(1, status.getActiveRulesCount());
         assertTrue(status.getLastDecision().contains("WATER deficiency detected (75.0%)"));
+
+        verify(lawExecutionEngine, times(1)).evaluateAndApplyLaws(rules, balance);
+        verify(agentMetabolismService, times(1)).processMetabolism(100, 100.0, 150.0);
+        verify(territoryControlService, times(1)).processTerritoryTick(1.0);
     }
 
     @Test

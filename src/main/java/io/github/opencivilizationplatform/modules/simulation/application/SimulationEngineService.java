@@ -4,8 +4,11 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
+import io.github.opencivilizationplatform.modules.life.application.AgentMetabolismService;
+import io.github.opencivilizationplatform.modules.participation.application.LawExecutionEngine;
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
+import io.github.opencivilizationplatform.modules.region.application.TerritoryControlService;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
@@ -35,6 +38,9 @@ public class SimulationEngineService {
     private final ObjectMapper objectMapper;
     private final UniverseService universeService;
     private final PhysicsEngineService physicsEngineService;
+    private final AgentMetabolismService agentMetabolismService;
+    private final TerritoryControlService territoryControlService;
+    private final LawExecutionEngine lawExecutionEngine;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -47,12 +53,18 @@ public class SimulationEngineService {
                                    BalanceService balanceService,
                                    ObjectMapper objectMapper,
                                    UniverseService universeService,
-                                   PhysicsEngineService physicsEngineService) {
+                                   PhysicsEngineService physicsEngineService,
+                                   AgentMetabolismService agentMetabolismService,
+                                   TerritoryControlService territoryControlService,
+                                   LawExecutionEngine lawExecutionEngine) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
         this.universeService = universeService;
         this.physicsEngineService = physicsEngineService;
+        this.agentMetabolismService = agentMetabolismService;
+        this.territoryControlService = territoryControlService;
+        this.lawExecutionEngine = lawExecutionEngine;
     }
 
     public UniverseService getUniverseService() {
@@ -61,6 +73,18 @@ public class SimulationEngineService {
 
     public PhysicsEngineService getPhysicsEngineService() {
         return physicsEngineService;
+    }
+
+    public AgentMetabolismService getAgentMetabolismService() {
+        return agentMetabolismService;
+    }
+
+    public TerritoryControlService getTerritoryControlService() {
+        return territoryControlService;
+    }
+
+    public LawExecutionEngine getLawExecutionEngine() {
+        return lawExecutionEngine;
     }
 
     @Scheduled(fixedRate = 15000)
@@ -82,7 +106,20 @@ public class SimulationEngineService {
 
         synchronized (monitoredCategories) {
             monitoredCategories.clear();
-            balance.forEach(b -> monitoredCategories.add(b.getCategory()));
+            if (balance != null) {
+                balance.forEach(b -> monitoredCategories.add(b.getCategory()));
+            }
+        }
+
+        // Execute core engines during tick
+        if (lawExecutionEngine != null) {
+            lawExecutionEngine.evaluateAndApplyLaws(rules, balance);
+        }
+        if (agentMetabolismService != null) {
+            agentMetabolismService.processMetabolism(100, 100.0, 150.0);
+        }
+        if (territoryControlService != null) {
+            territoryControlService.processTerritoryTick(1.0);
         }
 
         for (Rule rule : rules) {
@@ -98,18 +135,20 @@ public class SimulationEngineService {
                     if (metricNode == null) continue;
 
                     String metricCat = metricNode.asText();
-                    balance.stream()
-                        .filter(b -> metricCat.equals(b.getCategory()))
-                        .findFirst()
-                        .ifPresent(b -> {
-                            double percentage = b.getPercentageMet();
-                            if (percentage < 100) {
-                                String decision = String.format("[%s] DECISION: %s deficiency detected (%.1f%%). Rule '%s' fired.",
-                                    timestamp, metricCat, percentage, rule.getTitle());
-                                pushDecision(decision);
-                                log.info(decision);
-                            }
-                        });
+                    if (balance != null) {
+                        balance.stream()
+                            .filter(b -> metricCat.equals(b.getCategory()))
+                            .findFirst()
+                            .ifPresent(b -> {
+                                double percentage = b.getPercentageMet();
+                                if (percentage < 100) {
+                                    String decision = String.format("[%s] DECISION: %s deficiency detected (%.1f%%). Rule '%s' fired.",
+                                        timestamp, metricCat, percentage, rule.getTitle());
+                                    pushDecision(decision);
+                                    log.info(decision);
+                                }
+                            });
+                    }
                 } else if ("THRESHOLD_TRIGGER".equals(type)) {
                     String decision = String.format("[%s] AUDIT: Rule '%s' evaluation complete. No threshold breached.",
                         timestamp, rule.getTitle());
