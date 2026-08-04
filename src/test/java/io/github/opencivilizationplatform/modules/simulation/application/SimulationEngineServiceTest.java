@@ -25,6 +25,9 @@ import io.github.opencivilizationplatform.modules.cortex.application.AgentBrainR
 import io.github.opencivilizationplatform.modules.physics.application.ResourceStewardshipService;
 import io.github.opencivilizationplatform.modules.region.application.ExplorationColonyService;
 import io.github.opencivilizationplatform.modules.strategy.application.SocietalEvolutionService;
+import io.github.opencivilizationplatform.modules.region.application.AgentSpatialMapService;
+import io.github.opencivilizationplatform.modules.social.application.SocialGraphService;
+import io.github.opencivilizationplatform.modules.social.application.CultureArtService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -97,6 +100,15 @@ class SimulationEngineServiceTest {
     @Mock
     private AgentBrainRuntimeService agentBrainRuntimeService;
 
+    @Mock
+    private AgentSpatialMapService agentSpatialMapService;
+
+    @Mock
+    private SocialGraphService socialGraphService;
+
+    @Mock
+    private CultureArtService cultureArtService;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -155,6 +167,9 @@ class SimulationEngineServiceTest {
         verify(agentKnowledgeService, times(1)).processKnowledgeTick();
         verify(toolforgeService, times(1)).processToolforgeTick();
         verify(agentBrainRuntimeService, times(1)).processBrainRuntimeTick();
+        verify(agentSpatialMapService, times(1)).processSpatialTick();
+        verify(socialGraphService, times(1)).processSocialGraphTick();
+        verify(cultureArtService, times(1)).processCultureTick();
     }
 
     @Test

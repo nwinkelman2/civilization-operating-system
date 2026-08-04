@@ -17,6 +17,9 @@ import io.github.opencivilizationplatform.modules.participation.application.LawE
 import io.github.opencivilizationplatform.modules.participation.application.RuleService;
 import io.github.opencivilizationplatform.modules.participation.domain.Rule;
 import io.github.opencivilizationplatform.modules.region.application.TerritoryControlService;
+import io.github.opencivilizationplatform.modules.region.application.AgentSpatialMapService;
+import io.github.opencivilizationplatform.modules.social.application.SocialGraphService;
+import io.github.opencivilizationplatform.modules.social.application.CultureArtService;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.social.application.ImmigrationService;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
@@ -66,6 +69,9 @@ public class SimulationEngineService {
     private final AgentKnowledgeService agentKnowledgeService;
     private final ToolforgeService toolforgeService;
     private final AgentBrainRuntimeService agentBrainRuntimeService;
+    private final AgentSpatialMapService agentSpatialMapService;
+    private final SocialGraphService socialGraphService;
+    private final CultureArtService cultureArtService;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -94,7 +100,10 @@ public class SimulationEngineService {
                                    ExplorationColonyService explorationColonyService,
                                    AgentKnowledgeService agentKnowledgeService,
                                    ToolforgeService toolforgeService,
-                                   AgentBrainRuntimeService agentBrainRuntimeService) {
+                                   AgentBrainRuntimeService agentBrainRuntimeService,
+                                   AgentSpatialMapService agentSpatialMapService,
+                                   SocialGraphService socialGraphService,
+                                   CultureArtService cultureArtService) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
@@ -115,6 +124,9 @@ public class SimulationEngineService {
         this.agentKnowledgeService = agentKnowledgeService;
         this.toolforgeService = toolforgeService;
         this.agentBrainRuntimeService = agentBrainRuntimeService;
+        this.agentSpatialMapService = agentSpatialMapService;
+        this.socialGraphService = socialGraphService;
+        this.cultureArtService = cultureArtService;
     }
 
     public SimulationEngineService(RuleService ruleService,
@@ -128,7 +140,7 @@ public class SimulationEngineService {
         this(ruleService, balanceService, objectMapper, universeService, physicsEngineService,
              agentMetabolismService, territoryControlService, lawExecutionEngine,
              null, null, null, null, null, null, null, null, null,
-             null, null, null);
+             null, null, null, null, null, null);
     }
 
     public UniverseService getUniverseService() {
@@ -197,6 +209,18 @@ public class SimulationEngineService {
 
     public AgentBrainRuntimeService getAgentBrainRuntimeService() {
         return agentBrainRuntimeService;
+    }
+
+    public AgentSpatialMapService getAgentSpatialMapService() {
+        return agentSpatialMapService;
+    }
+
+    public SocialGraphService getSocialGraphService() {
+        return socialGraphService;
+    }
+
+    public CultureArtService getCultureArtService() {
+        return cultureArtService;
     }
 
     @Scheduled(fixedRate = 15000)
@@ -273,6 +297,15 @@ public class SimulationEngineService {
         }
         if (agentBrainRuntimeService != null) {
             agentBrainRuntimeService.processBrainRuntimeTick();
+        }
+        if (agentSpatialMapService != null) {
+            agentSpatialMapService.processSpatialTick();
+        }
+        if (socialGraphService != null) {
+            socialGraphService.processSocialGraphTick();
+        }
+        if (cultureArtService != null) {
+            cultureArtService.processCultureTick();
         }
 
         for (Rule rule : rules) {
