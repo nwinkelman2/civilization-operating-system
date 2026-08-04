@@ -19,6 +19,9 @@ import io.github.opencivilizationplatform.modules.social.application.Immigration
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
 import io.github.opencivilizationplatform.modules.physics.application.PhysicsEngineService;
+import io.github.opencivilizationplatform.modules.life.application.AgentKnowledgeService;
+import io.github.opencivilizationplatform.modules.production.application.ToolforgeService;
+import io.github.opencivilizationplatform.modules.cortex.application.AgentBrainRuntimeService;
 import io.github.opencivilizationplatform.modules.physics.application.ResourceStewardshipService;
 import io.github.opencivilizationplatform.modules.region.application.ExplorationColonyService;
 import io.github.opencivilizationplatform.modules.strategy.application.SocietalEvolutionService;
@@ -85,6 +88,15 @@ class SimulationEngineServiceTest {
     @Mock
     private ExplorationColonyService explorationColonyService;
 
+    @Mock
+    private AgentKnowledgeService agentKnowledgeService;
+
+    @Mock
+    private ToolforgeService toolforgeService;
+
+    @Mock
+    private AgentBrainRuntimeService agentBrainRuntimeService;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -140,6 +152,9 @@ class SimulationEngineServiceTest {
         verify(societalEvolutionService, times(1)).processEvolutionCycle(5, 120.0);
         verify(resourceStewardshipService, times(1)).processStewardshipTick(50.0, 20.0, 60.0, 100);
         verify(explorationColonyService, times(1)).processExplorationTick(10.0);
+        verify(agentKnowledgeService, times(1)).processKnowledgeTick();
+        verify(toolforgeService, times(1)).processToolforgeTick();
+        verify(agentBrainRuntimeService, times(1)).processBrainRuntimeTick();
     }
 
     @Test

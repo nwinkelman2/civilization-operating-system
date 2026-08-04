@@ -5,6 +5,9 @@ import tools.jackson.databind.ObjectMapper;
 import io.github.opencivilizationplatform.core.event.BiosphereCriticalEvent;
 import io.github.opencivilizationplatform.dto.BalanceDTO;
 import io.github.opencivilizationplatform.modules.life.application.HealthDiseaseService;
+import io.github.opencivilizationplatform.modules.life.application.AgentKnowledgeService;
+import io.github.opencivilizationplatform.modules.production.application.ToolforgeService;
+import io.github.opencivilizationplatform.modules.cortex.application.AgentBrainRuntimeService;
 import io.github.opencivilizationplatform.modules.physics.application.ClimateDisasterService;
 import io.github.opencivilizationplatform.modules.production.application.ComplexGoodsProductionService;
 import io.github.opencivilizationplatform.modules.diplomacy.application.DiplomacyEngineService;
@@ -60,6 +63,9 @@ public class SimulationEngineService {
     private final SocietalEvolutionService societalEvolutionService;
     private final ResourceStewardshipService resourceStewardshipService;
     private final ExplorationColonyService explorationColonyService;
+    private final AgentKnowledgeService agentKnowledgeService;
+    private final ToolforgeService toolforgeService;
+    private final AgentBrainRuntimeService agentBrainRuntimeService;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -85,7 +91,10 @@ public class SimulationEngineService {
                                    ComplexGoodsProductionService complexGoodsProductionService,
                                    SocietalEvolutionService societalEvolutionService,
                                    ResourceStewardshipService resourceStewardshipService,
-                                   ExplorationColonyService explorationColonyService) {
+                                   ExplorationColonyService explorationColonyService,
+                                   AgentKnowledgeService agentKnowledgeService,
+                                   ToolforgeService toolforgeService,
+                                   AgentBrainRuntimeService agentBrainRuntimeService) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
@@ -103,6 +112,9 @@ public class SimulationEngineService {
         this.societalEvolutionService = societalEvolutionService;
         this.resourceStewardshipService = resourceStewardshipService;
         this.explorationColonyService = explorationColonyService;
+        this.agentKnowledgeService = agentKnowledgeService;
+        this.toolforgeService = toolforgeService;
+        this.agentBrainRuntimeService = agentBrainRuntimeService;
     }
 
     public SimulationEngineService(RuleService ruleService,
@@ -115,7 +127,8 @@ public class SimulationEngineService {
                                    LawExecutionEngine lawExecutionEngine) {
         this(ruleService, balanceService, objectMapper, universeService, physicsEngineService,
              agentMetabolismService, territoryControlService, lawExecutionEngine,
-             null, null, null, null, null, null, null, null, null);
+             null, null, null, null, null, null, null, null, null,
+             null, null, null);
     }
 
     public UniverseService getUniverseService() {
@@ -172,6 +185,18 @@ public class SimulationEngineService {
 
     public ExplorationColonyService getExplorationColonyService() {
         return explorationColonyService;
+    }
+
+    public AgentKnowledgeService getAgentKnowledgeService() {
+        return agentKnowledgeService;
+    }
+
+    public ToolforgeService getToolforgeService() {
+        return toolforgeService;
+    }
+
+    public AgentBrainRuntimeService getAgentBrainRuntimeService() {
+        return agentBrainRuntimeService;
     }
 
     @Scheduled(fixedRate = 15000)
@@ -239,6 +264,15 @@ public class SimulationEngineService {
         }
         if (explorationColonyService != null) {
             explorationColonyService.processExplorationTick(10.0);
+        }
+        if (agentKnowledgeService != null) {
+            agentKnowledgeService.processKnowledgeTick();
+        }
+        if (toolforgeService != null) {
+            toolforgeService.processToolforgeTick();
+        }
+        if (agentBrainRuntimeService != null) {
+            agentBrainRuntimeService.processBrainRuntimeTick();
         }
 
         for (Rule rule : rules) {
