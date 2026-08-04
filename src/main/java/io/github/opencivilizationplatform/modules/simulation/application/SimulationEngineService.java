@@ -19,6 +19,9 @@ import io.github.opencivilizationplatform.modules.social.application.Immigration
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
 import io.github.opencivilizationplatform.modules.physics.application.PhysicsEngineService;
+import io.github.opencivilizationplatform.modules.physics.application.ResourceStewardshipService;
+import io.github.opencivilizationplatform.modules.region.application.ExplorationColonyService;
+import io.github.opencivilizationplatform.modules.strategy.application.SocietalEvolutionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
@@ -54,6 +57,9 @@ public class SimulationEngineService {
     private final HealthDiseaseService healthDiseaseService;
     private final ClimateDisasterService climateDisasterService;
     private final ComplexGoodsProductionService complexGoodsProductionService;
+    private final SocietalEvolutionService societalEvolutionService;
+    private final ResourceStewardshipService resourceStewardshipService;
+    private final ExplorationColonyService explorationColonyService;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -76,7 +82,10 @@ public class SimulationEngineService {
                                    ImmigrationService immigrationService,
                                    HealthDiseaseService healthDiseaseService,
                                    ClimateDisasterService climateDisasterService,
-                                   ComplexGoodsProductionService complexGoodsProductionService) {
+                                   ComplexGoodsProductionService complexGoodsProductionService,
+                                   SocietalEvolutionService societalEvolutionService,
+                                   ResourceStewardshipService resourceStewardshipService,
+                                   ExplorationColonyService explorationColonyService) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
@@ -91,6 +100,9 @@ public class SimulationEngineService {
         this.healthDiseaseService = healthDiseaseService;
         this.climateDisasterService = climateDisasterService;
         this.complexGoodsProductionService = complexGoodsProductionService;
+        this.societalEvolutionService = societalEvolutionService;
+        this.resourceStewardshipService = resourceStewardshipService;
+        this.explorationColonyService = explorationColonyService;
     }
 
     public SimulationEngineService(RuleService ruleService,
@@ -103,7 +115,7 @@ public class SimulationEngineService {
                                    LawExecutionEngine lawExecutionEngine) {
         this(ruleService, balanceService, objectMapper, universeService, physicsEngineService,
              agentMetabolismService, territoryControlService, lawExecutionEngine,
-             null, null, null, null, null, null);
+             null, null, null, null, null, null, null, null, null);
     }
 
     public UniverseService getUniverseService() {
@@ -148,6 +160,18 @@ public class SimulationEngineService {
 
     public ComplexGoodsProductionService getComplexGoodsProductionService() {
         return complexGoodsProductionService;
+    }
+
+    public SocietalEvolutionService getSocietalEvolutionService() {
+        return societalEvolutionService;
+    }
+
+    public ResourceStewardshipService getResourceStewardshipService() {
+        return resourceStewardshipService;
+    }
+
+    public ExplorationColonyService getExplorationColonyService() {
+        return explorationColonyService;
     }
 
     @Scheduled(fixedRate = 15000)
@@ -206,6 +230,15 @@ public class SimulationEngineService {
                 "SILICON", 2.0,
                 "COPPER", 2.0
             ));
+        }
+        if (societalEvolutionService != null) {
+            societalEvolutionService.processEvolutionCycle(5, 120.0);
+        }
+        if (resourceStewardshipService != null) {
+            resourceStewardshipService.processStewardshipTick(50.0, 20.0, 60.0, 100);
+        }
+        if (explorationColonyService != null) {
+            explorationColonyService.processExplorationTick(10.0);
         }
 
         for (Rule rule : rules) {

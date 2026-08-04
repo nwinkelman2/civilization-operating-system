@@ -19,6 +19,9 @@ import io.github.opencivilizationplatform.modules.social.application.Immigration
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
 import io.github.opencivilizationplatform.modules.universe.application.UniverseService;
 import io.github.opencivilizationplatform.modules.physics.application.PhysicsEngineService;
+import io.github.opencivilizationplatform.modules.physics.application.ResourceStewardshipService;
+import io.github.opencivilizationplatform.modules.region.application.ExplorationColonyService;
+import io.github.opencivilizationplatform.modules.strategy.application.SocietalEvolutionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -73,6 +76,15 @@ class SimulationEngineServiceTest {
     @Mock
     private ComplexGoodsProductionService complexGoodsProductionService;
 
+    @Mock
+    private SocietalEvolutionService societalEvolutionService;
+
+    @Mock
+    private ResourceStewardshipService resourceStewardshipService;
+
+    @Mock
+    private ExplorationColonyService explorationColonyService;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -125,6 +137,9 @@ class SimulationEngineServiceTest {
         verify(healthDiseaseService, times(1)).processHealthTick(100, 45.0, 50.0, 2);
         verify(climateDisasterService, times(1)).processClimateCycle(22.0);
         verify(complexGoodsProductionService, times(1)).processProductionCycle(any());
+        verify(societalEvolutionService, times(1)).processEvolutionCycle(5, 120.0);
+        verify(resourceStewardshipService, times(1)).processStewardshipTick(50.0, 20.0, 60.0, 100);
+        verify(explorationColonyService, times(1)).processExplorationTick(10.0);
     }
 
     @Test
