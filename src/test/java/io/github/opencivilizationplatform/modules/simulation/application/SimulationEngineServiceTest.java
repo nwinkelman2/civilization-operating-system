@@ -31,6 +31,9 @@ import io.github.opencivilizationplatform.modules.social.application.CultureArtS
 import io.github.opencivilizationplatform.modules.physics.application.WildlifeEcosystemService;
 import io.github.opencivilizationplatform.modules.physics.application.DayNightCycleService;
 import io.github.opencivilizationplatform.modules.social.application.CivilizationChronicleService;
+import io.github.opencivilizationplatform.modules.nexus.application.PluginSdkService;
+import io.github.opencivilizationplatform.modules.social.application.TourismPilgrimageService;
+import io.github.opencivilizationplatform.modules.trade.application.MonetaryEconomyService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -121,6 +124,15 @@ class SimulationEngineServiceTest {
     @Mock
     private CivilizationChronicleService civilizationChronicleService;
 
+    @Mock
+    private PluginSdkService pluginSdkService;
+
+    @Mock
+    private TourismPilgrimageService tourismPilgrimageService;
+
+    @Mock
+    private MonetaryEconomyService monetaryEconomyService;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -185,6 +197,9 @@ class SimulationEngineServiceTest {
         verify(wildlifeEcosystemService, times(1)).processEcosystemTick();
         verify(dayNightCycleService, times(1)).processDayNightTick();
         verify(civilizationChronicleService, times(1)).processChronicleTick();
+        verify(pluginSdkService, times(1)).processPluginTick();
+        verify(tourismPilgrimageService, times(1)).processTourismTick();
+        verify(monetaryEconomyService, times(1)).processMonetaryTick();
     }
 
     @Test

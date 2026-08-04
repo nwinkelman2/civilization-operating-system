@@ -23,6 +23,9 @@ import io.github.opencivilizationplatform.modules.social.application.CultureArtS
 import io.github.opencivilizationplatform.modules.physics.application.WildlifeEcosystemService;
 import io.github.opencivilizationplatform.modules.physics.application.DayNightCycleService;
 import io.github.opencivilizationplatform.modules.social.application.CivilizationChronicleService;
+import io.github.opencivilizationplatform.modules.nexus.application.PluginSdkService;
+import io.github.opencivilizationplatform.modules.social.application.TourismPilgrimageService;
+import io.github.opencivilizationplatform.modules.trade.application.MonetaryEconomyService;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.social.application.ImmigrationService;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
@@ -78,6 +81,9 @@ public class SimulationEngineService {
     private final WildlifeEcosystemService wildlifeEcosystemService;
     private final DayNightCycleService dayNightCycleService;
     private final CivilizationChronicleService civilizationChronicleService;
+    private final PluginSdkService pluginSdkService;
+    private final TourismPilgrimageService tourismPilgrimageService;
+    private final MonetaryEconomyService monetaryEconomyService;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -112,7 +118,10 @@ public class SimulationEngineService {
                                    CultureArtService cultureArtService,
                                    WildlifeEcosystemService wildlifeEcosystemService,
                                    DayNightCycleService dayNightCycleService,
-                                   CivilizationChronicleService civilizationChronicleService) {
+                                   CivilizationChronicleService civilizationChronicleService,
+                                   PluginSdkService pluginSdkService,
+                                   TourismPilgrimageService tourismPilgrimageService,
+                                   MonetaryEconomyService monetaryEconomyService) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
@@ -139,6 +148,9 @@ public class SimulationEngineService {
         this.wildlifeEcosystemService = wildlifeEcosystemService;
         this.dayNightCycleService = dayNightCycleService;
         this.civilizationChronicleService = civilizationChronicleService;
+        this.pluginSdkService = pluginSdkService;
+        this.tourismPilgrimageService = tourismPilgrimageService;
+        this.monetaryEconomyService = monetaryEconomyService;
     }
 
     public SimulationEngineService(RuleService ruleService,
@@ -152,7 +164,7 @@ public class SimulationEngineService {
         this(ruleService, balanceService, objectMapper, universeService, physicsEngineService,
              agentMetabolismService, territoryControlService, lawExecutionEngine,
              null, null, null, null, null, null, null, null, null,
-             null, null, null, null, null, null, null, null, null);
+             null, null, null, null, null, null, null, null, null, null, null, null);
     }
 
     public UniverseService getUniverseService() {
@@ -247,6 +259,18 @@ public class SimulationEngineService {
         return civilizationChronicleService;
     }
 
+    public PluginSdkService getPluginSdkService() {
+        return pluginSdkService;
+    }
+
+    public TourismPilgrimageService getTourismPilgrimageService() {
+        return tourismPilgrimageService;
+    }
+
+    public MonetaryEconomyService getMonetaryEconomyService() {
+        return monetaryEconomyService;
+    }
+
     @Scheduled(fixedRate = 15000)
     public void runSimulationCycle() {
         int tick = tickCounter.incrementAndGet();
@@ -339,6 +363,15 @@ public class SimulationEngineService {
         }
         if (civilizationChronicleService != null) {
             civilizationChronicleService.processChronicleTick();
+        }
+        if (pluginSdkService != null) {
+            pluginSdkService.processPluginTick();
+        }
+        if (tourismPilgrimageService != null) {
+            tourismPilgrimageService.processTourismTick();
+        }
+        if (monetaryEconomyService != null) {
+            monetaryEconomyService.processMonetaryTick();
         }
 
         for (Rule rule : rules) {
