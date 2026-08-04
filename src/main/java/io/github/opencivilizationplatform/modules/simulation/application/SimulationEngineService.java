@@ -20,6 +20,9 @@ import io.github.opencivilizationplatform.modules.region.application.TerritoryCo
 import io.github.opencivilizationplatform.modules.region.application.AgentSpatialMapService;
 import io.github.opencivilizationplatform.modules.social.application.SocialGraphService;
 import io.github.opencivilizationplatform.modules.social.application.CultureArtService;
+import io.github.opencivilizationplatform.modules.physics.application.WildlifeEcosystemService;
+import io.github.opencivilizationplatform.modules.physics.application.DayNightCycleService;
+import io.github.opencivilizationplatform.modules.social.application.CivilizationChronicleService;
 import io.github.opencivilizationplatform.modules.simulation.api.dto.SimulationStatusResponse;
 import io.github.opencivilizationplatform.modules.social.application.ImmigrationService;
 import io.github.opencivilizationplatform.modules.strategy.application.BalanceService;
@@ -72,6 +75,9 @@ public class SimulationEngineService {
     private final AgentSpatialMapService agentSpatialMapService;
     private final SocialGraphService socialGraphService;
     private final CultureArtService cultureArtService;
+    private final WildlifeEcosystemService wildlifeEcosystemService;
+    private final DayNightCycleService dayNightCycleService;
+    private final CivilizationChronicleService civilizationChronicleService;
 
     private final AtomicInteger tickCounter = new AtomicInteger(0);
     private final AtomicReference<String> lastDecision = new AtomicReference<>("Initializing Civilization Cortex...");
@@ -103,7 +109,10 @@ public class SimulationEngineService {
                                    AgentBrainRuntimeService agentBrainRuntimeService,
                                    AgentSpatialMapService agentSpatialMapService,
                                    SocialGraphService socialGraphService,
-                                   CultureArtService cultureArtService) {
+                                   CultureArtService cultureArtService,
+                                   WildlifeEcosystemService wildlifeEcosystemService,
+                                   DayNightCycleService dayNightCycleService,
+                                   CivilizationChronicleService civilizationChronicleService) {
         this.ruleService = ruleService;
         this.balanceService = balanceService;
         this.objectMapper = objectMapper;
@@ -127,6 +136,9 @@ public class SimulationEngineService {
         this.agentSpatialMapService = agentSpatialMapService;
         this.socialGraphService = socialGraphService;
         this.cultureArtService = cultureArtService;
+        this.wildlifeEcosystemService = wildlifeEcosystemService;
+        this.dayNightCycleService = dayNightCycleService;
+        this.civilizationChronicleService = civilizationChronicleService;
     }
 
     public SimulationEngineService(RuleService ruleService,
@@ -140,7 +152,7 @@ public class SimulationEngineService {
         this(ruleService, balanceService, objectMapper, universeService, physicsEngineService,
              agentMetabolismService, territoryControlService, lawExecutionEngine,
              null, null, null, null, null, null, null, null, null,
-             null, null, null, null, null, null);
+             null, null, null, null, null, null, null, null, null);
     }
 
     public UniverseService getUniverseService() {
@@ -221,6 +233,18 @@ public class SimulationEngineService {
 
     public CultureArtService getCultureArtService() {
         return cultureArtService;
+    }
+
+    public WildlifeEcosystemService getWildlifeEcosystemService() {
+        return wildlifeEcosystemService;
+    }
+
+    public DayNightCycleService getDayNightCycleService() {
+        return dayNightCycleService;
+    }
+
+    public CivilizationChronicleService getCivilizationChronicleService() {
+        return civilizationChronicleService;
     }
 
     @Scheduled(fixedRate = 15000)
@@ -306,6 +330,15 @@ public class SimulationEngineService {
         }
         if (cultureArtService != null) {
             cultureArtService.processCultureTick();
+        }
+        if (wildlifeEcosystemService != null) {
+            wildlifeEcosystemService.processEcosystemTick();
+        }
+        if (dayNightCycleService != null) {
+            dayNightCycleService.processDayNightTick();
+        }
+        if (civilizationChronicleService != null) {
+            civilizationChronicleService.processChronicleTick();
         }
 
         for (Rule rule : rules) {

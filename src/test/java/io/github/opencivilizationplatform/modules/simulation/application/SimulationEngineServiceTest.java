@@ -28,6 +28,9 @@ import io.github.opencivilizationplatform.modules.strategy.application.SocietalE
 import io.github.opencivilizationplatform.modules.region.application.AgentSpatialMapService;
 import io.github.opencivilizationplatform.modules.social.application.SocialGraphService;
 import io.github.opencivilizationplatform.modules.social.application.CultureArtService;
+import io.github.opencivilizationplatform.modules.physics.application.WildlifeEcosystemService;
+import io.github.opencivilizationplatform.modules.physics.application.DayNightCycleService;
+import io.github.opencivilizationplatform.modules.social.application.CivilizationChronicleService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -109,6 +112,15 @@ class SimulationEngineServiceTest {
     @Mock
     private CultureArtService cultureArtService;
 
+    @Mock
+    private WildlifeEcosystemService wildlifeEcosystemService;
+
+    @Mock
+    private DayNightCycleService dayNightCycleService;
+
+    @Mock
+    private CivilizationChronicleService civilizationChronicleService;
+
     @Spy
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -170,6 +182,9 @@ class SimulationEngineServiceTest {
         verify(agentSpatialMapService, times(1)).processSpatialTick();
         verify(socialGraphService, times(1)).processSocialGraphTick();
         verify(cultureArtService, times(1)).processCultureTick();
+        verify(wildlifeEcosystemService, times(1)).processEcosystemTick();
+        verify(dayNightCycleService, times(1)).processDayNightTick();
+        verify(civilizationChronicleService, times(1)).processChronicleTick();
     }
 
     @Test
